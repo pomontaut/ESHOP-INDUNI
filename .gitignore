@@ -9,3 +9,7 @@
 !/tmp/.keep
 /storage/*
 !/storage/.keep
+/log/*
+!/log/.keep
+/storage/*
+!/storage/.keep
