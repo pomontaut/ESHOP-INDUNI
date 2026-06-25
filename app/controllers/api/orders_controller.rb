@@ -33,8 +33,18 @@ class Api::OrdersController < ApplicationController
       )
     end
 
-    OrderMailer.send_order(order).deliver_now
-    render json: { success: true, order_number: order.number }, status: :ok
+    # Try to send PDF email, fall back to plain email if wkhtmltopdf missing
+    begin
+      OrderMailer.send_order(order).deliver_now
+      render json: { success: true, order_number: order.number, message: 'Commande enregistrée et email envoyé avec PDF.' }, status: :ok
+    rescue => e
+      if e.message.include?('wkhtmltopdf')
+        OrderMailer.send_order_plain(order).deliver_now rescue nil
+        render json: { success: true, order_number: order.number, message: 'Commande enregistrée. Email envoyé sans PDF (wkhtmltopdf non installé).' }, status: :ok
+      else
+        render json: { success: true, order_number: order.number, message: 'Commande enregistrée. Email non envoyé: ' + e.message }, status: :ok
+      end
+    end
   rescue => e
     render json: { error: e.message }, status: :unprocessable_entity
   end

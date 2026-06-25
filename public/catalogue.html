@@ -1182,27 +1182,30 @@ async function sendOrderByEmail(e) {
   btn.textContent = '⏳ Envoi en cours...';
 
   try {
+    const supplierName = (typeof cartSupplier === 'function' ? cartSupplier() : null) || (cart[0] && cart[0].catalog) || 'Inconnu';
     const res = await fetch('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chantier,
         delai,
-        supplier: (typeof cartSupplier === 'function' ? cartSupplier() : null) || (cart[0] && cart[0].catalog) || 'Inconnu',
+        supplier: supplierName,
         items: cart.map(i => ({ article: i.article, designation: i.designation, qty: i.qty, prix: i.prix, unite: i.unite || 'PCE', catalog: i.catalog || '' }))
       })
     });
-    const data = await res.json();
-    if (res.ok) {
-      btn.textContent = '✅ Envoyé !';
+    const text = await res.text();
+    let data = {};
+    try { data = JSON.parse(text); } catch(e) { data = { error: text || 'Réponse invalide du serveur' }; }
+    if (res.ok && data.success) {
+      btn.textContent = '✅ ' + (data.message || 'Envoyé !');
       btn.style.background = '#0b4f9c';
-      setTimeout(() => { closeModal('orderModal'); btn.disabled = false; btn.textContent = '📧 Envoyer au fournisseur (PDF)'; btn.style.background = '#176b28'; }, 2500);
+      setTimeout(() => { closeModal('orderModal'); btn.disabled = false; btn.textContent = '📧 Envoyer au fournisseur (PDF)'; btn.style.background = '#176b28'; }, 3000);
     } else {
       alert('Erreur: ' + (data.error || 'Envoi échoué'));
       btn.disabled = false; btn.textContent = '📧 Envoyer au fournisseur (PDF)';
     }
   } catch(err) {
-    alert('Erreur réseau: ' + err.message);
+    alert('Erreur: ' + err.message);
     btn.disabled = false; btn.textContent = '📧 Envoyer au fournisseur (PDF)';
   }
 }
