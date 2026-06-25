@@ -4,7 +4,7 @@
   "features": {
     "ghcr.io/devcontainers/features/node:1": {}
   },
-  "postCreateCommand": "bundle install && bin/rails db:migrate db:seed",
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y wkhtmltopdf && bundle install && bin/rails db:migrate db:seed",
   "forwardPorts": [3000],
   "portsAttributes": {
     "3000": { "label": "Rails App", "onAutoForward": "openBrowser" }
