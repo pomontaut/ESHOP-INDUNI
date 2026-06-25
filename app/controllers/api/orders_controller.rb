@@ -33,16 +33,23 @@ class Api::OrdersController < ApplicationController
       )
     end
 
-    # Try to send PDF email, fall back to plain email if wkhtmltopdf missing
+    # Generate PDF in controller context (has route helpers), then pass to mailer
     begin
-      OrderMailer.send_order(order).deliver_now
+      html = render_to_string(
+        template: 'orders/bon_de_commande',
+        assigns: { order: order },
+        layout: false
+      )
+      pdf_content = WickedPdf.new.pdf_from_string(html)
+      OrderMailer.send_order(order, pdf_content).deliver_now
       render json: { success: true, order_number: order.number, message: 'Commande enregistrée et email envoyé avec PDF.' }, status: :ok
     rescue => e
-      if e.message.include?('wkhtmltopdf')
+      if e.message.include?('wkhtmltopdf') || e.message.include?('command not found')
         OrderMailer.send_order_plain(order).deliver_now rescue nil
         render json: { success: true, order_number: order.number, message: 'Commande enregistrée. Email envoyé sans PDF (wkhtmltopdf non installé).' }, status: :ok
       else
-        render json: { success: true, order_number: order.number, message: 'Commande enregistrée. Email non envoyé: ' + e.message }, status: :ok
+        OrderMailer.send_order_plain(order).deliver_now rescue nil
+        render json: { success: true, order_number: order.number, message: 'Commande enregistrée. Email envoyé (sans PDF): ' + e.message }, status: :ok
       end
     end
   rescue => e

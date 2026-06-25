@@ -1,10 +1,9 @@
 class OrderMailer < ApplicationMailer
-  def send_order(order)
+  def send_order(order, pdf_content = nil)
     @order = order
-    pdf = WickedPdf.new.pdf_from_string(
-      render_to_string(template: 'orders/bon_de_commande', formats: [:html], layout: 'pdf')
-    )
-    attachments["commande_#{@order.number}.pdf"] = { mime_type: 'application/pdf', content: pdf }
+    if pdf_content
+      attachments["commande_#{@order.number}.pdf"] = { mime_type: 'application/pdf', content: pdf_content }
+    end
     mail(to: @order.supplier.email, subject: "Commande #{@order.number}")
   end
 
