@@ -4,10 +4,15 @@
   "features": {
     "ghcr.io/devcontainers/features/node:1": {}
   },
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y wkhtmltopdf && bundle install && bin/rails db:migrate db:seed && echo 'alias railsup=\"bin/rails server -b 0.0.0.0\"' >> ~/.bashrc",
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y wkhtmltopdf && bundle install && bin/rails db:migrate db:seed",
+  "postStartCommand": "bin/rails server -b 0.0.0.0 -p 3000 > /tmp/rails.log 2>&1 &",
   "forwardPorts": [3000],
   "portsAttributes": {
-    "3000": { "label": "Rails App", "onAutoForward": "openBrowser" }
+    "3000": {
+      "label": "INDUNI Eshop",
+      "onAutoForward": "openBrowser",
+      "protocol": "http"
+    }
   },
   "customizations": {
     "vscode": {
