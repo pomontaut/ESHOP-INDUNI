@@ -8,6 +8,10 @@ Rails.application.routes.draw do
     end
     resources :order_lines, only: [:create, :destroy]
   end
+  namespace :api do
+    resources :orders, only: [:create]
+  end
+
   root to: "orders#index"
 
   # Reveal health status on /up that returns 200 if the app boots without exceptions, 404 otherwise.
