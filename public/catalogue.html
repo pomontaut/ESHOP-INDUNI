@@ -764,8 +764,7 @@ async function sendOrderByEmail(e) {
     btn.textContent = '📧 Envoyer au fournisseur (PDF)';
   }
 }
-</script>
-</body></html>`; const blob=new Blob([order],{type:'text/html;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=no+'_bon_de_commande.html'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); const chantierVal=document.getElementById('chantier').value; saveOrderRecord({no:no,date:today,supplier:supplier,chantier:chantierVal,total:total,html:order,items:cart.map(i=>({catalog:i.catalog,article:i.article,designation:i.designation,prix:i.prix,qty:i.qty,unite:i.unite}))}); alert('Commande enregistrée dans le dashboard. Outlook va s’ouvrir avec un message prérempli. Pour joindre le PDF, ouvrez le bon téléchargé puis Imprimer / PDF, puis attachez-le dans Outlook.'); openOutlookDraft(no,chantierVal,supplier)}
+</html>`; const blob=new Blob([order],{type:'text/html;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=no+'_bon_de_commande.html'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); const chantierVal=document.getElementById('chantier').value; saveOrderRecord({no:no,date:today,supplier:supplier,chantier:chantierVal,total:total,html:order,items:cart.map(i=>({catalog:i.catalog,article:i.article,designation:i.designation,prix:i.prix,qty:i.qty,unite:i.unite}))}); alert('Commande enregistrée dans le dashboard. Outlook va s’ouvrir avec un message prérempli. Pour joindre le PDF, ouvrez le bon téléchargé puis Imprimer / PDF, puis attachez-le dans Outlook.'); openOutlookDraft(no,chantierVal,supplier)}
 
 
 /* === v49 PATCH STABLE : recherche experte, dashboard actions, graphiques === */
@@ -1168,5 +1167,44 @@ document.addEventListener('DOMContentLoaded', updateHgcPreview);
 document.addEventListener('change', function(e){
   if(e.target && e.target.id==='site') updateHgcPreview();
 });
+</script>
+
+<script>
+async function sendOrderByEmail(e) {
+  e.preventDefault();
+  const chantier = document.getElementById('chantier').value;
+  const delai = document.getElementById('delai').value;
+  if (!chantier || !delai) { alert('Veuillez remplir le N° de chantier et le délai.'); return; }
+  if (!cart.length) { alert('Le panier est vide.'); return; }
+
+  const btn = e.target;
+  btn.disabled = true;
+  btn.textContent = '⏳ Envoi en cours...';
+
+  try {
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chantier,
+        delai,
+        supplier: (typeof cartSupplier === 'function' ? cartSupplier() : null) || (cart[0] && cart[0].catalog) || 'Inconnu',
+        items: cart.map(i => ({ article: i.article, designation: i.designation, qty: i.qty, prix: i.prix, unite: i.unite || 'PCE', catalog: i.catalog || '' }))
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      btn.textContent = '✅ Envoyé !';
+      btn.style.background = '#0b4f9c';
+      setTimeout(() => { closeModal('orderModal'); btn.disabled = false; btn.textContent = '📧 Envoyer au fournisseur (PDF)'; btn.style.background = '#176b28'; }, 2500);
+    } else {
+      alert('Erreur: ' + (data.error || 'Envoi échoué'));
+      btn.disabled = false; btn.textContent = '📧 Envoyer au fournisseur (PDF)';
+    }
+  } catch(err) {
+    alert('Erreur réseau: ' + err.message);
+    btn.disabled = false; btn.textContent = '📧 Envoyer au fournisseur (PDF)';
+  }
+}
 </script>
 </body></html>
