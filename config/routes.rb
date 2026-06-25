@@ -14,6 +14,10 @@ Rails.application.routes.draw do
 
   root to: redirect('/catalogue.html')
 
+  if Rails.env.development?
+    mount LetterOpenerWeb::Engine, at: "/emails"
+  end
+
   # Reveal health status on /up that returns 200 if the app boots without exceptions, 404 otherwise.
   get "up" => "rails/health#show", as: :rails_health_check
 

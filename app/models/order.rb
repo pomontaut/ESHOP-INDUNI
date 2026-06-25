@@ -12,6 +12,8 @@ class Order < ApplicationRecord
   private
 
   def set_number
-    self.number = "CMD-#{Time.now.strftime('%Y%m%d%H%M%S')}"
+    last = Order.where("number LIKE 'ESHOP_%'").order(:id).last
+    seq = last ? last.number.gsub('ESHOP_', '').to_i + 1 : 1
+    self.number = "ESHOP_#{seq.to_s.rjust(2, '0')}"
   end
 end

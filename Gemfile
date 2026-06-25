@@ -67,4 +67,4 @@ end
 
 gem 'wicked_pdf'
 gem 'wkhtmltopdf-binary'
-gem 'letter_opener', group: :development
+gem 'letter_opener_web', group: :development
