@@ -12,7 +12,7 @@ Rails.application.routes.draw do
     resources :orders, only: [:create]
   end
 
-  root to: "orders#index"
+  root to: redirect('/catalogue.html')
 
   # Reveal health status on /up that returns 200 if the app boots without exceptions, 404 otherwise.
   get "up" => "rails/health#show", as: :rails_health_check
