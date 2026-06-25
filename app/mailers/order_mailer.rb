@@ -1,15 +1,17 @@
 class OrderMailer < ApplicationMailer
-  default from: 'commandes@induni.ch'
-
-  def send_order(order, pdf)
+  def send_order(order)
     @order = order
-    attachments["commande_#{@order.number}.pdf"] = {
-      mime_type: 'application/pdf',
-      content: pdf
-    }
+    pdf = WickedPdf.new.pdf_from_string(
+      render_to_string(
+        template: 'orders/show',
+        formats: [:html],
+        layout: 'pdf'
+      )
+    )
+    attachments["commande_#{@order.number}.pdf"] = { mime_type: 'application/pdf', content: pdf }
     mail(
       to: @order.supplier.email,
-      subject: "Commande #{@order.number} - ESHOP INDUNI"
+      subject: "Commande #{@order.number}"
     )
   end
 end

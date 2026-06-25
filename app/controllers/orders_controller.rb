@@ -1,61 +1,50 @@
 class OrdersController < ApplicationController
-  before_action :set_order, only: [:show, :edit, :update, :destroy, :send_to_supplier, :download_pdf]
+  before_action :set_order, only: [:show, :edit, :update, :destroy, :send_to_supplier]
 
   def index
-    @orders = Order.includes(:supplier).all.order(created_at: :desc)
+    @orders = Order.all.includes(:supplier)
   end
 
   def show
-    @order_lines = @order.order_lines.includes(:product)
+    @order_line = OrderLine.new
+    @products = Product.all
   end
 
   def new
-    @order = Order.new(status: 'draft', order_date: Date.today)
-    @suppliers = Supplier.all.order(:name)
+    @order = Order.new
   end
 
   def edit
-    @suppliers = Supplier.all.order(:name)
   end
 
   def create
     @order = Order.new(order_params)
     if @order.save
-      redirect_to @order, notice: 'Commande créée avec succès.'
+      redirect_to @order, notice: "Commande créée avec succès."
     else
-      @suppliers = Supplier.all.order(:name)
       render :new, status: :unprocessable_entity
     end
   end
 
   def update
     if @order.update(order_params)
-      redirect_to @order, notice: 'Commande mise à jour avec succès.'
+      redirect_to @order, notice: "Commande mise à jour avec succès."
     else
-      @suppliers = Supplier.all.order(:name)
       render :edit, status: :unprocessable_entity
     end
   end
 
   def destroy
     @order.destroy
-    redirect_to orders_url, notice: 'Commande supprimée.'
+    redirect_to orders_url, notice: "Commande supprimée."
   end
 
   def send_to_supplier
-    pdf = WickedPdf.new.pdf_from_string(
-      render_to_string('orders/show', formats: [:pdf], layout: 'pdf')
-    )
-    OrderMailer.send_order(@order, pdf).deliver_now
+    OrderMailer.send_order(@order).deliver_now
     @order.update(status: 'sent')
-    redirect_to @order, notice: "Commande envoyée à #{@order.supplier.name}."
-  end
-
-  def download_pdf
-    pdf = WickedPdf.new.pdf_from_string(
-      render_to_string('orders/show', formats: [:pdf], layout: 'pdf')
-    )
-    send_data pdf, filename: "commande_#{@order.number}.pdf", type: 'application/pdf'
+    redirect_to @order, notice: "Commande envoyée au fournisseur."
+  rescue => e
+    redirect_to @order, alert: "Erreur lors de l'envoi: #{e.message}"
   end
 
   private
