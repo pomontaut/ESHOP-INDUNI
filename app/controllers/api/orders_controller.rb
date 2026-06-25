@@ -34,10 +34,10 @@ class Api::OrdersController < ApplicationController
     end
 
     # Generate PDF in controller context (has route helpers), then pass to mailer
+    @order = order
     begin
       html = render_to_string(
         template: 'orders/bon_de_commande',
-        assigns: { order: order },
         layout: false
       )
       pdf_content = WickedPdf.new.pdf_from_string(html)
