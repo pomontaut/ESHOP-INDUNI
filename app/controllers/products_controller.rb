@@ -2,7 +2,7 @@ class ProductsController < ApplicationController
   before_action :set_product, only: [:show, :edit, :update, :destroy]
 
   def index
-    @products = Product.includes(:supplier).all.order(:name)
+    @products = Product.all.includes(:supplier)
   end
 
   def show
@@ -10,35 +10,31 @@ class ProductsController < ApplicationController
 
   def new
     @product = Product.new
-    @suppliers = Supplier.all.order(:name)
   end
 
   def edit
-    @suppliers = Supplier.all.order(:name)
   end
 
   def create
     @product = Product.new(product_params)
     if @product.save
-      redirect_to @product, notice: 'Produit créé avec succès.'
+      redirect_to @product, notice: "Produit créé avec succès."
     else
-      @suppliers = Supplier.all.order(:name)
       render :new, status: :unprocessable_entity
     end
   end
 
   def update
     if @product.update(product_params)
-      redirect_to @product, notice: 'Produit mis à jour avec succès.'
+      redirect_to @product, notice: "Produit mis à jour avec succès."
     else
-      @suppliers = Supplier.all.order(:name)
       render :edit, status: :unprocessable_entity
     end
   end
 
   def destroy
     @product.destroy
-    redirect_to products_url, notice: 'Produit supprimé.'
+    redirect_to products_url, notice: "Produit supprimé."
   end
 
   private

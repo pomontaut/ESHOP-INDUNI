@@ -1,39 +1,15 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1><i class="bi bi-person-badge"></i> <%= @supplier.name %></h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1><%= @supplier.name %></h1>
   <div>
-    <%= link_to '<i class="bi bi-pencil"></i> Modifier'.html_safe, edit_supplier_path(@supplier), class: "btn btn-secondary" %>
-    <%= link_to '<i class="bi bi-arrow-left"></i> Retour'.html_safe, suppliers_path, class: "btn btn-outline-secondary" %>
+    <%= link_to "Modifier", edit_supplier_path(@supplier), class: "btn btn-warning" %>
+    <%= link_to "Retour", suppliers_path, class: "btn btn-secondary" %>
   </div>
 </div>
 
-<div class="row">
-  <div class="col-md-6">
-    <div class="card mb-4">
-      <div class="card-header"><strong>Informations</strong></div>
-      <div class="card-body">
-        <p><strong>Email :</strong> <a href="mailto:<%= @supplier.email %>"><%= @supplier.email %></a></p>
-        <p><strong>Téléphone :</strong> <%= @supplier.phone || '-' %></p>
-        <p><strong>Adresse :</strong><br><%= simple_format(@supplier.address) %></p>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-6">
-    <div class="card mb-4">
-      <div class="card-header"><strong>Produits (<%= @supplier.products.count %>)</strong></div>
-      <div class="card-body">
-        <% if @supplier.products.empty? %>
-          <p class="text-muted">Aucun produit.</p>
-        <% else %>
-          <ul class="list-group list-group-flush">
-            <% @supplier.products.each do |product| %>
-              <li class="list-group-item d-flex justify-content-between">
-                <%= product.name %>
-                <span class="text-muted"><%= number_to_currency(product.unit_price, unit: 'CHF ', separator: '.', delimiter: "'") %></span>
-              </li>
-            <% end %>
-          </ul>
-        <% end %>
-      </div>
-    </div>
+<div class="card">
+  <div class="card-body">
+    <p><strong>Email:</strong> <%= @supplier.email %></p>
+    <p><strong>Téléphone:</strong> <%= @supplier.phone %></p>
+    <p><strong>Adresse:</strong> <%= @supplier.address %></p>
   </div>
 </div>

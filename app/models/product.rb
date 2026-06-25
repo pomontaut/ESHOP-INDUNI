@@ -1,4 +1,6 @@
 class Product < ApplicationRecord
   belongs_to :supplier
-  validates :name, :reference, :unit_price, presence: true
+
+  validates :name, presence: true
+  validates :reference, presence: true
 end
