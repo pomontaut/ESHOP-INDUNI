@@ -4,6 +4,7 @@ Rails.application.routes.draw do
   resources :orders do
     member do
       post :send_to_supplier
+      get  :download_eml
     end
     resources :order_lines, only: [:create, :destroy]
   end

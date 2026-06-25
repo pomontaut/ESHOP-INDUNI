@@ -1,5 +1,5 @@
 class OrdersController < ApplicationController
-  before_action :set_order, only: [:show, :edit, :update, :destroy, :send_to_supplier]
+  before_action :set_order, only: [:show, :edit, :update, :destroy, :send_to_supplier, :download_eml]
 
   def index
     @orders = Order.all.includes(:supplier)
@@ -45,6 +45,14 @@ class OrdersController < ApplicationController
     redirect_to @order, notice: "Commande envoyée au fournisseur."
   rescue => e
     redirect_to @order, alert: "Erreur lors de l'envoi: #{e.message}"
+  end
+
+  def download_eml
+    mail = OrderMailer.send_order(@order)
+    send_data mail.to_s,
+              filename: "commande_#{@order.number}.eml",
+              type: 'message/rfc822',
+              disposition: 'attachment'
   end
 
   private

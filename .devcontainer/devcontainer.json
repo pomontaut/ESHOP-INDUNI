@@ -1,0 +1,20 @@
+{
+  "name": "ESHOP-INDUNI",
+  "image": "mcr.microsoft.com/devcontainers/ruby:3.3",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {}
+  },
+  "postCreateCommand": "bundle install && bin/rails db:migrate db:seed",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "Rails App", "onAutoForward": "openBrowser" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["Shopify.ruby-lsp", "rebornix.Ruby"]
+    }
+  },
+  "remoteEnv": {
+    "RAILS_ENV": "development"
+  }
+}

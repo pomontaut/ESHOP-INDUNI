@@ -3,6 +3,7 @@
   <div>
     <%= link_to "Modifier", edit_order_path(@order), class: "btn btn-warning" %>
     <%= link_to "Retour", orders_path, class: "btn btn-secondary" %>
+    <%= link_to "⬇ Télécharger .eml", download_eml_order_path(@order), class: "btn btn-outline-primary" %>
     <% if @order.status == 'draft' && @order.supplier.email.present? %>
       <%= button_to "Envoyer au fournisseur", send_to_supplier_order_path(@order), method: :post, class: "btn btn-success", data: { confirm: "Envoyer la commande par email ?" } %>
     <% end %>
