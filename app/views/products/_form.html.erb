@@ -1,0 +1,36 @@
+<div class="card">
+  <div class="card-body">
+    <%= form_with(model: product) do |form| %>
+      <% if product.errors.any? %>
+        <div class="alert alert-danger">
+          <ul class="mb-0">
+            <% product.errors.full_messages.each do |msg| %>
+              <li><%= msg %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="mb-3">
+        <%= form.label :name, "Nom *", class: "form-label fw-bold" %>
+        <%= form.text_field :name, class: "form-control", required: true %>
+      </div>
+      <div class="mb-3">
+        <%= form.label :reference, "Référence *", class: "form-label fw-bold" %>
+        <%= form.text_field :reference, class: "form-control", required: true %>
+      </div>
+      <div class="mb-3">
+        <%= form.label :unit_price, "Prix unitaire (CHF) *", class: "form-label fw-bold" %>
+        <%= form.number_field :unit_price, class: "form-control", step: "0.01", min: "0", required: true %>
+      </div>
+      <div class="mb-3">
+        <%= form.label :supplier_id, "Fournisseur *", class: "form-label fw-bold" %>
+        <%= form.collection_select :supplier_id, @suppliers, :id, :name, { prompt: "Choisir un fournisseur" }, { class: "form-select", required: true } %>
+      </div>
+      <div class="d-flex gap-2">
+        <%= form.submit "Enregistrer", class: "btn btn-primary" %>
+        <%= link_to "Annuler", products_path, class: "btn btn-outline-secondary" %>
+      </div>
+    <% end %>
+  </div>
+</div>

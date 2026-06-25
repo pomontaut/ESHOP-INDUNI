@@ -1,0 +1,39 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1><i class="bi bi-box-seam"></i> Produits</h1>
+  <%= link_to '<i class="bi bi-plus-circle"></i> Nouveau produit'.html_safe, new_product_path, class: "btn btn-primary" %>
+</div>
+
+<% if @products.empty? %>
+  <div class="alert alert-info">Aucun produit enregistré.</div>
+<% else %>
+  <div class="card">
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th>Nom</th>
+            <th>Référence</th>
+            <th>Fournisseur</th>
+            <th>Prix unitaire</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @products.each do |product| %>
+            <tr>
+              <td><strong><%= product.name %></strong></td>
+              <td><code><%= product.reference %></code></td>
+              <td><%= link_to product.supplier.name, product.supplier %></td>
+              <td><%= number_to_currency(product.unit_price, unit: 'CHF ', separator: '.', delimiter: "'") %></td>
+              <td>
+                <%= link_to '<i class="bi bi-eye"></i>'.html_safe, product, class: "btn btn-sm btn-outline-primary" %>
+                <%= link_to '<i class="bi bi-pencil"></i>'.html_safe, edit_product_path(product), class: "btn btn-sm btn-outline-secondary" %>
+                <%= link_to '<i class="bi bi-trash"></i>'.html_safe, product, data: { turbo_method: :delete, turbo_confirm: 'Supprimer ce produit ?' }, class: "btn btn-sm btn-outline-danger" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>

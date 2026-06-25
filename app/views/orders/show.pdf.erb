@@ -1,0 +1,76 @@
+<div class="header">
+  <table width="100%">
+    <tr>
+      <td>
+        <div class="company-name">ESHOP INDUNI</div>
+        <div>Rue de l'Industrie 1, 1234 Ville</div>
+        <div>commandes@induni.ch | +41 XX XXX XX XX</div>
+      </td>
+      <td align="right">
+        <div style="font-size: 20px; font-weight: bold; color: #1a1a2e;">BON DE COMMANDE</div>
+        <div style="font-size: 14px; color: #666;">N° <%= @order.number %></div>
+        <div style="font-size: 12px;">Date : <%= @order.order_date&.strftime('%d.%m.%Y') %></div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<table width="100%" style="margin-top: 20px;">
+  <tr>
+    <td width="50%">
+      <div class="info-box">
+        <strong>Fournisseur :</strong><br>
+        <%= @order.supplier.name %><br>
+        <%= @order.supplier.email %><br>
+        <%= @order.supplier.phone %><br>
+        <%= @order.supplier.address %>
+      </div>
+    </td>
+    <td width="50%" align="right">
+      <div class="info-box" style="display: inline-block; text-align: left;">
+        <strong>Statut :</strong>
+        <% label = { 'draft' => 'Brouillon', 'sent' => 'Envoyée', 'confirmed' => 'Confirmée', 'received' => 'Reçue' }[@order.status] %>
+        <%= label %><br>
+        <% if @order.notes.present? %>
+          <strong>Notes :</strong> <%= @order.notes %>
+        <% end %>
+      </div>
+    </td>
+  </tr>
+</table>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Produit</th>
+      <th>Référence</th>
+      <th align="right">Qté</th>
+      <th align="right">Prix unit.</th>
+      <th align="right">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @order.order_lines.includes(:product).each_with_index do |line, i| %>
+      <tr>
+        <td><%= i + 1 %></td>
+        <td><%= line.product.name %></td>
+        <td><%= line.product.reference %></td>
+        <td align="right"><%= line.quantity %></td>
+        <td align="right">CHF <%= number_with_precision(line.unit_price, precision: 2) %></td>
+        <td align="right">CHF <%= number_with_precision(line.total, precision: 2) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+  <tfoot>
+    <tr class="total-row">
+      <td colspan="5" align="right"><strong>TOTAL HT</strong></td>
+      <td align="right"><strong>CHF <%= number_with_precision(@order.total, precision: 2) %></strong></td>
+    </tr>
+  </tfoot>
+</table>
+
+<div class="footer">
+  <p>Document généré le <%= Time.now.strftime('%d.%m.%Y à %H:%M') %> - ESHOP INDUNI</p>
+  <p>Veuillez confirmer la réception de cette commande par retour d'email.</p>
+</div>

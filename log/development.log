@@ -1,0 +1,273 @@
+  [1m[35m (2.2ms)[0m  [1m[35mCREATE TABLE "schema_migrations" ("version" varchar NOT NULL PRIMARY KEY) /*application='EshopInduni'*/[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE TABLE "ar_internal_metadata" ("key" varchar NOT NULL PRIMARY KEY, "value" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL) /*application='EshopInduni'*/[0m
+  [1m[36mActiveRecord::InternalMetadata Load (0.2ms)[0m  [1m[34mSELECT * FROM "ar_internal_metadata" WHERE "ar_internal_metadata"."key" = 'environment' ORDER BY "ar_internal_metadata"."key" ASC LIMIT 1 /*application='EshopInduni'*/[0m
+  [1m[36mActiveRecord::InternalMetadata Create (0.1ms)[0m  [1m[32mINSERT INTO "ar_internal_metadata" ("key", "value", "created_at", "updated_at") VALUES ('environment', 'development', '2026-06-25 06:21:49.885894', '2026-06-25 06:21:49.885897') RETURNING "key" /*application='EshopInduni'*/[0m
+  [1m[36mActiveRecord::SchemaMigration Load (0.1ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC /*application='EshopInduni'*/[0m
+Migrating to CreateSuppliers (20260625062143)
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[35m (10.1ms)[0m  [1m[35mCREATE TABLE "suppliers" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar, "email" varchar, "address" text, "phone" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL) /*application='EshopInduni'*/[0m
+  [1m[36mActiveRecord::SchemaMigration Create (0.1ms)[0m  [1m[32mINSERT INTO "schema_migrations" ("version") VALUES ('20260625062143') RETURNING "version" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+Migrating to CreateProducts (20260625062144)
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[35m (0.8ms)[0m  [1m[35mCREATE TABLE "products" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar, "reference" varchar, "unit_price" decimal, "supplier_id" integer NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_1aa9b0116b"
+FOREIGN KEY ("supplier_id")
+  REFERENCES "suppliers" ("id")
+) /*application='EshopInduni'*/[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_products_on_supplier_id" ON "products" ("supplier_id") /*application='EshopInduni'*/[0m
+  [1m[36mActiveRecord::SchemaMigration Create (0.1ms)[0m  [1m[32mINSERT INTO "schema_migrations" ("version") VALUES ('20260625062144') RETURNING "version" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+Migrating to CreateOrders (20260625062145)
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[35m (3.7ms)[0m  [1m[35mCREATE TABLE "orders" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "number" varchar, "supplier_id" integer NOT NULL, "status" varchar, "notes" text, "order_date" date, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_d426350910"
+FOREIGN KEY ("supplier_id")
+  REFERENCES "suppliers" ("id")
+) /*application='EshopInduni'*/[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_orders_on_supplier_id" ON "orders" ("supplier_id") /*application='EshopInduni'*/[0m
+  [1m[36mActiveRecord::SchemaMigration Create (0.9ms)[0m  [1m[32mINSERT INTO "schema_migrations" ("version") VALUES ('20260625062145') RETURNING "version" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+Migrating to CreateOrderLines (20260625062146)
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[35m (3.1ms)[0m  [1m[35mCREATE TABLE "order_lines" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "order_id" integer NOT NULL, "product_id" integer NOT NULL, "quantity" integer, "unit_price" decimal, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_e6c763ee60"
+FOREIGN KEY ("order_id")
+  REFERENCES "orders" ("id")
+, CONSTRAINT "fk_rails_83e960fa54"
+FOREIGN KEY ("product_id")
+  REFERENCES "products" ("id")
+) /*application='EshopInduni'*/[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE INDEX "index_order_lines_on_order_id" ON "order_lines" ("order_id") /*application='EshopInduni'*/[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_order_lines_on_product_id" ON "order_lines" ("product_id") /*application='EshopInduni'*/[0m
+  [1m[36mActiveRecord::SchemaMigration Create (0.2ms)[0m  [1m[32mINSERT INTO "schema_migrations" ("version") VALUES ('20260625062146') RETURNING "version" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mActiveRecord::SchemaMigration Load (0.0ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC /*application='EshopInduni'*/[0m
+  [1m[36mActiveRecord::SchemaMigration Load (0.1ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Load (0.2ms)[0m  [1m[34mSELECT "order_lines".* FROM "order_lines" /*application='EshopInduni'*/[0m
+  [1m[36mOrder Load (0.1ms)[0m  [1m[34mSELECT "orders".* FROM "orders" /*application='EshopInduni'*/[0m
+  [1m[36mProduct Load (0.1ms)[0m  [1m[34mSELECT "products".* FROM "products" /*application='EshopInduni'*/[0m
+  [1m[36mSupplier Load (0.1ms)[0m  [1m[34mSELECT "suppliers".* FROM "suppliers" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mSupplier Create (1.1ms)[0m  [1m[32mINSERT INTO "suppliers" ("name", "email", "address", "phone", "created_at", "updated_at") VALUES ('TechParts SA', 'commandes@techparts.ch', 'Route de la Technique 42
+1200 Genève', '+41 22 123 45 67', '2026-06-25 06:24:56.509359', '2026-06-25 06:24:56.509359') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (5.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mSupplier Create (1.0ms)[0m  [1m[32mINSERT INTO "suppliers" ("name", "email", "address", "phone", "created_at", "updated_at") VALUES ('Bureau Express SARL', 'orders@bureauexpress.ch', 'Avenue des Bureaux 15
+1000 Lausanne', '+41 21 987 65 43', '2026-06-25 06:24:56.518380', '2026-06-25 06:24:56.518380') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mSupplier Create (0.9ms)[0m  [1m[32mINSERT INTO "suppliers" ("name", "email", "address", "phone", "created_at", "updated_at") VALUES ('MégaStock AG', 'achats@megastock.ch', 'Industriestrasse 88
+8000 Zürich', '+41 44 555 00 11', '2026-06-25 06:24:56.521170', '2026-06-25 06:24:56.521170') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Create (1.0ms)[0m  [1m[32mINSERT INTO "products" ("name", "reference", "unit_price", "supplier_id", "created_at", "updated_at") VALUES ('Câble USB-C 2m', 'CAB-USBC-2M', 12.9, 1, '2026-06-25 06:24:56.531613', '2026-06-25 06:24:56.531613') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Create (0.9ms)[0m  [1m[32mINSERT INTO "products" ("name", "reference", "unit_price", "supplier_id", "created_at", "updated_at") VALUES ('Hub USB 4 ports', 'HUB-USB-4P', 34.5, 1, '2026-06-25 06:24:56.534582', '2026-06-25 06:24:56.534582') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Create (1.0ms)[0m  [1m[32mINSERT INTO "products" ("name", "reference", "unit_price", "supplier_id", "created_at", "updated_at") VALUES ('Écran 24" Full HD', 'ECR-24FHD', 189.0, 1, '2026-06-25 06:24:56.537322', '2026-06-25 06:24:56.537322') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Create (1.0ms)[0m  [1m[32mINSERT INTO "products" ("name", "reference", "unit_price", "supplier_id", "created_at", "updated_at") VALUES ('Papier A4 500 feuilles', 'PAP-A4-500', 6.9, 2, '2026-06-25 06:24:56.540135', '2026-06-25 06:24:56.540135') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Create (10.4ms)[0m  [1m[32mINSERT INTO "products" ("name", "reference", "unit_price", "supplier_id", "created_at", "updated_at") VALUES ('Stylo bille bleu (boîte 10)', 'STY-BB-10', 8.5, 2, '2026-06-25 06:24:56.543031', '2026-06-25 06:24:56.543031') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Create (0.8ms)[0m  [1m[32mINSERT INTO "products" ("name", "reference", "unit_price", "supplier_id", "created_at", "updated_at") VALUES ('Cartouche imprimante HP 305', 'CART-HP305', 18.9, 2, '2026-06-25 06:24:56.555223', '2026-06-25 06:24:56.555223') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Create (0.8ms)[0m  [1m[32mINSERT INTO "products" ("name", "reference", "unit_price", "supplier_id", "created_at", "updated_at") VALUES ('Clavier sans fil', 'CLV-WLESS', 45.0, 3, '2026-06-25 06:24:56.557848', '2026-06-25 06:24:56.557848') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Create (1.7ms)[0m  [1m[32mINSERT INTO "products" ("name", "reference", "unit_price", "supplier_id", "created_at", "updated_at") VALUES ('Souris ergonomique', 'SOU-ERGO', 39.9, 3, '2026-06-25 06:24:56.560338', '2026-06-25 06:24:56.560338') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrder Create (0.9ms)[0m  [1m[32mINSERT INTO "orders" ("number", "supplier_id", "status", "notes", "order_date", "created_at", "updated_at") VALUES ('CMD-20260625-F56447', 1, 'draft', 'Livraison urgente requise', '2026-06-25', '2026-06-25 06:24:56.568168', '2026-06-25 06:24:56.568168') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Create (0.9ms)[0m  [1m[32mINSERT INTO "order_lines" ("order_id", "product_id", "quantity", "unit_price", "created_at", "updated_at") VALUES (1, 1, 5, 12.9, '2026-06-25 06:24:56.574800', '2026-06-25 06:24:56.574800') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Create (0.9ms)[0m  [1m[32mINSERT INTO "order_lines" ("order_id", "product_id", "quantity", "unit_price", "created_at", "updated_at") VALUES (1, 2, 2, 34.5, '2026-06-25 06:24:56.577997', '2026-06-25 06:24:56.577997') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Create (1.2ms)[0m  [1m[32mINSERT INTO "order_lines" ("order_id", "product_id", "quantity", "unit_price", "created_at", "updated_at") VALUES (1, 3, 1, 189.0, '2026-06-25 06:24:56.581037', '2026-06-25 06:24:56.581037') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrder Create (0.9ms)[0m  [1m[32mINSERT INTO "orders" ("number", "supplier_id", "status", "notes", "order_date", "created_at", "updated_at") VALUES ('CMD-20260625-1F6543', 2, 'sent', 'Commande mensuelle fournitures', '2026-06-22', '2026-06-25 06:24:56.584265', '2026-06-25 06:24:56.584265') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Create (0.9ms)[0m  [1m[32mINSERT INTO "order_lines" ("order_id", "product_id", "quantity", "unit_price", "created_at", "updated_at") VALUES (2, 4, 10, 6.9, '2026-06-25 06:24:56.587067', '2026-06-25 06:24:56.587067') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Create (0.8ms)[0m  [1m[32mINSERT INTO "order_lines" ("order_id", "product_id", "quantity", "unit_price", "created_at", "updated_at") VALUES (2, 5, 3, 8.5, '2026-06-25 06:24:56.589764', '2026-06-25 06:24:56.589764') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Create (0.8ms)[0m  [1m[32mINSERT INTO "order_lines" ("order_id", "product_id", "quantity", "unit_price", "created_at", "updated_at") VALUES (2, 6, 4, 18.9, '2026-06-25 06:24:56.592305', '2026-06-25 06:24:56.592305') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrder Create (0.9ms)[0m  [1m[32mINSERT INTO "orders" ("number", "supplier_id", "status", "notes", "order_date", "created_at", "updated_at") VALUES ('CMD-20260625-1ECCB5', 3, 'confirmed', NULL, '2026-06-18', '2026-06-25 06:24:56.594874', '2026-06-25 06:24:56.594874') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Create (0.9ms)[0m  [1m[32mINSERT INTO "order_lines" ("order_id", "product_id", "quantity", "unit_price", "created_at", "updated_at") VALUES (3, 7, 3, 45.0, '2026-06-25 06:24:56.605710', '2026-06-25 06:24:56.605710') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Create (0.9ms)[0m  [1m[32mINSERT INTO "order_lines" ("order_id", "product_id", "quantity", "unit_price", "created_at", "updated_at") VALUES (3, 8, 3, 39.9, '2026-06-25 06:24:56.608430', '2026-06-25 06:24:56.608430') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mSupplier Count (0.1ms)[0m  [1m[34mSELECT COUNT(*) FROM "suppliers" /*application='EshopInduni'*/[0m
+  [1m[36mProduct Count (0.1ms)[0m  [1m[34mSELECT COUNT(*) FROM "products" /*application='EshopInduni'*/[0m
+  [1m[36mOrder Count (0.1ms)[0m  [1m[34mSELECT COUNT(*) FROM "orders" /*application='EshopInduni'*/[0m
+  [1m[36mActiveRecord::SchemaMigration Load (0.1ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC /*application='EshopInduni'*/[0m
+  [1m[36mActiveRecord::SchemaMigration Load (0.2ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC /*application='EshopInduni'*/[0m
+  [1m[36mActiveRecord::SchemaMigration Load (0.1ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Load (0.2ms)[0m  [1m[34mSELECT "order_lines".* FROM "order_lines" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Destroy (2.0ms)[0m  [1m[31mDELETE FROM "order_lines" WHERE "order_lines"."id" = 1 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (8.7ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Destroy (2.7ms)[0m  [1m[31mDELETE FROM "order_lines" WHERE "order_lines"."id" = 2 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.9ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Destroy (1.9ms)[0m  [1m[31mDELETE FROM "order_lines" WHERE "order_lines"."id" = 3 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Destroy (1.2ms)[0m  [1m[31mDELETE FROM "order_lines" WHERE "order_lines"."id" = 4 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Destroy (1.0ms)[0m  [1m[31mDELETE FROM "order_lines" WHERE "order_lines"."id" = 5 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Destroy (0.9ms)[0m  [1m[31mDELETE FROM "order_lines" WHERE "order_lines"."id" = 6 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Destroy (0.8ms)[0m  [1m[31mDELETE FROM "order_lines" WHERE "order_lines"."id" = 7 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Destroy (0.8ms)[0m  [1m[31mDELETE FROM "order_lines" WHERE "order_lines"."id" = 8 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrder Load (0.1ms)[0m  [1m[34mSELECT "orders".* FROM "orders" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Load (1.1ms)[0m  [1m[34mSELECT "order_lines".* FROM "order_lines" WHERE "order_lines"."order_id" = 1 /*application='EshopInduni'*/[0m
+  [1m[36mOrder Destroy (0.1ms)[0m  [1m[31mDELETE FROM "orders" WHERE "orders"."id" = 1 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Load (1.0ms)[0m  [1m[34mSELECT "order_lines".* FROM "order_lines" WHERE "order_lines"."order_id" = 2 /*application='EshopInduni'*/[0m
+  [1m[36mOrder Destroy (0.1ms)[0m  [1m[31mDELETE FROM "orders" WHERE "orders"."id" = 2 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Load (0.9ms)[0m  [1m[34mSELECT "order_lines".* FROM "order_lines" WHERE "order_lines"."order_id" = 3 /*application='EshopInduni'*/[0m
+  [1m[36mOrder Destroy (0.0ms)[0m  [1m[31mDELETE FROM "orders" WHERE "orders"."id" = 3 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Load (0.1ms)[0m  [1m[34mSELECT "products".* FROM "products" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Destroy (0.9ms)[0m  [1m[31mDELETE FROM "products" WHERE "products"."id" = 1 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Destroy (0.9ms)[0m  [1m[31mDELETE FROM "products" WHERE "products"."id" = 2 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Destroy (0.8ms)[0m  [1m[31mDELETE FROM "products" WHERE "products"."id" = 3 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Destroy (0.8ms)[0m  [1m[31mDELETE FROM "products" WHERE "products"."id" = 4 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Destroy (1.4ms)[0m  [1m[31mDELETE FROM "products" WHERE "products"."id" = 5 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Destroy (0.8ms)[0m  [1m[31mDELETE FROM "products" WHERE "products"."id" = 6 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Destroy (0.7ms)[0m  [1m[31mDELETE FROM "products" WHERE "products"."id" = 7 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Destroy (0.9ms)[0m  [1m[31mDELETE FROM "products" WHERE "products"."id" = 8 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mSupplier Load (0.1ms)[0m  [1m[34mSELECT "suppliers".* FROM "suppliers" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Load (1.1ms)[0m  [1m[34mSELECT "products".* FROM "products" WHERE "products"."supplier_id" = 1 /*application='EshopInduni'*/[0m
+  [1m[36mOrder Load (0.1ms)[0m  [1m[34mSELECT "orders".* FROM "orders" WHERE "orders"."supplier_id" = 1 /*application='EshopInduni'*/[0m
+  [1m[36mSupplier Destroy (0.1ms)[0m  [1m[31mDELETE FROM "suppliers" WHERE "suppliers"."id" = 1 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Load (1.0ms)[0m  [1m[34mSELECT "products".* FROM "products" WHERE "products"."supplier_id" = 2 /*application='EshopInduni'*/[0m
+  [1m[36mOrder Load (0.1ms)[0m  [1m[34mSELECT "orders".* FROM "orders" WHERE "orders"."supplier_id" = 2 /*application='EshopInduni'*/[0m
+  [1m[36mSupplier Destroy (0.0ms)[0m  [1m[31mDELETE FROM "suppliers" WHERE "suppliers"."id" = 2 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Load (0.9ms)[0m  [1m[34mSELECT "products".* FROM "products" WHERE "products"."supplier_id" = 3 /*application='EshopInduni'*/[0m
+  [1m[36mOrder Load (0.1ms)[0m  [1m[34mSELECT "orders".* FROM "orders" WHERE "orders"."supplier_id" = 3 /*application='EshopInduni'*/[0m
+  [1m[36mSupplier Destroy (0.0ms)[0m  [1m[31mDELETE FROM "suppliers" WHERE "suppliers"."id" = 3 /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mSupplier Create (1.0ms)[0m  [1m[32mINSERT INTO "suppliers" ("name", "email", "address", "phone", "created_at", "updated_at") VALUES ('TechParts SA', 'commandes@techparts.ch', 'Route de la Technique 42
+1200 Genève', '+41 22 123 45 67', '2026-06-25 06:25:39.681477', '2026-06-25 06:25:39.681477') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mSupplier Create (5.9ms)[0m  [1m[32mINSERT INTO "suppliers" ("name", "email", "address", "phone", "created_at", "updated_at") VALUES ('Bureau Express SARL', 'orders@bureauexpress.ch', 'Avenue des Bureaux 15
+1000 Lausanne', '+41 21 987 65 43', '2026-06-25 06:25:39.684786', '2026-06-25 06:25:39.684786') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mSupplier Create (1.0ms)[0m  [1m[32mINSERT INTO "suppliers" ("name", "email", "address", "phone", "created_at", "updated_at") VALUES ('MégaStock AG', 'achats@megastock.ch', 'Industriestrasse 88
+8000 Zürich', '+41 44 555 00 11', '2026-06-25 06:25:39.692737', '2026-06-25 06:25:39.692737') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Create (1.7ms)[0m  [1m[32mINSERT INTO "products" ("name", "reference", "unit_price", "supplier_id", "created_at", "updated_at") VALUES ('Câble USB-C 2m', 'CAB-USBC-2M', 12.9, 4, '2026-06-25 06:25:39.696271', '2026-06-25 06:25:39.696271') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Create (0.9ms)[0m  [1m[32mINSERT INTO "products" ("name", "reference", "unit_price", "supplier_id", "created_at", "updated_at") VALUES ('Hub USB 4 ports', 'HUB-USB-4P', 34.5, 4, '2026-06-25 06:25:39.700012', '2026-06-25 06:25:39.700012') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Create (0.9ms)[0m  [1m[32mINSERT INTO "products" ("name", "reference", "unit_price", "supplier_id", "created_at", "updated_at") VALUES ('Écran 24" Full HD', 'ECR-24FHD', 189.0, 4, '2026-06-25 06:25:39.702753', '2026-06-25 06:25:39.702753') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Create (1.3ms)[0m  [1m[32mINSERT INTO "products" ("name", "reference", "unit_price", "supplier_id", "created_at", "updated_at") VALUES ('Papier A4 500 feuilles', 'PAP-A4-500', 6.9, 5, '2026-06-25 06:25:39.705435', '2026-06-25 06:25:39.705435') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Create (0.9ms)[0m  [1m[32mINSERT INTO "products" ("name", "reference", "unit_price", "supplier_id", "created_at", "updated_at") VALUES ('Stylo bille bleu (boîte 10)', 'STY-BB-10', 8.5, 5, '2026-06-25 06:25:39.708602', '2026-06-25 06:25:39.708602') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Create (0.8ms)[0m  [1m[32mINSERT INTO "products" ("name", "reference", "unit_price", "supplier_id", "created_at", "updated_at") VALUES ('Cartouche imprimante HP 305', 'CART-HP305', 18.9, 5, '2026-06-25 06:25:39.711133', '2026-06-25 06:25:39.711133') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Create (1.0ms)[0m  [1m[32mINSERT INTO "products" ("name", "reference", "unit_price", "supplier_id", "created_at", "updated_at") VALUES ('Clavier sans fil', 'CLV-WLESS', 45.0, 6, '2026-06-25 06:25:39.714149', '2026-06-25 06:25:39.714149') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mProduct Create (1.4ms)[0m  [1m[32mINSERT INTO "products" ("name", "reference", "unit_price", "supplier_id", "created_at", "updated_at") VALUES ('Souris ergonomique', 'SOU-ERGO', 39.9, 6, '2026-06-25 06:25:39.716914', '2026-06-25 06:25:39.716914') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrder Create (1.0ms)[0m  [1m[32mINSERT INTO "orders" ("number", "supplier_id", "status", "notes", "order_date", "created_at", "updated_at") VALUES ('CMD-20260625-009776', 4, 'draft', 'Livraison urgente requise', '2026-06-25', '2026-06-25 06:25:39.720499', '2026-06-25 06:25:39.720499') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Create (0.9ms)[0m  [1m[32mINSERT INTO "order_lines" ("order_id", "product_id", "quantity", "unit_price", "created_at", "updated_at") VALUES (4, 9, 5, 12.9, '2026-06-25 06:25:39.723931', '2026-06-25 06:25:39.723931') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Create (0.9ms)[0m  [1m[32mINSERT INTO "order_lines" ("order_id", "product_id", "quantity", "unit_price", "created_at", "updated_at") VALUES (4, 10, 2, 34.5, '2026-06-25 06:25:39.726824', '2026-06-25 06:25:39.726824') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Create (0.9ms)[0m  [1m[32mINSERT INTO "order_lines" ("order_id", "product_id", "quantity", "unit_price", "created_at", "updated_at") VALUES (4, 11, 1, 189.0, '2026-06-25 06:25:39.729780', '2026-06-25 06:25:39.729780') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrder Create (1.1ms)[0m  [1m[32mINSERT INTO "orders" ("number", "supplier_id", "status", "notes", "order_date", "created_at", "updated_at") VALUES ('CMD-20260625-D2A58F', 5, 'sent', 'Commande mensuelle fournitures', '2026-06-22', '2026-06-25 06:25:39.735294', '2026-06-25 06:25:39.735294') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Create (0.9ms)[0m  [1m[32mINSERT INTO "order_lines" ("order_id", "product_id", "quantity", "unit_price", "created_at", "updated_at") VALUES (5, 12, 10, 6.9, '2026-06-25 06:25:39.738609', '2026-06-25 06:25:39.738609') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Create (1.5ms)[0m  [1m[32mINSERT INTO "order_lines" ("order_id", "product_id", "quantity", "unit_price", "created_at", "updated_at") VALUES (5, 13, 3, 8.5, '2026-06-25 06:25:39.741417', '2026-06-25 06:25:39.741417') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Create (0.9ms)[0m  [1m[32mINSERT INTO "order_lines" ("order_id", "product_id", "quantity", "unit_price", "created_at", "updated_at") VALUES (5, 14, 4, 18.9, '2026-06-25 06:25:39.744892', '2026-06-25 06:25:39.744892') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrder Create (1.0ms)[0m  [1m[32mINSERT INTO "orders" ("number", "supplier_id", "status", "notes", "order_date", "created_at", "updated_at") VALUES ('CMD-20260625-BB1A74', 6, 'confirmed', NULL, '2026-06-18', '2026-06-25 06:25:39.747734', '2026-06-25 06:25:39.747734') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Create (1.1ms)[0m  [1m[32mINSERT INTO "order_lines" ("order_id", "product_id", "quantity", "unit_price", "created_at", "updated_at") VALUES (6, 15, 3, 45.0, '2026-06-25 06:25:39.751266', '2026-06-25 06:25:39.751266') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mOrderLine Create (0.8ms)[0m  [1m[32mINSERT INTO "order_lines" ("order_id", "product_id", "quantity", "unit_price", "created_at", "updated_at") VALUES (6, 16, 3, 39.9, '2026-06-25 06:25:39.754359', '2026-06-25 06:25:39.754359') RETURNING "id" /*application='EshopInduni'*/[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='EshopInduni'*/[0m
+  [1m[36mSupplier Count (0.1ms)[0m  [1m[34mSELECT COUNT(*) FROM "suppliers" /*application='EshopInduni'*/[0m
+  [1m[36mProduct Count (0.1ms)[0m  [1m[34mSELECT COUNT(*) FROM "products" /*application='EshopInduni'*/[0m
+  [1m[36mOrder Count (0.1ms)[0m  [1m[34mSELECT COUNT(*) FROM "orders" /*application='EshopInduni'*/[0m
