@@ -1,76 +1,62 @@
-<div class="header">
-  <table width="100%">
-    <tr>
-      <td>
-        <div class="company-name">ESHOP INDUNI</div>
-        <div>Rue de l'Industrie 1, 1234 Ville</div>
-        <div>commandes@induni.ch | +41 XX XXX XX XX</div>
-      </td>
-      <td align="right">
-        <div style="font-size: 20px; font-weight: bold; color: #1a1a2e;">BON DE COMMANDE</div>
-        <div style="font-size: 14px; color: #666;">N° <%= @order.number %></div>
-        <div style="font-size: 12px;">Date : <%= @order.order_date&.strftime('%d.%m.%Y') %></div>
-      </td>
-    </tr>
-  </table>
-</div>
+<div style="font-family: Arial, sans-serif; padding: 20px;">
+  <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px;">
+    <h1 style="font-size: 28px; color: #333; margin: 0;">INDUNI</h1>
+    <p style="color: #666; margin: 5px 0;">Bon de commande</p>
+  </div>
 
-<table width="100%" style="margin-top: 20px;">
-  <tr>
-    <td width="50%">
-      <div class="info-box">
-        <strong>Fournisseur :</strong><br>
-        <%= @order.supplier.name %><br>
-        <%= @order.supplier.email %><br>
-        <%= @order.supplier.phone %><br>
-        <%= @order.supplier.address %>
-      </div>
-    </td>
-    <td width="50%" align="right">
-      <div class="info-box" style="display: inline-block; text-align: left;">
-        <strong>Statut :</strong>
-        <% label = { 'draft' => 'Brouillon', 'sent' => 'Envoyée', 'confirmed' => 'Confirmée', 'received' => 'Reçue' }[@order.status] %>
-        <%= label %><br>
-        <% if @order.notes.present? %>
-          <strong>Notes :</strong> <%= @order.notes %>
-        <% end %>
-      </div>
-    </td>
-  </tr>
-</table>
+  <div style="margin-bottom: 20px;">
+    <h2 style="font-size: 18px;">Commande <%= @order.number %></h2>
+    <p><strong>Date:</strong> <%= @order.order_date&.strftime('%d.%m.%Y') %></p>
+    <p><strong>Statut:</strong> <%= @order.status %></p>
+  </div>
 
-<table>
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Produit</th>
-      <th>Référence</th>
-      <th align="right">Qté</th>
-      <th align="right">Prix unit.</th>
-      <th align="right">Total</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @order.order_lines.includes(:product).each_with_index do |line, i| %>
-      <tr>
-        <td><%= i + 1 %></td>
-        <td><%= line.product.name %></td>
-        <td><%= line.product.reference %></td>
-        <td align="right"><%= line.quantity %></td>
-        <td align="right">CHF <%= number_with_precision(line.unit_price, precision: 2) %></td>
-        <td align="right">CHF <%= number_with_precision(line.total, precision: 2) %></td>
-      </tr>
+  <div style="margin-bottom: 20px; background: #f9f9f9; padding: 15px; border: 1px solid #ddd;">
+    <h3 style="font-size: 14px; margin-top: 0;">Fournisseur</h3>
+    <p style="margin: 0;"><strong><%= @order.supplier.name %></strong></p>
+    <p style="margin: 0;"><%= @order.supplier.email %></p>
+    <p style="margin: 0;"><%= @order.supplier.phone %></p>
+    <% if @order.supplier.address.present? %>
+      <p style="margin: 0;"><%= @order.supplier.address %></p>
     <% end %>
-  </tbody>
-  <tfoot>
-    <tr class="total-row">
-      <td colspan="5" align="right"><strong>TOTAL HT</strong></td>
-      <td align="right"><strong>CHF <%= number_with_precision(@order.total, precision: 2) %></strong></td>
-    </tr>
-  </tfoot>
-</table>
+  </div>
 
-<div class="footer">
-  <p>Document généré le <%= Time.now.strftime('%d.%m.%Y à %H:%M') %> - ESHOP INDUNI</p>
-  <p>Veuillez confirmer la réception de cette commande par retour d'email.</p>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+    <thead>
+      <tr style="background-color: #333; color: white;">
+        <th style="padding: 10px; text-align: left; border: 1px solid #999;">Produit</th>
+        <th style="padding: 10px; text-align: center; border: 1px solid #999;">Référence</th>
+        <th style="padding: 10px; text-align: center; border: 1px solid #999;">Quantité</th>
+        <th style="padding: 10px; text-align: right; border: 1px solid #999;">Prix unitaire</th>
+        <th style="padding: 10px; text-align: right; border: 1px solid #999;">Sous-total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @order.order_lines.includes(:product).each_with_index do |line, i| %>
+        <tr style="background-color: <%= i.even? ? '#fff' : '#f5f5f5' %>;">
+          <td style="padding: 8px; border: 1px solid #ddd;"><%= line.product.name %></td>
+          <td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><%= line.product.reference %></td>
+          <td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><%= line.quantity %></td>
+          <td style="padding: 8px; border: 1px solid #ddd; text-align: right;"><%= number_to_currency(line.unit_price, unit: "CHF ") %></td>
+          <td style="padding: 8px; border: 1px solid #ddd; text-align: right;"><%= number_to_currency(line.subtotal, unit: "CHF ") %></td>
+        </tr>
+      <% end %>
+    </tbody>
+    <tfoot>
+      <tr style="background-color: #333; color: white;">
+        <td colspan="4" style="padding: 10px; text-align: right; border: 1px solid #999; font-weight: bold;">TOTAL:</td>
+        <td style="padding: 10px; text-align: right; border: 1px solid #999; font-weight: bold;"><%= number_to_currency(@order.total, unit: "CHF ") %></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <% if @order.notes.present? %>
+    <div style="margin-bottom: 20px;">
+      <h3 style="font-size: 14px;">Notes</h3>
+      <p><%= @order.notes %></p>
+    </div>
+  <% end %>
+
+  <div style="margin-top: 40px; text-align: center; color: #999; font-size: 11px; border-top: 1px solid #ddd; padding-top: 10px;">
+    Commande générée automatiquement par le système INDUNI
+  </div>
 </div>

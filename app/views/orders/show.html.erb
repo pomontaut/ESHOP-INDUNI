@@ -1,126 +1,95 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1>Commande <%= @order.number %></h1>
   <div>
-    <h1><i class="bi bi-file-text"></i> Commande <%= @order.number %></h1>
-    <% badge_class = { 'draft' => 'bg-warning text-dark', 'sent' => 'bg-primary', 'confirmed' => 'bg-success', 'received' => 'bg-secondary' }[@order.status] %>
-    <% label = { 'draft' => 'Brouillon', 'sent' => 'Envoyée', 'confirmed' => 'Confirmée', 'received' => 'Reçue' }[@order.status] %>
-    <span class="badge <%= badge_class %> fs-6"><%= label %></span>
-  </div>
-  <div class="d-flex gap-2">
-    <% if @order.status == 'draft' %>
-      <%= button_to '<i class="bi bi-send"></i> Envoyer au fournisseur'.html_safe,
-          send_to_supplier_order_path(@order),
-          method: :post,
-          data: { turbo_confirm: "Envoyer la commande à #{@order.supplier.name} ?" },
-          class: "btn btn-success" %>
+    <%= link_to "Modifier", edit_order_path(@order), class: "btn btn-warning" %>
+    <%= link_to "Retour", orders_path, class: "btn btn-secondary" %>
+    <% if @order.status == 'draft' && @order.supplier.email.present? %>
+      <%= button_to "Envoyer au fournisseur", send_to_supplier_order_path(@order), method: :post, class: "btn btn-success", data: { confirm: "Envoyer la commande par email ?" } %>
     <% end %>
-    <%= link_to '<i class="bi bi-file-pdf"></i> Télécharger PDF'.html_safe, download_pdf_order_path(@order), class: "btn btn-outline-danger" %>
-    <%= link_to '<i class="bi bi-pencil"></i> Modifier'.html_safe, edit_order_path(@order), class: "btn btn-secondary" %>
-    <%= link_to '<i class="bi bi-arrow-left"></i> Retour'.html_safe, orders_path, class: "btn btn-outline-secondary" %>
   </div>
 </div>
 
 <div class="row mb-4">
   <div class="col-md-6">
     <div class="card">
-      <div class="card-header"><strong>Fournisseur</strong></div>
+      <div class="card-header">Détails de la commande</div>
       <div class="card-body">
-        <p class="mb-1"><strong><%= @order.supplier.name %></strong></p>
-        <p class="mb-1"><a href="mailto:<%= @order.supplier.email %>"><%= @order.supplier.email %></a></p>
-        <p class="mb-0 text-muted"><%= @order.supplier.phone %></p>
+        <p><strong>Numéro:</strong> <%= @order.number %></p>
+        <p><strong>Date:</strong> <%= @order.order_date&.strftime('%d.%m.%Y') %></p>
+        <p><strong>Statut:</strong> <span class="badge <%= @order.status == 'sent' ? 'bg-success' : 'bg-secondary' %>"><%= @order.status %></span></p>
+        <% if @order.notes.present? %>
+          <p><strong>Notes:</strong> <%= @order.notes %></p>
+        <% end %>
       </div>
     </div>
   </div>
   <div class="col-md-6">
     <div class="card">
-      <div class="card-header"><strong>Détails</strong></div>
+      <div class="card-header">Fournisseur</div>
       <div class="card-body">
-        <p class="mb-1"><strong>Date :</strong> <%= l(@order.order_date, format: :long) if @order.order_date %></p>
-        <% if @order.notes.present? %>
-          <p class="mb-0"><strong>Notes :</strong> <%= @order.notes %></p>
-        <% end %>
+        <p><strong>Nom:</strong> <%= @order.supplier.name %></p>
+        <p><strong>Email:</strong> <%= @order.supplier.email %></p>
+        <p><strong>Téléphone:</strong> <%= @order.supplier.phone %></p>
       </div>
     </div>
   </div>
 </div>
 
-<div class="card mb-4">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <strong>Lignes de commande</strong>
-    <% if @order.status == 'draft' %>
-      <button class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#addLineForm">
-        <i class="bi bi-plus"></i> Ajouter une ligne
-      </button>
+<h2>Lignes de commande</h2>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Produit</th>
+      <th>Quantité</th>
+      <th>Prix unitaire</th>
+      <th>Sous-total</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @order.order_lines.includes(:product).each do |line| %>
+      <tr>
+        <td><%= line.product.name %></td>
+        <td><%= line.quantity %></td>
+        <td><%= number_to_currency(line.unit_price, unit: "CHF ") %></td>
+        <td><%= number_to_currency(line.subtotal, unit: "CHF ") %></td>
+        <td>
+          <%= button_to "Supprimer", order_order_line_path(@order, line), method: :delete, class: "btn btn-sm btn-danger", data: { confirm: "Supprimer cette ligne ?" } %>
+        </td>
+      </tr>
     <% end %>
-  </div>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="3" class="text-end fw-bold">Total:</td>
+      <td colspan="2" class="fw-bold"><%= number_to_currency(@order.total, unit: "CHF ") %></td>
+    </tr>
+  </tfoot>
+</table>
 
-  <% if @order.status == 'draft' %>
-    <div class="collapse" id="addLineForm">
-      <div class="card-body border-bottom bg-light">
-        <%= form_with(url: order_order_lines_path(@order), method: :post) do |form| %>
-          <div class="row g-3 align-items-end">
-            <div class="col-md-5">
-              <%= form.label :product_id, "Produit", class: "form-label fw-bold" %>
-              <%= form.collection_select :product_id, @order.supplier.products, :id, :name, { prompt: "Choisir un produit" }, { class: "form-select" } %>
-            </div>
-            <div class="col-md-3">
-              <%= form.label :quantity, "Quantité", class: "form-label fw-bold" %>
-              <%= form.number_field :quantity, class: "form-control", min: 1, value: 1 %>
-            </div>
-            <div class="col-md-3">
-              <%= form.label :unit_price, "Prix unitaire", class: "form-label fw-bold" %>
-              <%= form.number_field :unit_price, class: "form-control", step: "0.01", min: "0" %>
-            </div>
-            <div class="col-md-1">
-              <%= form.submit "OK", class: "btn btn-primary w-100" %>
-            </div>
+<% if @order.status == 'draft' %>
+  <div class="card mt-4">
+    <div class="card-header">Ajouter une ligne</div>
+    <div class="card-body">
+      <%= form_with(model: [@order, @order_line]) do |form| %>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <%= form.label :product_id, "Produit", class: "form-label" %>
+            <%= form.collection_select :product_id, @products, :id, :name, { prompt: "Choisir un produit" }, { class: "form-select", id: "product_select" } %>
           </div>
-        <% end %>
-      </div>
+          <div class="col-md-3">
+            <%= form.label :quantity, "Quantité", class: "form-label" %>
+            <%= form.number_field :quantity, class: "form-control", min: 1, value: 1 %>
+          </div>
+          <div class="col-md-3">
+            <%= form.label :unit_price, "Prix unitaire", class: "form-label" %>
+            <%= form.number_field :unit_price, step: 0.01, class: "form-control", id: "unit_price_field" %>
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <%= form.submit "Ajouter", class: "btn btn-primary w-100" %>
+          </div>
+        </div>
+      <% end %>
     </div>
-  <% end %>
-
-  <div class="card-body p-0">
-    <% if @order_lines.empty? %>
-      <p class="text-muted p-3 mb-0">Aucune ligne de commande.</p>
-    <% else %>
-      <table class="table mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Produit</th>
-            <th>Référence</th>
-            <th class="text-end">Quantité</th>
-            <th class="text-end">Prix unitaire</th>
-            <th class="text-end">Total</th>
-            <% if @order.status == 'draft' %><th></th><% end %>
-          </tr>
-        </thead>
-        <tbody>
-          <% @order_lines.each do |line| %>
-            <tr>
-              <td><%= line.product.name %></td>
-              <td><code><%= line.product.reference %></code></td>
-              <td class="text-end"><%= line.quantity %></td>
-              <td class="text-end"><%= number_to_currency(line.unit_price, unit: 'CHF ', separator: '.', delimiter: "'") %></td>
-              <td class="text-end"><strong><%= number_to_currency(line.total, unit: 'CHF ', separator: '.', delimiter: "'") %></strong></td>
-              <% if @order.status == 'draft' %>
-                <td>
-                  <%= link_to '<i class="bi bi-trash"></i>'.html_safe,
-                      order_order_line_path(@order, line),
-                      data: { turbo_method: :delete, turbo_confirm: 'Supprimer cette ligne ?' },
-                      class: "btn btn-sm btn-outline-danger" %>
-                </td>
-              <% end %>
-            </tr>
-          <% end %>
-        </tbody>
-        <tfoot>
-          <tr class="table-dark">
-            <td colspan="<%= @order.status == 'draft' ? 5 : 4 %>" class="text-end fw-bold">TOTAL</td>
-            <td class="text-end fw-bold fs-5"><%= number_to_currency(@order.total, unit: 'CHF ', separator: '.', delimiter: "'") %></td>
-            <% if @order.status == 'draft' %><td></td><% end %>
-          </tr>
-        </tfoot>
-      </table>
-    <% end %>
   </div>
-</div>
+<% end %>
