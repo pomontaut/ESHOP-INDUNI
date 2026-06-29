@@ -66,6 +66,7 @@ group :test do
   gem "selenium-webdriver"
 end
 
+gem 'pg', group: :production
 gem 'wicked_pdf'
 gem 'wkhtmltopdf-binary'
 gem 'letter_opener_web', group: :development
