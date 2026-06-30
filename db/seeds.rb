@@ -1,6 +1,18 @@
 # Ne pas tourner les seeds en production
 exit if Rails.env.production?
 
+# Create admin user (password via env var SEED_ADMIN_PASSWORD or skipped if not set)
+if (pwd = ENV["SEED_ADMIN_PASSWORD"].presence)
+  User.find_or_create_by!(email: "pomontaut@induni.ch") do |u|
+    u.password = pwd
+    u.password_confirmation = pwd
+    u.first_name = "Pascal"
+    u.last_name  = "Omontaut"
+    u.admin = true
+  end
+  puts "Utilisateur admin créé: pomontaut@induni.ch"
+end
+
 # Clear existing data
 OrderLine.destroy_all
 Order.destroy_all
