@@ -45,6 +45,8 @@ RUN bundle install && \
     bundle exec bootsnap precompile -j 1 --gemfile
 
 # Copy application code
+# Cache bust: change this value to force Docker to rebuild from here
+ARG CACHE_BUST=20260630_1
 COPY . .
 
 # Precompile bootsnap code for faster boot times.
