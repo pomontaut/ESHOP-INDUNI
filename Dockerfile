@@ -20,12 +20,11 @@ RUN apt-get update -qq && \
     ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
-# Set production environment variables and enable jemalloc for reduced memory usage and latency.
+# Set production environment variables
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development" \
-    LD_PRELOAD="/usr/local/lib/libjemalloc.so"
+    BUNDLE_WITHOUT="development"
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build
@@ -46,7 +45,7 @@ RUN bundle install && \
 
 # Copy application code
 # Cache bust: change this value to force Docker to rebuild from here
-ARG CACHE_BUST=20260630_1
+ARG CACHE_BUST=20260630_2
 COPY . .
 
 # Precompile bootsnap code for faster boot times.
