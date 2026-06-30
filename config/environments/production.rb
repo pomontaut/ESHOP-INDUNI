@@ -46,6 +46,10 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
+  # Use SECRET_KEY_BASE env var if set; otherwise generate a random key per-boot
+  # (set SECRET_KEY_BASE in Railway variables for persistent sessions)
+  config.secret_key_base = ENV.fetch("SECRET_KEY_BASE") { SecureRandom.hex(64) }
+
   # Use solid_cache with its own SQLite database
   config.cache_store = :solid_cache_store
 

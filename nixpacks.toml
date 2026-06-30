@@ -1,8 +1,0 @@
-[phases.setup]
-nixPkgs = ["ruby_3_3", "nodejs", "libxml2", "libxslt"]
-
-[phases.install]
-cmds = ["bundle install"]
-
-[phases.build]
-cmds = ["bundle exec rails assets:precompile"]
