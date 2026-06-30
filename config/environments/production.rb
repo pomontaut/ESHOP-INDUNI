@@ -50,12 +50,11 @@ Rails.application.configure do
   # (set SECRET_KEY_BASE in Railway variables for persistent sessions)
   config.secret_key_base = ENV.fetch("SECRET_KEY_BASE") { SecureRandom.hex(64) }
 
-  # Use solid_cache with its own SQLite database
-  config.cache_store = :solid_cache_store
+  # Cache en mémoire (simple, pas de DB séparée)
+  config.cache_store = :memory_store
 
-  # Use solid_queue with its own SQLite database
-  config.active_job.queue_adapter = :solid_queue
-  config.solid_queue.connects_to = { database: { writing: :queue } }
+  # Jobs asynchrones (pas de solid_queue)
+  config.active_job.queue_adapter = :async
 
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
