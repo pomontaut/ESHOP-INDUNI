@@ -1,3 +1,6 @@
+# Ne pas tourner les seeds en production
+exit if Rails.env.production?
+
 # Clear existing data
 OrderLine.destroy_all
 Order.destroy_all
