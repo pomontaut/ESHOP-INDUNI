@@ -71,4 +71,4 @@ COPY --chown=rails:rails --from=build /rails /rails
 
 # Start: migrate DB then launch Puma on $PORT
 EXPOSE 3000
-CMD ["bash", "-c", "bundle exec rails db:migrate && echo '=== DB OK, starting Puma on PORT='$PORT' ===' && exec bundle exec puma -C config/puma.rb"]
+CMD ["bash", "-c", "echo '=== CONTAINER START: RAILS_ENV='$RAILS_ENV' PORT='$PORT' ===' && bundle exec rails db:migrate && echo '=== DB OK, starting Puma on PORT='$PORT' ===' && exec bundle exec puma -C config/puma.rb"]
