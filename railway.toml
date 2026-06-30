@@ -2,6 +2,6 @@
 builder = "DOCKERFILE"
 
 [deploy]
-startCommand = "bundle exec rails db:migrate && bundle exec puma -C config/puma.rb"
+startCommand = "bin/rails db:migrate && exec bundle exec puma -C config/puma.rb"
 healthcheckPath = "/up"
 healthcheckTimeout = 300
