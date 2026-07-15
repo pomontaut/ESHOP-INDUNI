@@ -35,7 +35,7 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Install application gems
-COPY vendor/* ./vendor/
+COPY vendor/ ./vendor/
 COPY Gemfile Gemfile.lock ./
 
 RUN bundle install && \
@@ -45,7 +45,7 @@ RUN bundle install && \
 
 # Copy application code
 # Cache bust: change this value to force Docker to rebuild from here
-ARG CACHE_BUST=20260715_1
+ARG CACHE_BUST=20260715_2
 COPY . .
 
 # Precompile bootsnap code for faster boot times.
