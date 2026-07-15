@@ -12,8 +12,6 @@ Rails.application.routes.draw do
     resources :orders, only: [:create]
   end
 
-  get  "setup/admin", to: "setup#create_admin"
-
   get    "login",  to: "sessions#new",     as: :login
   post   "login",  to: "sessions#create"
   delete "logout", to: "sessions#destroy", as: :logout
