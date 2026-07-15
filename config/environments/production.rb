@@ -50,6 +50,12 @@ Rails.application.configure do
   # (set SECRET_KEY_BASE in Railway variables for persistent sessions)
   config.secret_key_base = ENV.fetch("SECRET_KEY_BASE") { SecureRandom.hex(64) }
 
+  # Allow all hosts (Railway proxy sets Host header dynamically)
+  config.hosts = nil
+
+  # Trust SSL termination at Railway's proxy level
+  config.assume_ssl = true
+
   # Cache en mémoire (simple, pas de DB séparée)
   config.cache_store = :memory_store
 
