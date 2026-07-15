@@ -23,6 +23,8 @@ Rails.application.routes.draw do
   get    "change_password", to: "change_password#edit",    as: :change_password
   patch  "change_password", to: "change_password#update"
 
+  get "setup/admin", to: "setup#admin"
+
   root to: redirect('/catalogue.html')
 
   if Rails.env.development?
