@@ -12,6 +12,10 @@ Rails.application.routes.draw do
     resources :orders, only: [:create]
   end
 
+  namespace :admin do
+    resources :users, only: [:index, :new, :create, :destroy]
+  end
+
   get    "login",  to: "sessions#new",     as: :login
   post   "login",  to: "sessions#create"
   delete "logout", to: "sessions#destroy", as: :logout

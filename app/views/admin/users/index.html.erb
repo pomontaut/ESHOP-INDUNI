@@ -1,0 +1,39 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Gestion des utilisateurs</h1>
+  <%= link_to "Nouvel utilisateur", new_admin_user_path, class: "btn btn-primary" %>
+</div>
+
+<table class="table table-striped table-hover">
+  <thead class="table-dark">
+    <tr>
+      <th>Email</th>
+      <th>Prénom</th>
+      <th>Nom</th>
+      <th>Admin</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @users.each do |user| %>
+      <tr>
+        <td><%= user.email %></td>
+        <td><%= user.first_name %></td>
+        <td><%= user.last_name %></td>
+        <td>
+          <% if user.admin? %>
+            <span class="badge bg-success">Oui</span>
+          <% else %>
+            <span class="badge bg-secondary">Non</span>
+          <% end %>
+        </td>
+        <td>
+          <% unless user == current_user %>
+            <%= button_to "Supprimer", admin_user_path(user), method: :delete,
+                class: "btn btn-danger btn-sm",
+                data: { turbo_confirm: "Supprimer l'utilisateur #{user.email} ?" } %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
