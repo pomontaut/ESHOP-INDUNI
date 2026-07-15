@@ -8,7 +8,11 @@ class SessionsController < ApplicationController
     user = User.find_by(email: params[:email].to_s.downcase)
     if user&.authenticate(params[:password])
       session[:user_id] = user.id
-      redirect_to root_path, notice: "Bienvenue #{user.first_name.presence || user.email} !"
+      if user.must_change_password?
+        redirect_to change_password_path, notice: "Bienvenue ! Veuillez choisir votre mot de passe personnel."
+      else
+        redirect_to '/catalogue.html', notice: "Bienvenue #{user.full_name} !"
+      end
     else
       flash.now[:alert] = "Email ou mot de passe incorrect."
       render :new, status: :unprocessable_entity

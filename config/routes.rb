@@ -17,9 +17,11 @@ Rails.application.routes.draw do
     resources :users, only: [:index, :new, :create, :destroy]
   end
 
-  get    "login",  to: "sessions#new",     as: :login
-  post   "login",  to: "sessions#create"
-  delete "logout", to: "sessions#destroy", as: :logout
+  get    "login",           to: "sessions#new",           as: :login
+  post   "login",           to: "sessions#create"
+  delete "logout",          to: "sessions#destroy",        as: :logout
+  get    "change_password", to: "change_password#edit",    as: :change_password
+  patch  "change_password", to: "change_password#update"
 
   root to: redirect('/catalogue.html')
 
