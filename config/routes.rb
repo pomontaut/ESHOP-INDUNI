@@ -10,6 +10,7 @@ Rails.application.routes.draw do
   end
   namespace :api do
     resources :orders, only: [:create]
+    get :me, to: 'sessions#me'
   end
 
   namespace :admin do
