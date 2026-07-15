@@ -45,7 +45,7 @@ RUN bundle install && \
 
 # Copy application code
 # Cache bust: change this value to force Docker to rebuild from here
-ARG CACHE_BUST=20260630_3
+ARG CACHE_BUST=20260715_1
 COPY . .
 
 # Precompile bootsnap code for faster boot times.
