@@ -59,7 +59,7 @@ class OrdersController < ApplicationController
     send_data mail.to_s,
               filename: "commande_#{@order.number}.eml",
               type: 'message/rfc822',
-              disposition: 'attachment'
+              disposition: 'inline'
   end
 
   def resubmit_approval

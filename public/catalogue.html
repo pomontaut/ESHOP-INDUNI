@@ -1242,25 +1242,9 @@ async function sendOrderByEmail(e) {
         setTimeout(() => { closeModal('orderModal'); btn.disabled = false; btn.textContent = '📧 Envoyer la commande'; btn.style.background = '#176b28'; }, 3000);
         alert(data.message || 'Demande d\'approbation envoyée à votre N+1.');
       } else {
-        // Build mailto: link — opens Outlook directly with supplier email pre-filled
-        const toEmail = data.supplier_email || '';
-        const subject = encodeURIComponent('Commande ' + data.order_number + ' — ' + (data.supplier_name || supplierName));
-        const total = cart.reduce((s, i) => s + i.prix * i.qty, 0);
-        const lignes = cart.map(i => '  - ' + i.designation + ' (' + i.article + ') x' + i.qty + ' = CHF ' + (i.prix * i.qty).toFixed(2)).join('\n');
-        const body = encodeURIComponent(
-          'Bonjour,\n\n' +
-          'Veuillez trouver ci-dessous notre commande ' + data.order_number + '.\n\n' +
-          'Chantier : ' + chantier + '\n' +
-          'Délai souhaité : ' + delai + '\n' +
-          (adresse ? 'Adresse de livraison :\n' + adresse + '\n' : '') +
-          (contact ? 'Contact : ' + contact + (phone ? ' — ' + phone : '') + '\n' : '') +
-          '\nARTICLES :\n' + lignes + '\n\n' +
-          'TOTAL : CHF ' + total.toFixed(2) + '\n' +
-          (remarks ? '\nRemarques : ' + remarks + '\n' : '') +
-          '\nCordialement,\nInduni SA'
-        );
-        btn.textContent = '✅ Outlook s\'ouvre...';
-        window.location.href = 'mailto:' + toEmail + '?subject=' + subject + '&body=' + body;
+        // Navigate to EML endpoint — browser opens the file in Outlook (message/rfc822 inline)
+        btn.textContent = '✅ Ouverture Outlook...';
+        window.location.href = '/orders/' + data.order_id + '/download_eml';
         setTimeout(() => { closeModal('orderModal'); btn.disabled = false; btn.textContent = '📧 Envoyer la commande'; btn.style.background = '#176b28'; }, 3000);
       }
     } else {
