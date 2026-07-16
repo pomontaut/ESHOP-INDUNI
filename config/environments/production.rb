@@ -69,14 +69,22 @@ Rails.application.configure do
   # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: ENV.fetch("RAILWAY_PUBLIC_DOMAIN", "eshop-induni-production.up.railway.app"), protocol: "https" }
 
-  # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
-  # config.action_mailer.smtp_settings = {
-  #   user_name: Rails.application.credentials.dig(:smtp, :user_name),
-  #   password: Rails.application.credentials.dig(:smtp, :password),
-  #   address: "smtp.example.com",
-  #   port: 587,
-  #   authentication: :plain
-  # }
+  # SMTP via Microsoft 365 — configure SMTP_USERNAME and SMTP_PASSWORD in Railway variables
+  if ENV["SMTP_USERNAME"].present?
+    config.action_mailer.delivery_method = :smtp
+    config.action_mailer.smtp_settings = {
+      address:              ENV.fetch("SMTP_ADDRESS", "smtp.office365.com"),
+      port:                 ENV.fetch("SMTP_PORT", 587).to_i,
+      domain:               ENV.fetch("SMTP_DOMAIN", "induni.ch"),
+      user_name:            ENV["SMTP_USERNAME"],
+      password:             ENV["SMTP_PASSWORD"],
+      authentication:       :login,
+      enable_starttls_auto: true
+    }
+    config.action_mailer.raise_delivery_errors = true
+  else
+    config.action_mailer.delivery_method = :test
+  end
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).
