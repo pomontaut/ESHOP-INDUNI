@@ -14,7 +14,7 @@ Rails.application.routes.draw do
   end
 
   namespace :admin do
-    resources :users, only: [:index, :new, :create, :destroy]
+    resources :users, only: [:index, :new, :create, :edit, :update, :destroy]
   end
 
   get    "login",           to: "sessions#new",           as: :login

@@ -1,8 +1,9 @@
 class Admin::UsersController < ApplicationController
   before_action :require_admin
+  before_action :set_user, only: [:edit, :update, :destroy]
 
   def index
-    @users = User.order(:email)
+    @users = User.order(:last_name, :first_name)
   end
 
   def new
@@ -12,14 +13,26 @@ class Admin::UsersController < ApplicationController
   def create
     @user = User.new(user_params)
     if @user.save
-      redirect_to admin_users_path, notice: "Utilisateur créé avec succès."
+      redirect_to admin_users_path, notice: "Utilisateur #{@user.full_name} créé avec succès."
     else
       render :new, status: :unprocessable_entity
     end
   end
 
+  def edit
+  end
+
+  def update
+    attrs = user_params
+    attrs.delete(:password) if attrs[:password].blank?
+    if @user.update(attrs)
+      redirect_to admin_users_path, notice: "Droits de #{@user.full_name} mis à jour."
+    else
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
   def destroy
-    @user = User.find(params[:id])
     if @user == current_user
       redirect_to admin_users_path, alert: "Vous ne pouvez pas supprimer votre propre compte."
     else
@@ -29,6 +42,10 @@ class Admin::UsersController < ApplicationController
   end
 
   private
+
+  def set_user
+    @user = User.find(params[:id])
+  end
 
   def require_admin
     unless current_user&.admin?
