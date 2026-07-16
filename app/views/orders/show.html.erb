@@ -26,7 +26,7 @@
       <%= link_to "⬇ Télécharger .eml", download_eml_order_path(@order), class: "btn btn-outline-primary" %>
       <%= button_to "📧 Envoyer au fournisseur", send_to_supplier_order_path(@order),
           method: :post, class: "btn btn-success",
-          data: { turbo_confirm: "Envoyer la commande #{@order.number} à #{@order.supplier.name} ?" } %>
+          data: { turbo_confirm: "Envoyer la commande #{@order.number} à #{@order.supplier&.name} ?" } %>
     <% end %>
 
     <%# Actions sur commandes refusées uniquement %>
@@ -71,8 +71,8 @@
     <div class="card shadow-sm">
       <div class="card-header" style="background:#0c1d34;color:white;">Fournisseur</div>
       <div class="card-body">
-        <p class="mb-1"><strong>Nom :</strong> <%= @order.supplier.name %></p>
-        <p class="mb-1"><strong>Email :</strong> <%= @order.supplier.email %></p>
+        <p class="mb-1"><strong>Nom :</strong> <%= @order.supplier&.name %></p>
+        <p class="mb-1"><strong>Email :</strong> <%= @order.supplier&.email %></p>
         <% if @order.supplier.phone.present? %>
           <p class="mb-0"><strong>Tél :</strong> <%= @order.supplier.phone %></p>
         <% end %>

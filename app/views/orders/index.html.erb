@@ -19,7 +19,7 @@
       <tr>
         <td><%= order.number %></td>
         <td><%= order.order_date&.strftime('%d.%m.%Y') %></td>
-        <td><%= order.supplier.name %></td>
+        <td><%= order.supplier&.name || "—" %></td>
         <td>
           <span class="badge <%= order.status == 'sent' ? 'bg-success' : 'bg-secondary' %>">
             <%= order.status %>

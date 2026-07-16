@@ -56,9 +56,9 @@ td:not(:first-child){text-align:right}
   </div>
   <div class="hcol">
     <div class="htitle">FOURNISSEUR</div>
-    <div class="cname"><%= @order.supplier.name.upcase %></div>
-    <% if @order.supplier.email.present? %>
-    <div class="ir"><span class="il">Mail :</span> <%= @order.supplier.email %></div>
+    <div class="cname"><%= @order.supplier&.name&.upcase %></div>
+    <% if @order.supplier&.email.present? %>
+    <div class="ir"><span class="il">Mail :</span> <%= @order.supplier&.email %></div>
     <% end %>
     <% if @order.supplier.phone.present? %>
     <div class="ir"><span class="il">Tél :</span> <%= @order.supplier.phone %></div>
