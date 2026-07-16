@@ -2,11 +2,11 @@ class User < ApplicationRecord
   has_secure_password
 
   SUPPLIERS = [
-    { key: "canplast",  label: "Canplast" },
-    { key: "hgc_ge",   label: "HG Commercial GE" },
-    { key: "hgc_vd",   label: "HG Commerciale VD" },
-    { key: "sika",     label: "Sika" },
-    { key: "leuba",    label: "Leuba Hiag SA" }
+    { key: "HGC",        label: "HGC" },
+    { key: "Canplast",   label: "Canplast" },
+    { key: "Sika",       label: "Sika" },
+    { key: "Alzo",       label: "Alzo" },
+    { key: "Leuba HIAG", label: "Leuba HIAG SA" }
   ].freeze
 
   validates :email, presence: true, uniqueness: { case_sensitive: false },

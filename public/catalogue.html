@@ -196,7 +196,8 @@ function showDashboard(){state={view:'dashboard',catalog:null,famille:null,sous:
 function showAnalysis(){state={view:'analysis',catalog:null,famille:null,sous:null};document.getElementById('searchBox').value='';render()}
 
 function catalogLogoInduni(c){return c==='HGC'?HGC_LOGO:(c==='Canplast'?CAN_LOGO:(c==='Sika'?SIKA_LOGO:(c==='Alzo'?ALZO_LOGO:(c==='Leuba HIAG'?HIAG_LOGO:INDUNI_LOGO))))}
-function chooseCatalog(c){
+function chooseCatalog(c){const p=window._userPerms;if(p&&p.allowed_suppliers&&p.allowed_suppliers.length>0&&!p.allowed_suppliers.includes(c)){return;}
+
   setCartSupplierIfNeeded(c);
   state={view:'catalog',catalog:c,famille:null,sous:null};document.getElementById('searchBox').placeholder='Rechercher un article '+c+'...';render()
 }
@@ -219,7 +220,17 @@ const CANPLAST_SUB_ORDERS={"Canalisations PVC":["Tuyaux SN8","Tuyaux SN4","Tuyau
 const HGC_SUB_ORDERS={"Armatures & Distanceurs":["Armatures","Distanceurs","Treillis & accessoires","Divers"],"Ciments & Bétons":["Ciments en sac","Bétons & Mortiers","Liants & additifs","Divers"],"Coffrage & Étaiement":["Coffrage","Étaiement","Panneaux & accessoires","Divers"],"Drainage & Canalisation":["Tuyaux","Regards & chambres","Raccords","Coudes","Manchons","Grilles & caniveaux","Divers"],"EPI & Sécurité":["Protection tête & visage","Gants","Chaussures","Vêtements","Signalisation","Sécurité chantier","Divers"],"Fournitures Diverses":["Fixations","Visserie & quincaillerie","Accessoires","Produits d'entretien","Divers"],"Granulats & Agrégats":["Gravier","Sable","Gravillons","Concassés","Divers"],"Isolation & Étanchéité":["Isolation","Étanchéité","Membranes & films","Mousses & bandes","Divers"],"Manutention & Chantier":["Bacs & seaux","Levage & manutention","Nettoyage chantier","Stockage","Divers"],"Mastics & Colles":["Mastics","Colles","Silicones","Mortiers-colles","Accessoires","Divers"],"Maçonnerie & Briques":["Briques","Blocs","Linteaux","Mortiers","Accessoires","Divers"],"Mesure & Traçage":["Mesure","Traçage","Niveaux","Lasers","Accessoires","Divers"],"Mortiers & Produits Spéciaux":["Mortiers","Enduits","Réparations","Adjuvants","Produits spéciaux","Divers"],"Outillage & Machines":["Outillage à main","Machines","Consommables machines","Accessoires","Divers"],"Outils à Main & Plâtrerie":["Outils à main","Plâtrerie","Taloche & truelles","Spatules & couteaux","Divers"],"Plaques & Panneaux":["Plaques","Panneaux","Accessoires","Divers"],"Voirie & Aménagement":["Voirie","Bordures","Pavés & dalles","Caniveaux","Aménagement extérieur","Divers"],"Équipement de Chantier":["Équipement","Protection chantier","Signalisation","Balisage","Divers"]};
 function subFamilySortInduni(a,b){const orders=(state.catalog==='Canplast'?CANPLAST_SUB_ORDERS:HGC_SUB_ORDERS);if(orders&&orders[state.famille]){const order=orders[state.famille];const ia=order.indexOf(a),ib=order.indexOf(b);return (ia===-1?999:ia)-(ib===-1?999:ib)}return String(a).localeCompare(String(b),'fr')}
 function render(){const q=document.getElementById('searchBox').value.trim().toLowerCase(); if(q){return renderSearch(q)} if(state.view==='home')return renderHome(); if(state.view==='catalog')return renderCatalog(); if(state.view==='family')return renderFamily(); if(state.view==='subfamily')return renderSubFamily(); if(state.view==='products')return renderProducts(); if(state.view==='dashboard')return renderDashboard(); if(state.view==='analysis')return renderAnalysis();}
-function renderHome(){const h=PRODUCTS.filter(p=>p.catalog==='HGC').length, c=PRODUCTS.filter(p=>p.catalog==='Canplast').length, s=PRODUCTS.filter(p=>p.catalog==='Sika').length, a=PRODUCTS.filter(p=>p.catalog==='Alzo').length, l=PRODUCTS.filter(p=>p.catalog==='Leuba HIAG').length; app.innerHTML=`<section class="hero"><div><h1>Catalogues Achats Induni</h1><p class="muted" style="font-size:18px">Cliquez sur un logo pour accéder à l'e-shop correspondant.</p><div class="coverGrid threeCovers"><button class="cover" onclick="chooseCatalog('HGC')"><div class="coverTop"><img src="${HGC_LOGO}" alt="HGC"></div><div class="coverText"><b>E-shop HGC</b><p class="muted">${h} articles · familles d'articles HGC</p></div></button><button class="cover" onclick="chooseCatalog('Canplast')"><div class="coverTop"><img src="${CAN_LOGO}" alt="Canplast"></div><div class="coverText"><b>E-shop Canplast</b><p class="muted">${c} articles · familles d'articles Canplast</p></div></button><button class="cover" onclick="chooseCatalog('Sika')"><div class="coverTop sikaCover"><img src="${SIKA_LOGO}" alt="Sika"></div><div class="coverText"><b>E-shop Sika</b><p class="muted">${s} articles · prix unitaires offre 2026</p></div></button><button class="cover" onclick="chooseCatalog('Alzo')"><div class="coverTop alzoCover"><img src="${ALZO_LOGO}" alt="Alzo"></div><div class="coverText"><b>E-shop Alzo</b><p class="muted">${a} articles · Saturn S étancheurs INOX V2A EPDM</p></div></button><button class="cover" onclick="chooseCatalog('Leuba HIAG')"><div class="coverTop"><img src="${HIAG_LOGO}" alt="Leuba HIAG"></div><div class="coverText"><b>E-shop Leuba HIAG</b><p class="muted">${l} articles · bois, coffrage, panneaux & accessoires</p></div></button></div></div></section>`}
+function renderHome(){const h=PRODUCTS.filter(p=>p.catalog==='HGC').length, c=PRODUCTS.filter(p=>p.catalog==='Canplast').length, s=PRODUCTS.filter(p=>p.catalog==='Sika').length, a=PRODUCTS.filter(p=>p.catalog==='Alzo').length, l=PRODUCTS.filter(p=>p.catalog==='Leuba HIAG').length;
+const allowed=window._userPerms&&window._userPerms.allowed_suppliers;
+function canSee(key){return !allowed||allowed.length===0||allowed.includes(key);}
+const covers=[
+  canSee('HGC')?`<button class="cover" onclick="chooseCatalog('HGC')"><div class="coverTop"><img src="${HGC_LOGO}" alt="HGC"></div><div class="coverText"><b>E-shop HGC</b><p class="muted">${h} articles · familles d'articles HGC</p></div></button>`:'',
+  canSee('Canplast')?`<button class="cover" onclick="chooseCatalog('Canplast')"><div class="coverTop"><img src="${CAN_LOGO}" alt="Canplast"></div><div class="coverText"><b>E-shop Canplast</b><p class="muted">${c} articles · familles d'articles Canplast</p></div></button>`:'',
+  canSee('Sika')?`<button class="cover" onclick="chooseCatalog('Sika')"><div class="coverTop sikaCover"><img src="${SIKA_LOGO}" alt="Sika"></div><div class="coverText"><b>E-shop Sika</b><p class="muted">${s} articles · prix unitaires offre 2026</p></div></button>`:'',
+  canSee('Alzo')?`<button class="cover" onclick="chooseCatalog('Alzo')"><div class="coverTop alzoCover"><img src="${ALZO_LOGO}" alt="Alzo"></div><div class="coverText"><b>E-shop Alzo</b><p class="muted">${a} articles · Saturn S étancheurs INOX V2A EPDM</p></div></button>`:'',
+  canSee('Leuba HIAG')?`<button class="cover" onclick="chooseCatalog('Leuba HIAG')"><div class="coverTop"><img src="${HIAG_LOGO}" alt="Leuba HIAG"></div><div class="coverText"><b>E-shop Leuba HIAG</b><p class="muted">${l} articles · bois, coffrage, panneaux & accessoires</p></div></button>`:''
+].join('');
+app.innerHTML=`<section class="hero"><div><h1>Catalogues Achats Induni</h1><p class="muted" style="font-size:18px">Cliquez sur un logo pour accéder à l'e-shop correspondant.</p><div class="coverGrid threeCovers">${covers}</div></div></section>`}
 
 /* ============================================================
    CLASSIFICATION VISUELLE PAR E-SHOP — v52
@@ -1212,7 +1223,9 @@ async function sendOrderByEmail(e) {
 </script>
 <script>
 fetch('/api/me').then(r=>r.json()).then(d=>{
-  if(d.admin) document.getElementById('adminNavLink').style.display='inline-flex';
+  window._userPerms = d;
+  if(d.admin||d.can_create_users) document.getElementById('adminNavLink').style.display='inline-flex';
+  render();
 }).catch(()=>{});
 </script>
 </body></html>
