@@ -73,9 +73,9 @@ Rails.application.configure do
   if ENV["SMTP_USERNAME"].present?
     config.action_mailer.delivery_method = :smtp
     config.action_mailer.smtp_settings = {
-      address:              ENV.fetch("SMTP_ADDRESS", "smtp.office365.com"),
-      port:                 ENV.fetch("SMTP_PORT", 587).to_i,
-      domain:               ENV.fetch("SMTP_DOMAIN", "induni.ch"),
+      address:              ENV["SMTP_ADDRESS"].presence || "smtp.office365.com",
+      port:                 ENV["SMTP_PORT"].presence&.to_i || 587,
+      domain:               ENV["SMTP_DOMAIN"].presence || "induni.ch",
       user_name:            ENV["SMTP_USERNAME"],
       password:             ENV["SMTP_PASSWORD"],
       authentication:       :login,
