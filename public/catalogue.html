@@ -1280,6 +1280,10 @@ async function sendOrderByEmail(e) {
           '\n──────────────────────────────\n' +
           'Cordialement,\n' + userName + '\nInduni SA'
         );
+        clearCartInduni();
+        fetch('/api/orders', { headers: { 'Accept': 'application/json' } })
+          .then(r => r.json()).then(orders => { window._serverOrders = orders; renderDashboard(); renderAnalysis(); })
+          .catch(() => {});
         closeModal('orderModal');
         window.location.href = 'mailto:' + toEmail + '?subject=' + subject + '&body=' + body;
       }
