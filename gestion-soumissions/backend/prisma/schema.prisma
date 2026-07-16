@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+
+  submissions Submission[]
+}
+
+model Submission {
+  id                 String    @id @default(cuid())
+  name               String
+  ref                String?
+  lieu               String?
+  entite             String?
+  contactName        String?
+  contactEmail       String?
+  dateLimiteRetour   DateTime?
+  lienDocument       String?
+  status             String    @default("open")
+  statutApprobation  String?
+  createdBy          String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  owner User  @relation(fields: [createdBy], references: [id])
+  lots  Lot[]
+}
+
+model Lot {
+  id           String   @id @default(cuid())
+  submissionId String
+  title        String
+  cfcRef       String?
+  workType     String?
+  status       String   @default("proposed")
+  position     Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  submission Submission     @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  suppliers  LotSupplier[]
+  suivi      SuiviRow[]
+}
+
+model SourcingSupplier {
+  id           String   @id @default(cuid())
+  category     String
+  supplierName String
+  email        String?
+  note         String?
+  isCustom     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  lotSuppliers LotSupplier[]
+
+  @@index([category])
+}
+
+model LotSupplier {
+  id               String   @id @default(cuid())
+  lotId            String
+  sourcingSupplierId String?
+  supplierName     String
+  email            String?
+  status           String   @default("suggested")
+  selectedForEmail Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  lot              Lot               @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  sourcingSupplier SourcingSupplier? @relation(fields: [sourcingSupplierId], references: [id])
+  suivi            SuiviRow[]
+
+  @@index([lotId])
+}
+
+model SuiviRow {
+  id                String    @id @default(cuid())
+  lotId             String
+  lotSupplierId     String
+  status            String    @default("A_envoyer")
+  montantEstimatif  Float?
+  montant           Float?
+  conforme          Boolean   @default(true)
+  sentDate          DateTime?
+  relanceDate       DateTime?
+  dateRetour        DateTime?
+  notes             String?
+  offerFileUrl      String?
+  retained          Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  lot         Lot         @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  lotSupplier LotSupplier @relation(fields: [lotSupplierId], references: [id], onDelete: Cascade)
+
+  @@index([lotId])
+}
