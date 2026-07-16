@@ -1,0 +1,8 @@
+Bonjour <%= @user&.first_name %>,
+
+Votre commande <%= @order.number %> a été APPROUVÉE.
+
+Fournisseur : <%= @order.supplier.name %>
+Montant : <%= number_with_delimiter(@order.total.to_i) %> CHF
+
+Connectez-vous à l'e-shop pour envoyer la commande au fournisseur.

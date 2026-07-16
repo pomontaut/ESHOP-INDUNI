@@ -4,8 +4,17 @@ class Order < ApplicationRecord
   has_many :order_lines, dependent: :destroy
   has_many :products, through: :order_lines
 
+  before_create :generate_approval_token
+
   def pending_approval? = approval_status == 'pending_approval'
   def approved?         = approval_status == 'approved'
+  def refused?          = approval_status == 'refused'
+
+  private
+
+  def generate_approval_token
+    self.approval_token = SecureRandom.urlsafe_base64(32)
+  end
 
   before_create :set_number
 

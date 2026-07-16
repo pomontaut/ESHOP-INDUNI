@@ -4,6 +4,7 @@ Rails.application.routes.draw do
   resources :orders do
     member do
       post :send_to_supplier
+      post :resubmit_approval
       get  :download_eml
     end
     resources :order_lines, only: [:create, :destroy]
@@ -22,6 +23,10 @@ Rails.application.routes.draw do
   delete "logout",          to: "sessions#destroy",        as: :logout
   get    "change_password", to: "change_password#edit",    as: :change_password
   patch  "change_password", to: "change_password#update"
+
+  get    "approvals/:token",        to: "approvals#show",   as: :approval
+  post   "approvals/:token/approve", to: "approvals#approve", as: :approve_approval
+  post   "approvals/:token/refuse",  to: "approvals#refuse",  as: :refuse_approval
 
   get "setup/admin", to: "setup#admin"
 
