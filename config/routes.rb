@@ -15,7 +15,9 @@ Rails.application.routes.draw do
   end
 
   namespace :admin do
-    resources :users, only: [:index, :new, :create, :edit, :update, :destroy]
+    resources :users, only: [:index, :new, :create, :edit, :update, :destroy] do
+      member { post :resend_welcome }
+    end
   end
 
   get    "login",           to: "sessions#new",           as: :login

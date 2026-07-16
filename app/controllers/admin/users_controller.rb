@@ -1,6 +1,6 @@
 class Admin::UsersController < ApplicationController
   before_action :require_admin
-  before_action :set_user, only: [:edit, :update, :destroy]
+  before_action :set_user, only: [:edit, :update, :destroy, :resend_welcome]
 
   def index
     @users = User.order(:last_name, :first_name)
@@ -12,8 +12,10 @@ class Admin::UsersController < ApplicationController
 
   def create
     @user = User.new(user_params)
+    temporary_password = params.dig(:user, :password).to_s
     if @user.save
-      redirect_to admin_users_path, notice: "Utilisateur #{@user.full_name} créé avec succès."
+      UserMailer.welcome(@user, temporary_password).deliver_now rescue nil
+      redirect_to admin_users_path, notice: "Utilisateur #{@user.full_name} créé. Un email avec ses identifiants lui a été envoyé."
     else
       render :new, status: :unprocessable_entity
     end
@@ -30,6 +32,15 @@ class Admin::UsersController < ApplicationController
     else
       render :edit, status: :unprocessable_entity
     end
+  end
+
+  def resend_welcome
+    new_password = SecureRandom.hex(6)
+    @user.update!(password: new_password, must_change_password: true)
+    UserMailer.welcome(@user, new_password).deliver_now
+    redirect_to admin_users_path, notice: "Nouveau mot de passe envoyé à #{@user.email}."
+  rescue => e
+    redirect_to admin_users_path, alert: "Erreur : #{e.message}"
   end
 
   def destroy

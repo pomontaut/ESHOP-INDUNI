@@ -76,8 +76,13 @@
               <% end %>
             </td>
             <td class="py-3 text-center pe-3">
-              <div class="d-flex gap-1 justify-content-center">
+              <div class="d-flex gap-1 justify-content-center flex-wrap">
                 <%= link_to "✏ Modifier", edit_admin_user_path(user), class: "btn btn-outline-primary btn-sm" %>
+                <% if user.must_change_password? %>
+                  <%= button_to "📧 Renvoyer accès", resend_welcome_admin_user_path(user),
+                      method: :post, class: "btn btn-warning btn-sm",
+                      data: { turbo_confirm: "Envoyer un nouveau mot de passe temporaire à #{user.email} ?" } %>
+                <% end %>
                 <% unless user == current_user %>
                   <%= button_to "✕", admin_user_path(user), method: :delete,
                       class: "btn btn-outline-danger btn-sm",

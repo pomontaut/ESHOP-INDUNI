@@ -1,0 +1,14 @@
+Bonjour <%= @user.first_name %>,
+
+Votre compte sur l'e-shop Induni a été créé.
+
+Vos identifiants de connexion :
+  E-mail              : <%= @user.email %>
+  Mot de passe temp.  : <%= @temporary_password %>
+
+Lors de votre première connexion, vous devrez choisir un nouveau mot de passe.
+
+Lien de connexion : <%= @login_url %>
+
+---
+Cet email a été généré automatiquement. Ne pas répondre à ce message.
