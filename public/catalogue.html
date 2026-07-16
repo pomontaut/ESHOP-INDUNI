@@ -1227,12 +1227,7 @@ async function sendOrderByEmail(e) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        chantier,
-        delai,
-        adresse,
-        contact,
-        phone,
-        remarks,
+        chantier, delai, adresse, contact, phone, remarks,
         supplier: supplierName,
         items: cart.map(i => ({ article: i.article, designation: i.designation, descriptif: i.descriptif || '', qty: i.qty, prix: i.prix, unite: i.unite || 'PCE', catalog: i.catalog || '' }))
       })
@@ -1247,13 +1242,25 @@ async function sendOrderByEmail(e) {
         setTimeout(() => { closeModal('orderModal'); btn.disabled = false; btn.textContent = '📧 Envoyer la commande'; btn.style.background = '#176b28'; }, 3000);
         alert(data.message || 'Demande d\'approbation envoyée à votre N+1.');
       } else {
-        btn.textContent = '⬇ Ouverture Outlook...';
-        const link = document.createElement('a');
-        link.href = '/orders/' + data.order_id + '/download_eml';
-        link.download = 'commande_' + data.order_number + '.eml';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Build mailto: link — opens Outlook directly with supplier email pre-filled
+        const toEmail = data.supplier_email || '';
+        const subject = encodeURIComponent('Commande ' + data.order_number + ' — ' + (data.supplier_name || supplierName));
+        const total = cart.reduce((s, i) => s + i.prix * i.qty, 0);
+        const lignes = cart.map(i => '  - ' + i.designation + ' (' + i.article + ') x' + i.qty + ' = CHF ' + (i.prix * i.qty).toFixed(2)).join('\n');
+        const body = encodeURIComponent(
+          'Bonjour,\n\n' +
+          'Veuillez trouver ci-dessous notre commande ' + data.order_number + '.\n\n' +
+          'Chantier : ' + chantier + '\n' +
+          'Délai souhaité : ' + delai + '\n' +
+          (adresse ? 'Adresse de livraison :\n' + adresse + '\n' : '') +
+          (contact ? 'Contact : ' + contact + (phone ? ' — ' + phone : '') + '\n' : '') +
+          '\nARTICLES :\n' + lignes + '\n\n' +
+          'TOTAL : CHF ' + total.toFixed(2) + '\n' +
+          (remarks ? '\nRemarques : ' + remarks + '\n' : '') +
+          '\nCordialement,\nInduni SA'
+        );
+        btn.textContent = '✅ Outlook s\'ouvre...';
+        window.location.href = 'mailto:' + toEmail + '?subject=' + subject + '&body=' + body;
         setTimeout(() => { closeModal('orderModal'); btn.disabled = false; btn.textContent = '📧 Envoyer la commande'; btn.style.background = '#176b28'; }, 3000);
       }
     } else {

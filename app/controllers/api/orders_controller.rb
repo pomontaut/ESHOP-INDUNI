@@ -55,12 +55,14 @@ class Api::OrdersController < ApplicationController
         message:          "Commande #{order.number} enregistrée. Votre commande dépasse votre plafond de #{number_with_commas(limit)} CHF — une demande d'approbation a été envoyée à #{current_user.approver_email}."
       }, status: :ok
     else
-      # Return order_id so the client can download the EML and open it in Outlook
+      # Return supplier email so the client can open a mailto: link in Outlook
       render json: {
-        success:      true,
+        success:        true,
         needs_approval: false,
-        order_id:     order.id,
-        order_number: order.number
+        order_id:       order.id,
+        order_number:   order.number,
+        supplier_email: supplier.email,
+        supplier_name:  supplier.name
       }, status: :ok
     end
   rescue => e
