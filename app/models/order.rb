@@ -10,6 +10,10 @@ class Order < ApplicationRecord
   def approved?         = approval_status == 'approved'
   def refused?          = approval_status == 'refused'
 
+  def total
+    order_lines.sum(&:subtotal)
+  end
+
   private
 
   def generate_approval_token
@@ -17,12 +21,6 @@ class Order < ApplicationRecord
   end
 
   before_create :set_number
-
-  def total
-    order_lines.sum(&:subtotal)
-  end
-
-  private
 
   def set_number
     last = Order.where("number LIKE 'ESHOP_%'").order(:id).last
