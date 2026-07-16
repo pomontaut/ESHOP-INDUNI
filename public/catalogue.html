@@ -762,9 +762,15 @@ async function sendOrderByEmail(e) {
     });
     const data = await res.json();
     if (res.ok) {
-      btn.textContent = '✅ Envoyé !';
+      btn.textContent = '✅ Commande envoyée !';
       btn.style.background = '#0b4f9c';
-      setTimeout(() => { closeModal('orderModal'); btn.disabled = false; btn.textContent = '📧 Envoyer au fournisseur (PDF)'; btn.style.background = '#176b28'; }, 2500);
+      // Vider le panier
+      clearCartInduni();
+      // Rafraîchir les commandes serveur puis re-render dashboard
+      fetch('/api/orders', { headers: { 'Accept': 'application/json' } })
+        .then(r => r.json()).then(orders => { window._serverOrders = orders; renderDashboard(); renderAnalysis(); })
+        .catch(() => {});
+      setTimeout(() => { closeModal('orderModal'); btn.disabled = false; btn.textContent = '📧 Envoyer la commande'; btn.style.background = '#176b28'; }, 2500);
     } else {
       alert('Erreur: ' + (data.error || 'Envoi échoué'));
       btn.disabled = false;
