@@ -7,6 +7,8 @@ class Api::SessionsController < ApplicationController
       render json: {
         logged_in:         true,
         admin:             current_user.admin?,
+        full_name:         current_user.full_name,
+        sector:            current_user.sector,
         can_create_users:  current_user.effective_can_create_users?,
         can_create_orders: current_user.effective_can_create_orders?,
         can_modify_orders: current_user.effective_can_modify_orders?,

@@ -55,7 +55,7 @@ class Admin::UsersController < ApplicationController
 
   def user_params
     params.require(:user).permit(
-      :email, :password, :first_name, :last_name, :job_function,
+      :email, :password, :first_name, :last_name, :job_function, :sector,
       :admin, :must_change_password,
       :can_read, :can_create_orders, :can_modify_orders, :can_create_users,
       :order_limit, :approver_email,

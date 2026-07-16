@@ -1,6 +1,28 @@
 class Api::OrdersController < ApplicationController
   skip_before_action :verify_authenticity_token
 
+  def index
+    orders = current_user&.admin? ? Order.all : Order.where(user: current_user)
+    orders = orders.includes(:supplier, :order_lines, :user).order(created_at: :desc).limit(100)
+    render json: orders.map { |o|
+      chantier = o.notes.to_s.match(/Chantier:\s*([^|]+)/)&.captures&.first&.strip || "—"
+      {
+        id:              o.id,
+        no:              o.number,
+        date:            o.order_date&.strftime('%d.%m.%Y') || o.created_at.strftime('%d.%m.%Y'),
+        supplier:        o.supplier&.name,
+        chantier:        chantier,
+        total:           o.total.to_f.round(2),
+        status:          o.approval_status.presence || o.status,
+        user_name:       o.user&.full_name,
+        user_sector:     o.user&.sector,
+        items:           o.order_lines.map { |l|
+          { article: l.product&.reference, designation: l.product&.name, qty: l.quantity, prix: l.unit_price.to_f }
+        }
+      }
+    }
+  end
+
   def create
     chantier      = params[:chantier].to_s.strip
     delai         = params[:delai].to_s.strip

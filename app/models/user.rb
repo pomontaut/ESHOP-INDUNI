@@ -1,6 +1,11 @@
 class User < ApplicationRecord
   has_secure_password
 
+  SECTORS = [
+    "BAT GE", "BAT VD", "GC", "EG VS", "EG VD", "EG GE", "DEPOT",
+    "ADMIN GE", "ADMIN VS", "ADMIN VD", "TRANSFO GE", "TRANSFO VD"
+  ].freeze
+
   SUPPLIERS = [
     { key: "HGC",        label: "HGC" },
     { key: "Canplast",   label: "Canplast" },

@@ -30,9 +30,16 @@
               <%= f.text_field :last_name, class: "form-control", required: true %>
             </div>
           </div>
-          <div class="mb-3">
-            <%= f.label :job_function, "Fonction / Métier", class: "form-label fw-semibold" %>
-            <%= f.text_field :job_function, class: "form-control" %>
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <%= f.label :job_function, "Fonction / Métier", class: "form-label fw-semibold" %>
+              <%= f.text_field :job_function, class: "form-control" %>
+            </div>
+            <div class="col-6">
+              <%= f.label :sector, "Secteur / Service", class: "form-label fw-semibold" %>
+              <%= f.select :sector, [["— Choisir —", ""]] + User::SECTORS.map { |s| [s, s] },
+                           {}, class: "form-select" %>
+            </div>
           </div>
           <div class="mb-3">
             <%= f.label :email, "Adresse e-mail", class: "form-label fw-semibold" %>

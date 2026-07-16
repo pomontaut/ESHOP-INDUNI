@@ -13,6 +13,7 @@
         <tr>
           <th class="py-3 ps-3">Nom complet</th>
           <th class="py-3">Fonction</th>
+          <th class="py-3">Secteur</th>
           <th class="py-3">Email</th>
           <th class="py-3 text-center">Droits e-shop</th>
           <th class="py-3 text-center">Catalogues</th>
@@ -31,6 +32,7 @@
               <% end %>
             </td>
             <td class="py-3 text-muted small"><%= user.job_function.presence || "—" %></td>
+            <td class="py-3 text-muted small"><%= user.sector.presence || "—" %></td>
             <td class="py-3 small"><%= user.email %></td>
             <td class="py-3 text-center">
               <% if user.admin? %>

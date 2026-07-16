@@ -10,7 +10,7 @@ Rails.application.routes.draw do
     resources :order_lines, only: [:create, :destroy]
   end
   namespace :api do
-    resources :orders, only: [:create]
+    resources :orders, only: [:create, :index]
     get :me, to: 'sessions#me'
   end
 
