@@ -737,7 +737,439 @@ function downloadOrder(e){e.preventDefault(); const no='BC-'+Math.floor(100000+M
 function buildOrderHtml(no,today,chantier,delai,billingMerchant,supplier,rows,sub,tdet,total){return `<!doctype html><html><head><meta charset="utf-8"><title>${no}</title><style>@page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#10233e}.head{display:flex;justify-content:space-between}.logos img{height:58px;max-width:150px;object-fit:contain;margin-right:18px}h1{font-size:31px;margin:0;color:#071b35}.no{color:#f1642a;font-weight:bold;text-align:right}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:24px 0}.box{border:1px solid #d9dee8;border-radius:8px;padding:13px;min-height:70px;white-space:pre-line}.box b{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#6b7280}table{width:100%;border-collapse:collapse;margin-top:20px}th{text-align:left;color:#8a93a3;font-size:12px;border-bottom:1px solid #e5e7eb;padding:9px}td{border-bottom:1px solid #e5e7eb;padding:10px;vertical-align:top}td:nth-child(3){color:#0b4f9c;font-weight:bold}td:nth-child(4),td:nth-child(5),td:nth-child(6){text-align:right}.totals{margin-left:auto;margin-top:16px;width:340px;border:1px solid #e5e7eb;border-radius:8px;padding:12px}.sum{display:flex;justify-content:space-between;margin:10px}.total{font-size:21px;font-weight:bold}.terms{border-left:4px solid #0b4f9c;margin-top:28px;padding:12px;background:#fafafa}footer{margin-top:28px;border-top:1px solid #e5e7eb;padding-top:16px;display:flex;justify-content:space-between;font-size:12px}@media print{button{display:none}}
 .dashboardCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:18px 0 26px}.kpi{background:white;border-radius:14px;padding:18px;box-shadow:0 8px 22px #0b1e3515}.kpi small{display:block;color:#697386;text-transform:uppercase;letter-spacing:.08em;font-weight:900}.kpi b{display:block;font-size:28px;margin-top:6px}.dashTable{width:100%;border-collapse:collapse;background:white;border-radius:14px;overflow:hidden;box-shadow:0 8px 22px #0b1e3515}.dashTable th{text-align:left;background:#0c1d34;color:white;padding:12px;font-size:13px}.dashTable td{padding:12px;border-bottom:1px solid #e5e7eb;vertical-align:top}.dashTable tr:hover td{background:#f8fafc}.miniBtn{border:0;border-radius:8px;background:#0b4f9c;color:white;font-weight:900;padding:8px 10px;cursor:pointer}.miniBtn.orange{background:#f1642a}.miniBtn.gray{background:#64748b}.synHint{font-size:11px;color:#697386;margin-top:4px}.noticeBox{background:#fff7ed;border:1px solid #fed7aa;color:#8a3b12;border-radius:10px;padding:12px;margin:12px 0}.barRow{display:grid;grid-template-columns:180px 1fr 110px;gap:10px;align-items:center;margin:9px 0}.barOuter{height:14px;background:#e5e7eb;border-radius:999px;overflow:hidden}.barInner{height:14px;background:#0c1d34;border-radius:999px}.analysisBlock{background:white;border-radius:14px;padding:18px;box-shadow:0 8px 22px #0b1e3515;margin:16px 0}.emailNote{font-size:12px;color:#697386;margin-top:8px}
 </style></head><body><button onclick="window.print()" style="position:fixed;right:18px;top:18px;padding:12px 18px;background:#f1642a;color:white;border:0;border-radius:8px;font-weight:bold">Imprimer / PDF</button><div class="head"><div class="logos"><img src="${INDUNI_LOGO}"><img src="${catalogLogoInduni(supplier)}"></div><div><h1>BON DE COMMANDE</h1><div class="no">${no}</div><div>Date : ${today}</div><small>induni sa & cie — Avenue des Grandes-Communes 6, 1213 Petit-Lancy</small></div></div><div class="grid">${supplier==='HGC'?`<div class="box"><b>Site fournisseur HGC</b><br>${esc(document.getElementById('site').value)}</div>`:''}${billingMerchant?`<div class="box"><b>Marchand pour facturation</b><br>${esc(billingMerchant)}</div>`:''}<div class="box"><b>Acheteur / facturation</b><br><strong>induni sa & cie</strong><br>Avenue des Grandes-Communes 6<br>1213 Petit-Lancy</div><div class="box"><b>Chantier</b><br>N° de chantier : <strong>${esc(document.getElementById('chantier').value)}</strong></div><div class="box"><b>Délai de livraison</b><br>${esc(document.getElementById('delai').value)}</div><div class="box"><b>Adresse de livraison</b><br>${esc(document.getElementById('adresse').value)}</div><div class="box"><b>Contact livraison</b><br>${esc(document.getElementById('contact').value)}<br>${esc(document.getElementById('phone').value)}</div></div>${document.getElementById('remarks').value?`<div class="box"><b>Remarques</b><br>${esc(document.getElementById('remarks').value)}</div>`:''}<table><thead><tr><th>#</th><th>Désignation / descriptif</th><th>N° article</th><th>Qté / U</th><th>P.U. CHF</th><th>Total CHF</th></tr></thead><tbody>${rows}</tbody></table><div class="totals"><div class="sum"><span>Sous-total marchandises</span><b>${fmt(sub)}</b></div>${transportHtmlInduni(sub,cartSupplier())}<div class="sum total"><span>TOTAL TTC</span><b>${fmt(total)}</b></div></div><p style="text-align:center;font-size:12px">Prix en CHF HT. Catalogues Induni tarifs février 2026. Transport HGC fixe : CHF 85.00. Canplast : CHF 150 sous CHF 2’000, franco dès CHF 2’000, RPLP 2.7% en sus, grue CHF 80 si sélectionnée. Sika : CHF 0.09/kg brut, min. CHF 20, max. CHF 900; mise à disposition/emballage CHF 150 si commande < CHF 500, CHF 100 si CHF 500 à < CHF 1000. Alzo : port CHF 12 si commande < CHF 300. Leuba HIAG : prix franco dépôt ou chantiers GE, hors TVA; coupe/grutage non inclus.</p><div class="terms"><b>Conditions générales de vente</b><br>Commande passée conformément aux conditions générales de vente applicables.</div><footer><div><b>induni sa & cie</b><br>Avenue des Grandes-Communes 6 — 1213 Petit-Lancy<br>${no}</div><div>Commandé par : __________________________</div></footer>
-<script>window.onload=function(){window.print();}<\/script>
+<script>
+async function sendOrderByEmail(e) {
+  e.preventDefault();
+  const chantier = document.getElementById('chantier').value;
+  const delai = document.getElementById('delai').value;
+  if (!chantier || !delai) { alert('Veuillez remplir le N° de chantier et le délai.'); return; }
+  if (!cart.length) { alert('Le panier est vide.'); return; }
+
+  const btn = e.target;
+  btn.disabled = true;
+  btn.textContent = '⏳ Envoi en cours...';
+
+  try {
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': document.querySelector('meta[name=csrf-token]')?.content || '' },
+      body: JSON.stringify({
+        chantier,
+        delai,
+        supplier: cartSupplier ? cartSupplier() : (cart[0] && cart[0].catalog) || 'Inconnu',
+        items: cart.map(i => ({ article: i.article, designation: i.designation, descriptif: i.descriptif || '', qty: i.qty, prix: i.prix, unite: i.unite || 'PCE', catalog: i.catalog || '' }))
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      btn.textContent = '✅ Commande envoyée !';
+      btn.style.background = '#0b4f9c';
+      // Vider le panier
+      clearCartInduni();
+      // Rafraîchir les commandes serveur puis re-render dashboard
+      fetch('/api/orders', { headers: { 'Accept': 'application/json' } })
+        .then(r => r.json()).then(orders => { window._serverOrders = orders; renderDashboard(); renderAnalysis(); })
+        .catch(() => {});
+      setTimeout(() => { closeModal('orderModal'); btn.disabled = false; btn.textContent = '📧 Envoyer la commande'; btn.style.background = '#176b28'; }, 2500);
+    } else {
+      alert('Erreur: ' + (data.error || 'Envoi échoué'));
+      btn.disabled = false;
+      btn.textContent = '📧 Envoyer au fournisseur (PDF)';
+    }
+  } catch(err) {
+    alert('Erreur réseau: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = '📧 Envoyer au fournisseur (PDF)';
+  }
+}
+</html>`}
+
+
+
+/* === v49 PATCH STABLE : recherche experte, dashboard actions, graphiques === */
+const SEARCH_SYNONYM_MAP_V49={
+  tuyau:['tube','conduite','canalisation','gaine','fourreau','pipe'], tube:['tuyau','conduite','canalisation','gaine','fourreau','pipe'], conduite:['tuyau','tube','canalisation'], canalisation:['tuyau','tube','conduite','evacuation','drainage'],
+  drainage:['ecoulement','evacuation','drain','eaux','canalisation'], compact:['plein','lisse','nonperfore','non-perfore','sansjoint','sans-joint'], sn4:['serie4','série4','classe4','rigidite4','rigidité4'], pvc:['polyvinyle','plastique','synthetique'],
+  pe:['polyethylene','polyéthylène','hdpe','pehd'], hdpe:['pe','pehd','polyethylene'], pehd:['pe','hdpe','polyethylene'], pp:['polypropylene','polypropylène'],
+  perfore:['perforé','drain','filtre','troue','trous'], perforé:['perfore','drain','filtre','troue','trous'], protection:['gaine','fourreau','cable','câble'], cable:['câble','gaine','fourreau','protection'],
+  panneau:['plaque','planche','bois','panneaux','contreplaque'], plaque:['panneau','dalle','feuille'], coffrage:['banche','coffrer','beton','béton','formwork'], poutrelle:['poutre','h20','support','coffrage'], poutre:['poutrelle','h20'],
+  carrelet:['latte','tasseau','bois','planche'], planche:['bois','madrier','volige','carrelet'], lambourde:['latte','carrelet','tasseau'], osb:['panneau','particules','agglo','agglomere'], filme:['filmé','phenolique','phénolique','jaune','bouleau','coffrage'], filmé:['filme','phenolique','phénolique','jaune','bouleau','coffrage'],
+  ciment:['mortier','béton','beton','liant','sac'], mortier:['ciment','béton','beton','scellement','colle'], beton:['béton','ciment','mortier','bloc'],
+  regard:['chambre','tampon','couvercle','fonte','grille'], chambre:['regard','puits','puit'], manchon:['raccord','coude','jonction'], raccord:['manchon','connexion','adaptateur'],
+  etancheur:['étancheur','joint','traversee','traversée','bague','epdm','saturn','manchette'], joint:['etancheite','étanchéité','epdm','manchette'],
+  mastic:['silicone','cartouche','colle','etancheite'], colle:['adhesif','adhésif','mortier-colle','mastic'], gant:['gants','protection','main','epi'], gants:['gant','protection','main','epi'], chaussure:['chaussures','soulier','botte','securite','epi'],
+  gravier:['grave','granulat','agregat','agrégat','cailloux','ballast'], sable:['granulat','agregat','agrégat','quartz'], piquet:['jalon','pieu','repere'], coin:['cale','wedge'], seau:['bac','caisse','recipient']
+};
+function normV49(t){return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/œ/g,'oe').replace(/æ/g,'ae');}
+function compactV49(t){return normV49(t).replace(/[^a-z0-9]+/g,'');}
+function wordsV49(t){return normV49(t).replace(/ø/g,' diam ').split(/[^a-z0-9]+/).filter(Boolean);}
+function enrichTokensV49(q){
+  const base=wordsV49(q), set=new Set(base);
+  base.forEach(w=>{(SEARCH_SYNONYM_MAP_V49[w]||[]).forEach(x=>{wordsV49(x).forEach(y=>set.add(y)); set.add(compactV49(x));});});
+  const raw=normV49(q);
+  (raw.match(/dn\s*\d+/g)||[]).forEach(x=>set.add(x.replace(/\s+/g,'')));
+  (raw.match(/\d+(?:[.,]\d+)?\s*(?:mm|cm|m|kg|lt|l|m2|m3|m1)?/g)||[]).forEach(x=>set.add(x.replace(/\s+/g,'')));
+  const c=compactV49(q); if(c) set.add(c);
+  return Array.from(set).filter(Boolean);
+}
+function productTextV49(p){
+  let txt=[p.article,p.designation,p.descriptif,p.famille,p.sousFamille,p.sousSousFamille,p.catalog,p.synonymes].join(' ');
+  const n=normV49(txt), ws=wordsV49(txt), set=new Set(ws);
+  ws.forEach(w=>{(SEARCH_SYNONYM_MAP_V49[w]||[]).forEach(x=>wordsV49(x).forEach(y=>set.add(y)));});
+  (n.match(/dn\s*\d+/g)||[]).forEach(x=>set.add(x.replace(/\s+/g,'')));
+  (n.match(/\d+(?:[.,]\d+)?\s*(?:x|\/|-)\s*\d+(?:[.,]\d+)?(?:\s*(?:x|\/|-)\s*\d+(?:[.,]\d+)?)?\s*(?:mm|cm|m)?/g)||[]).forEach(x=>set.add(x.replace(/\s+/g,'')));
+  return {raw:n, compact:compactV49(txt), words:set};
+}
+/* ── Cache de score pour éviter recalculs ── */
+const _scoreCache = new Map();
+let _scoreCacheQuery = '';
+
+/* ── MOTEUR DE RECHERCHE v51 : scoring precis avec matching numerique exact ── */
+function exactNumMatch(token, txt){
+  if(!/^\d+(?:[.,]\d+)?$/.test(token)) return false;
+  const re=new RegExp('(?<![0-9])'+token.replace('.',String.raw`[.,]`)+'(?![0-9])','i');
+  return re.test(txt);
+}
+function productTypeBonus(p, original){
+  const d=normV49(p.designation+' '+p.sousFamille);
+  const wT=original.some(t=>['tube','tuyau','conduite','canalisation','drain','drainage','pipe'].includes(t));
+  const wC=original.some(t=>['coude','courbe'].includes(t));
+  const wM=original.some(t=>['manchon','raccord'].includes(t));
+  const wE=original.some(t=>['embranchement','culotte'].includes(t));
+  if(wT){
+    if(/\btuyau\b/.test(d)) return 80;
+    if(/\b(coude|manchon|embranchement|culotte|reduction|bouchon)\b/.test(d)) return -80;
+  }
+  if(wC && /\bcoude\b/.test(d)) return 60;
+  if(wM && /\bmanchon\b/.test(d)) return 60;
+  if(wE && /\b(embranchement|culotte)\b/.test(d)) return 60;
+  return 0;
+}
+function scoreProductV49(p,q){
+  // Cache: si la query change, vider le cache
+  if(q!==_scoreCacheQuery){_scoreCache.clear();_scoreCacheQuery=q;}
+  const cacheKey=p._idx;
+  if(_scoreCache.has(cacheKey)) return _scoreCache.get(cacheKey);
+  const original=wordsV49(q); const tokens=enrichTokensV49(q); const text=productTextV49(p); let score=0, matchedOriginal=0;
+  const art=normV49(p.article), des=normV49(p.designation), desc=normV49(p.descriptif), fam=normV49([p.famille,p.sousFamille,p.sousSousFamille].join(' '));
+  const fullRaw=normV49(p.designation+' '+p.descriptif+' '+p.famille+' '+p.sousFamille);
+  original.forEach(t=>{
+    const isNum=/^\d+(?:[.,]\d+)?$/.test(t);
+    let hit=false;
+    if(isNum){
+      if(exactNumMatch(t,des))  {score+=60;hit=true;}
+      if(exactNumMatch(t,desc)) {score+=40;hit=true;}
+      if(exactNumMatch(t,art))  {score+=80;hit=true;}
+      // penalite si 100 est substring de 1000
+      if(!hit){const bigRe=new RegExp('[0-9]'+t+'|'+t+'[0-9]','i'); if(bigRe.test(des)||bigRe.test(desc)) score-=10;}
+    } else {
+      if(text.words.has(t)){score+=45;hit=true;}
+      if(des.includes(t)){score+=35;hit=true;}
+      if(desc.includes(t)){score+=20;hit=true;}
+      if(fam.includes(t)){score+=12;hit=true;}
+      if(art.includes(t)){score+=80;hit=true;}
+      if(text.compact.includes(compactV49(t))){score+=8;hit=true;}
+    }
+    if(hit) matchedOriginal++;
+  });
+  tokens.forEach(t=>{
+    if(original.includes(t)||/^\d+$/.test(t)) return;
+    const ct=compactV49(t);
+    if(text.words.has(t)) score+=15;
+    else if(text.raw.includes(t)) score+=8;
+    else if(ct&&text.compact.includes(ct)) score+=5;
+  });
+  if(original.length&&matchedOriginal===original.length) score+=120;
+  if(original.length>=2&&matchedOriginal>=Math.max(1,original.length-1)) score+=40;
+  if(fullRaw.includes(normV49(q))) score+=130;
+  if(text.compact.includes(compactV49(q))) score+=50;
+  const qset=new Set(original);
+  if((qset.has('tube')||qset.has('tuyau'))&&(text.words.has('tuyau')||text.words.has('tube'))) score+=50;
+  if(qset.has('sn4')&&text.words.has('sn4')) score+=80;
+  if(qset.has('sn8')&&text.words.has('sn8')) score+=80;
+  if(qset.has('sn2')&&text.words.has('sn2')) score+=80;
+  if(qset.has('pvc')&&text.words.has('pvc')) score+=60;
+  if(qset.has('compact')&&text.words.has('compact')) score+=30;
+  if(qset.has('perfore')&&text.words.has('perfore')) score+=50;
+  score+=productTypeBonus(p, original);
+  // Bonus diametre exact Ø dans la query
+  const diaM=q.match(/(?:o|[øo]|\bdn\b)\s*(\d+)/i)||q.match(/\b(\d{2,4})\s*mm\b/i);
+  if(diaM){
+    const dv=parseInt(diaM[1]);
+    const dr1=new RegExp('(?:o|[ø])\\s*'+dv+'(?![0-9])','i');
+    const dr2=new RegExp('(?<![0-9])'+dv+'\\s*mm','i');
+    const ftp=fullTxt(p);
+    if(dr1.test(ftp)||dr2.test(ftp)) score+=90;
+  }
+  _scoreCache.set(cacheKey, score);
+  return score;
+}
+// Carte allégée pour la recherche (sans calcul équivalences = 100x plus rapide)
+function productCardFast(p, scoreVal){
+  const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation);
+  const cp=comparablePrice(p);
+  const cpHtml=cp&&cp.unit&&cp.unit!==String(p.unite||'').toUpperCase()?`<div class="unit equivMeta">≈ ${fmt(cp.value)} / ${esc(cp.unit)}</div>`:'';
+  return `<div class="prod"><div class="prodImg" style="background-image:url('${img(p.image)}')"><span class="tag">${esc(p.catalog)}</span></div><div class="prodBody"><h4>${esc(p.designation)} <span class="scoreBadge">⭐${scoreVal}</span></h4><div class="desc">${esc(p.descriptif)}</div><div class="article">N° ${esc(p.article)}</div><div class="price">${fmt(p.prix)} <span class="unit">/ ${esc(p.unite)}</span></div>${cpHtml}<div id="eq_${p._idx}" class="equivBox emptyEquiv" style="cursor:pointer" onclick="loadEquivCard(${p._idx},this)"><div class="equivTitle">🔄 Voir comparatif fournisseurs</div></div><button class="add ${inCart?'ok':''}" onclick="addCartByIndex(${Number(p._idx)})">${inCart?'✓ Dans le panier':'+ Ajouter au panier'}</button></div></div>`;
+}
+function loadEquivCard(idx, el){
+  el.onclick=null;
+  const p=PRODUCTS[idx];
+  if(!p){el.innerHTML='<div class="equivMeta">Erreur</div>';return;}
+  el.classList.remove('emptyEquiv');
+  const eq=findEquivalents(p);
+  if(!eq.length){el.innerHTML='<div class="equivTitle">Comparatif fournisseurs</div><div class="equivMeta">Aucun équivalent fiable détecté.</div>';return;}
+  const cp=comparablePrice(p);
+  const all=[p,...eq];
+  const comparable=all.map(x=>({x,c:comparablePrice(x)})).filter(o=>o.c&&o.c.unit===cp?.unit);
+  const min=comparable.length?Math.min(...comparable.map(o=>o.c.value)):Number(p.prix);
+  const base=cp?.value||Number(p.prix)||0;
+  const rows=eq.map(e=>{const ce=comparablePrice(e);const val=ce?.value||Number(e.prix)||0;const diff=(base&&val&&ce&&cp&&ce.unit===cp.unit)?(((val-base)/base)*100):null;const isBest=ce&&cp&&ce.unit===cp.unit&&Math.abs(val-min)<0.0001;const best=isBest?'<span class="equivBest">✓ meilleur prix</span>':confidenceLabel(e.score);const delta=diff!==null?` · ${diff>0?'+':''}${diff.toFixed(1)}%`:'';return `<div class="equivRow"><span class="equivSupplier">${esc(e.catalog)}</span>${best} — ${esc(e.designation.slice(0,45))}<br><span class="equivMeta">N°${esc(e.article)} · <span class="equivPrice">${equivPriceText(e)}</span>${delta}</span></div>`;}).join('');
+  const selfBest=(cp&&Math.abs(cp.value-min)<0.0001)?'<span class="equivBest">✓ cet article est le moins cher</span>':'';
+  el.innerHTML=`<div class="equivTitle">🔄 Comparatif fournisseurs ${selfBest}</div><div class="equivMeta">Base : ${esc(cp?cp.unit:p.unite)}</div>${rows}`;
+}
+function renderSearch(q){
+  const locked=cartSupplier();
+  const scored=PRODUCTS.filter(p=>locked?p.catalog===locked:true).map(p=>({p,score:scoreProductV49(p,q)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score||String(a.p.designation).localeCompare(String(b.p.designation),'fr')).slice(0,120);
+  const expanded=enrichTokensV49(q).slice(0,15).join(', ');
+  app.innerHTML=`<h2>Recherche : "${esc(q)}"</h2>${locked?`<p class="muted">Panier verrouillé sur ${locked}.</p>`:''}<div class="searchExplain"><b>🔍 Recherche experte</b> : matching exact, synonymes BTP, DN, matières. Cliquez sur un article pour voir le comparatif fournisseurs.<br><span class="spark">Termes interprétés : ${esc(expanded)}</span></div><p class="muted">${scored.length} résultat(s)</p><div class="products">${scored.length?scored.map(x=>productCardFast(x.p,Math.round(x.score))).join(''):'<div class="empty">Aucun article trouvé.</div>'}</div>`;
+}
+function duplicateOrder(id){const rec=getOrderHistory().find(o=>o.no===id); if(!rec){alert('Commande introuvable.');return;} cart=(rec.items||[]).map(it=>{const found=PRODUCTS.find(p=>p.catalog===it.catalog&&String(p.article)===String(it.article)); return {...(found||it), qty:Number(it.qty||1)};}); save(); state={view:'home',catalog:null,famille:null,sous:null}; render(); openCart(); alert('Commande dupliquée dans le panier. Vous pouvez ajuster les quantités puis générer un nouveau bon.');}
+function modifyOrder(id){duplicateOrder(id); closeCart(); checkout();}
+function svgBarsV49(data,title){
+  const vals=data.map(d=>d[1]); const max=Math.max(1,...vals); const w=640,h=250,left=140,top=18,row=34;
+  const rows=data.slice(0,6).map((d,i)=>{const bw=Math.max(3,Math.round((w-left-105)*(d[1]/max))); const y=top+i*row; return `<text x="0" y="${y+17}" font-size="12" fill="#10233e">${esc(String(d[0]).slice(0,25))}</text><rect x="${left}" y="${y}" width="${bw}" height="21" rx="8" fill="${i%2?'#f1642a':'#0c1d34'}"></rect><text x="${left+bw+8}" y="${y+15}" font-size="12" fill="#10233e" font-weight="700">${fmt(d[1])}</text>`}).join('');
+  return `<div class="chartCard"><h3>${esc(title)}</h3><svg class="svgChart" viewBox="0 0 ${w} ${h}" role="img">${rows||`<text x="20" y="50" fill="#697386">Aucune donnée</text>`}</svg></div>`;
+}
+function svgPieV49(data,title){
+  const total=data.reduce((s,d)=>s+d[1],0)||1; let acc=0; const cx=130,cy=125,r=88; const colors=['#0c1d34','#f1642a','#0b4f9c','#047857','#7c3aed','#64748b'];
+  function arc(start,end){const a1=(start/total)*Math.PI*2-Math.PI/2,a2=(end/total)*Math.PI*2-Math.PI/2; const x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1),x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2); const large=(end-start)/total>.5?1:0; return `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;}
+  const paths=data.slice(0,6).map((d,i)=>{const st=acc; acc+=d[1]; return `<path d="${arc(st,acc)}" fill="${colors[i%colors.length]}"></path>`}).join('');
+  const legend=data.slice(0,6).map((d,i)=>`<div class="legendItem"><span class="legendSwatch" style="background:${colors[i%colors.length]}"></span><span>${esc(d[0])} · <b>${Math.round(d[1]/total*100)}%</b></span></div>`).join('');
+  return `<div class="chartCard"><h3>${esc(title)}</h3><svg class="svgChart" viewBox="0 0 420 250" role="img">${paths||`<text x="20" y="50" fill="#697386">Aucune donnée</text>`}<circle cx="${cx}" cy="${cy}" r="42" fill="white"></circle><text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="15" font-weight="900" fill="#0c1d34">${fmt(total)}</text><text x="${cx}" y="${cy+18}" text-anchor="middle" font-size="11" fill="#697386">total</text></svg><div class="pieLegend">${legend}</div></div>`;
+}
+function renderDashboard(){const rows=getOrderHistory(); const total=rows.reduce((s,o)=>s+Number(o.total||0),0); const avg=rows.length?total/rows.length:0; const last=rows[0]?.date||'-'; app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › Dashboard commandes</div><div class="toolbar"><h2>Dashboard commandes</h2><button class="miniBtn gray" onclick="exportOrdersCsv()">Exporter CSV</button></div><div class="dashboardCards"><div class="kpi"><small>Commandes générées</small><b>${rows.length}</b></div><div class="kpi"><small>Montant total</small><b>${fmt(total)}</b></div><div class="kpi"><small>Panier moyen</small><b>${fmt(avg)}</b></div><div class="kpi"><small>Dernière commande</small><b style="font-size:22px">${esc(last)}</b></div></div><div class="noticeBox">Historique enregistré localement dans ce navigateur. Vous pouvez ouvrir, dupliquer ou modifier une ancienne commande. Modifier recharge le panier et ouvre l’étape bon de commande.</div><table class="dashTable"><thead><tr><th>N° commande</th><th>Date</th><th>Fournisseur</th><th>N° chantier</th><th>Montant</th><th>Actions</th></tr></thead><tbody>${rows.length?rows.map(o=>`<tr><td><b>${esc(o.no)}</b></td><td>${esc(o.date)}</td><td>${esc(o.supplier)}</td><td>${esc(o.chantier)}</td><td><b>${fmt(Number(o.total||0))}</b></td><td><div class="actionBtns"><button class="miniBtn blue" onclick="openSavedOrder('${esc(o.no)}')">Ouvrir</button><button class="miniBtn green" onclick="duplicateOrder('${esc(o.no)}')">Dupliquer</button><button class="miniBtn purple" onclick="modifyOrder('${esc(o.no)}')">Modifier</button><button class="miniBtn orange" onclick="deleteSavedOrder('${esc(o.no)}')">Suppr.</button></div></td></tr>`).join(''):'<tr><td colspan="6" class="muted">Aucune commande générée pour l’instant.</td></tr>'}</tbody></table>`}
+function renderAnalysis(){
+  const rows=getOrderHistory(); const total=rows.reduce((s,o)=>s+Number(o.total||0),0); const bySup={}, bySite={}, articles={}, families={};
+  rows.forEach(o=>{bySup[o.supplier]=(bySup[o.supplier]||0)+Number(o.total||0); bySite[o.chantier]=(bySite[o.chantier]||0)+Number(o.total||0); (o.items||[]).forEach(i=>{const found=PRODUCTS.find(p=>p.catalog===i.catalog&&String(p.article)===String(i.article)); const amount=Number(i.prix||0)*Number(i.qty||0); const k=(i.article||'')+' '+(i.designation||''); articles[k]=(articles[k]||0)+amount; const fam=found?.famille||'Non classé'; families[fam]=(families[fam]||0)+amount;});});
+  const supRows=Object.entries(bySup).sort((a,b)=>b[1]-a[1]); const artRows=Object.entries(articles).sort((a,b)=>b[1]-a[1]).slice(0,10); const famRows=Object.entries(families).sort((a,b)=>b[1]-a[1]); const siteRows=Object.entries(bySite).sort((a,b)=>b[1]-a[1]).slice(0,8); const maxSup=Math.max(1,...Object.values(bySup));
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › Analyse achat</div><div class="toolbar"><h2>Analyse achat</h2><p class="muted">Indicateurs calculés sur les commandes générées dans cet outil.</p></div><div class="dashboardCards"><div class="kpi"><small>Dépense totale suivie</small><b>${fmt(total)}</b></div><div class="kpi"><small>Nombre de commandes</small><b>${rows.length}</b></div><div class="kpi"><small>Panier moyen</small><b>${fmt(rows.length?total/rows.length:0)}</b></div><div class="kpi"><small>Fournisseur principal</small><b style="font-size:22px">${esc(supRows[0]?.[0]||'-')}</b></div></div><div class="chartGrid">${svgPieV49(supRows,'Répartition dépenses par fournisseur')}${svgBarsV49(famRows,'Top familles d’achat')}${svgBarsV49(siteRows,'Dépenses par chantier')}${svgBarsV49(artRows,'Top articles commandés')}</div><div class="analysisBlock"><h3>Dépenses par fournisseur</h3>${supRows.length?supRows.map(([k,v])=>`<div class="barRow"><b>${esc(k)}</b><div class="barOuter"><div class="barInner" style="width:${Math.round(v/maxSup*100)}%"></div></div><span>${fmt(v)}</span></div>`).join(''):'<p class="muted">Aucune donnée.</p>'}</div><div class="analysisBlock"><h3>Actions achats proposées</h3><p>1. Consolider les volumes par famille forte et négocier en priorité avec le fournisseur principal.</p><p>2. Suivre les chantiers récurrents pour anticiper les commandes répétitives via la fonction Dupliquer.</p><p>3. Contrôler les articles à fort montant et utiliser le comparatif fournisseur avant validation.</p></div>`;
+}
+try{PRODUCTS.forEach(p=>{p.synonymes=Array.from(new Set((String(p.synonymes||'')+' '+enrichTokensV49([p.designation,p.descriptif,p.famille,p.sousFamille,p.sousSousFamille].join(' ')).join(' ')).split(/\s+/).filter(Boolean))).join(' ');});}catch(e){}
+/* === fin patch v49 === */
+
+/* ===================================================
+   PATCH v50 — Recherche robuste + Synonymes BTP enrichis
+   + Reclassification intelligente + Équivalences améliorées
+   =================================================== */
+
+// ── 1. BASE DE SYNONYMES ÉTENDUE ─────────────────────────────────────────────
+// Termes métiers BTP suisses complets
+const SYNONYMES_V50 = {
+  // Béton & ciment
+  'bpe': ['beton pret emploi','beton','ciment','mortier','gachage'],
+  'beton pret emploi': ['bpe','beton','ciment'],
+  'beton pret a emploi': ['bpe','beton','ciment'],
+  'beton': ['bpe','ciment','mortier','beton pret emploi','b25','b30','c25','c30'],
+  'ciment': ['beton','mortier','liant','cem'],
+  'mortier': ['ciment','beton','scellement','colle ciment'],
+  'chape': ['mortier','dalle','lissage','beton','nivelage'],
+  'enduit': ['crepi','platrage','lissage','fixit','platre'],
+  'crepi': ['enduit','projection','facade'],
+  'ferraillage': ['armature','fer beton','acier','treillis','ligature'],
+  'fer beton': ['armature','acier','ferraillage','ligature','treillis'],
+  'armature': ['fer beton','acier','ferraillage','treillis','distanceur'],
+  'acier': ['fer','inox','metal','acier trempe','acier galvanise'],
+  'coffrages': ['coffrage','banche','panneau coffrage','planche'],
+  'coffrage': ['banche','panneau','planche coffrage','huile coffrage'],
+  'etaiement': ['etai','verin','support','coffrage'],
+  // Tuyaux & canalisations
+  'tuyau': ['tube','conduite','canalisation','pipe','gaine','fourreau','tuyaux'],
+  'tube': ['tuyau','conduite','canalisation','pipe'],
+  'canalisation': ['tuyau','tube','conduite','reseau','egout'],
+  'evacuation': ['drainage','ecoulement','canalisation','tuyau'],
+  'egout': ['canalisation','drainage','tuyau beton','tuyau pvc'],
+  'tuyau beton': ['bpe','dalle beton','bordure beton','tuyau rond'],
+  // Isolation
+  'isolant': ['isolation','xps','eps','polystyrene','laine','mousse'],
+  'isolation': ['isolant','xps','eps','laine de verre','laine roche'],
+  'etancheite': ['impermeabilisation','hydrofuge','membrane','bitume','sika'],
+  'hydrofuge': ['etancheite','impermeabilisation','sikagard','waterproof'],
+  // Outils & EPI
+  'epi': ['securite','protection','gants','casque','lunettes','chaussures','gilet'],
+  'securite chantier': ['epi','signalisation','balisage','cone','latte'],
+  'echafaudage': ['banche','cadre','planche','tube echafaudage','plateau'],
+  // Granulats
+  'gravier': ['grave','granulat','concasse','ballast','cailloux'],
+  'sable': ['gravillon','granulat','sable maconner','sable fin'],
+  'gravillon': ['gravier','concasse','granulat'],
+  // Carrelage & revêtement
+  'carrelage': ['carreau','faience','dallage','colle carrelage','joint'],
+  'joint carrelage': ['fugue','jointoiement','coulis'],
+  'colle carrelage': ['mortier colle','biogel','kerakoll','colle flex'],
+  // Maçonnerie
+  'maconnerie': ['brique','bloc','parpaing','moellon','mur'],
+  'brique': ['bloc beton','parpaing','linteau','terre cuite'],
+  'parpaing': ['brique','bloc beton','bloc','moellon'],
+  // Drainage & VRD
+  'vrd': ['voirie','canalisation','regard','drainage','bordure','trottoir'],
+  'voirie': ['vrd','bordure','pavage','route','asphalte','drain'],
+  'regard': ['chambre','tampon','grille','fonte'],
+  'drain': ['drainage','tuyau perfore','geocomposite','nappe drainage'],
+  'geotextile': ['non tisse','geocomposite','nappe','filtre'],
+  // Collage & mastics
+  'silicone': ['mastic','joint','etancheite','colle','sista','kerakoll'],
+  'mastic': ['silicone','colle','sista','joint','cartouche'],
+  'colle': ['adhesif','mortier colle','mastic','pattex','tangit'],
+  // Bois & coffrage
+  'bois': ['sapin','epicea','carrelet','planche','lambourde','latte'],
+  'osb': ['panneau bois','agglomere','panneau'],
+  'contreplaque': ['panneau bois','bouleau','film','coffrage'],
+  // Nettoyage & entretien
+  'nettoyage': ['entretien','lavage','brosse','balai','degraissant'],
+  // Abréviations courantes chantier
+  'pvc': ['polyvinyle','plastique','tuyau pvc','canalisation pvc'],
+  'pe': ['polyethylene','pehd','hdpe','tuyau pe'],
+  'pp': ['polypropylene'],
+  'dn': ['diametre nominal','diametre interieur'],
+  'ep': ['epaisseur'],
+  'lg': ['longueur'],
+  'm2': ['metre carre','surface'],
+  'm3': ['metre cube','volume','m3'],
+  'ml': ['metre lineaire','metre'],
+  'sn2': ['classe 2','rigidite 2','sn 2'],
+  'sn4': ['classe 4','rigidite 4','sn 4'],
+  'sn8': ['classe 8','rigidite 8','sn 8'],
+};
+
+// Injecter les synonymes v50 dans la map existante
+try {
+  Object.entries(SYNONYMES_V50).forEach(([k, vals]) => {
+    const kn = normV49(k).replace(/\s+/g,'');
+    if (!SEARCH_SYNONYM_MAP_V49[kn]) SEARCH_SYNONYM_MAP_V49[kn] = [];
+    vals.forEach(v => {
+      const vn = normV49(v).replace(/\s+/g,'');
+      if (!SEARCH_SYNONYM_MAP_V49[kn].includes(vn)) SEARCH_SYNONYM_MAP_V49[kn].push(vn);
+    });
+    // Also add space-separated key
+    const ks = normV49(k);
+    if (ks !== kn) {
+      if (!SEARCH_SYNONYM_MAP_V49[ks]) SEARCH_SYNONYM_MAP_V49[ks] = [];
+      vals.forEach(v => { const vn=normV49(v); if(!SEARCH_SYNONYM_MAP_V49[ks].includes(vn)) SEARCH_SYNONYM_MAP_V49[ks].push(vn); });
+    }
+  });
+} catch(e) { console.warn('v50 synonymes error', e); }
+
+// ── 2. RECLASSIFICATION INTELLIGENTE ─────────────────────────────────────────
+// Corrige les produits mal classés dans les données existantes
+const RECLASSIF_RULES = [
+  // Tube halogène → Équipement de Chantier
+  { match: p => /tube halog[eè]ne/i.test(p.designation), famille: 'Équipement de Chantier', sousFamille: 'Équipement', icone: '🪣' },
+  // Spatules de plâtrier dans Drainage → Fournitures Diverses
+  { match: p => /spatule.*pl[aâ]tr/i.test(p.designation) && p.famille === 'Drainage & Canalisation', famille: 'Fournitures Diverses', sousFamille: 'Divers', icone: '🧰' },
+  // MSU échelon dans Drainage → Équipement de Chantier
+  { match: p => /MSU.*[eé]chelon/i.test(p.designation) && p.famille === 'Drainage & Canalisation', famille: 'Équipement de Chantier', sousFamille: 'Équipement', icone: '🪣' },
+  // Serre-joints dans Drainage → Outillage
+  { match: p => /serre.joint/i.test(p.designation) && p.famille === 'Drainage & Canalisation', famille: 'Outillage & Machines', sousFamille: 'Outillage à main', icone: '🔧' },
+  // Disques à couper dans Drainage/Manchons → Outillage
+  { match: p => /disque.*couper/i.test(p.designation) && p.famille === 'Drainage & Canalisation', famille: 'Outillage & Machines', sousFamille: 'Consommables machines', icone: '🔧' },
+  // Pavés granit dans Manutention/Bacs → Voirie
+  { match: p => /pav[eé].*granit/i.test(p.designation) && p.famille === 'Manutention & Chantier', famille: 'Voirie & Aménagement', sousFamille: 'Pavés & dalles', icone: '🛣️' },
+  // Carrelet bois dans EPI → Coffrage
+  { match: p => /carrelet.*(sapin|[eé]pic[eé]a)/i.test(p.designation) && p.famille === 'EPI & Sécurité', famille: 'Coffrage & Étaiement', sousFamille: 'Coffrage', icone: '🏗️' },
+  // Latte bois dans EPI → Coffrage
+  { match: p => /latte.*bois/i.test(p.designation) && p.famille === 'EPI & Sécurité', famille: 'Coffrage & Étaiement', sousFamille: 'Coffrage', icone: '🏗️' },
+  // Plateau d'échafaudage dans EPI → Équipement de Chantier
+  { match: p => /plateau.*[eé]chafaudage/i.test(p.designation) && p.famille === 'EPI & Sécurité', famille: 'Équipement de Chantier', sousFamille: 'Équipement', icone: '🪣' },
+  // Sika Cosmetic dans Isolation → Mastics & Colles
+  { match: p => /sika cosmetic/i.test(p.designation), famille: 'Mastics & Colles', sousFamille: 'Mastics', icone: '🔫' },
+  // Sista F 109 dans Fournitures Diverses → Mastics & Colles
+  { match: p => /sista f 109/i.test(p.designation) && p.famille === 'Fournitures Diverses', famille: 'Mastics & Colles', sousFamille: 'Mastics', icone: '🔫' },
+  // Sista F 101 dans Ciments → Mastics & Colles
+  { match: p => /sista f 101/i.test(p.designation) && p.famille === 'Ciments & Bétons', famille: 'Mastics & Colles', sousFamille: 'Mastics', icone: '🔫' },
+  // Sista F 130 dans Isolation → Mastics & Colles
+  { match: p => /sista f 130/i.test(p.designation), famille: 'Mastics & Colles', sousFamille: 'Mastics', icone: '🔫' },
+  // Bordure béton dans Ciments → Voirie
+  { match: p => /bordure.*b[eé]ton/i.test(p.designation), famille: 'Voirie & Aménagement', sousFamille: 'Bordures', icone: '🛣️' },
+  // Dalle de jardin dans Ciments → Voirie
+  { match: p => /dalle.*jardin/i.test(p.designation), famille: 'Voirie & Aménagement', sousFamille: 'Pavés & dalles', icone: '🛣️' },
+  // SikaScreed dans Isolation → Ciments & Bétons
+  { match: p => /sikascreed/i.test(p.designation), famille: 'Ciments & Bétons', sousFamille: 'Bétons & Mortiers', icone: '🏗️' },
+  // Rapido ligatures dans Ciments → Coffrage & Étaiement
+  { match: p => /rapido ligatures/i.test(p.designation), famille: 'Coffrage & Étaiement', sousFamille: 'Divers', icone: '🏗️' },
+  // Tuyau béton dans Ciments → Drainage & Canalisation
+  { match: p => /tuyau.*b[eé]ton/i.test(p.designation) && p.famille === 'Ciments & Bétons', famille: 'Drainage & Canalisation', sousFamille: 'Tuyaux', icone: '🔩' },
+  // Cadre béton TE ovale dans Ciments → Drainage
+  { match: p => /cadre.*b[eé]ton/i.test(p.designation), famille: 'Drainage & Canalisation', sousFamille: 'Regards & chambres', icone: '🔩' },
+  // Géotextile dans Fournitures → Isolation & Étanchéité
+  { match: p => /g[eé]otextile/i.test(p.designation) && p.famille === 'Fournitures Diverses', famille: 'Isolation & Étanchéité', sousFamille: 'Membranes & films', icone: '🛡️' },
+  // Géonontissés dans Fournitures → Isolation & Étanchéité
+  { match: p => /g[eé]onontiss/i.test(p.designation), famille: 'Isolation & Étanchéité', sousFamille: 'Membranes & films', icone: '🛡️' },
+  // Cisel à pierre dans Manutention/Bacs → Outillage
+  { match: p => /ciseau.*pierre/i.test(p.designation) && p.famille === 'Manutention & Chantier', famille: 'Outillage & Machines', sousFamille: 'Outillage à main', icone: '🔧' },
+];
+
+// Appliquer la reclassification
+let reclassifCount = 0;
+try {
+  PRODUCTS.forEach(p => {
+    for (const rule of RECLASSIF_RULES) {
+      if (rule.match(p)) {
+        p.famille = rule.famille;
+        p.sousFamille = rule.sousFamille;
+        if (rule.sousSousFamille) p.sousSousFamille = rule.sousSousFamille;
+        if (rule.icone) p.icone = rule.icone;
+        reclassifCount++;
+        break;
+      }
+    }
+  });
+  console.log(`[v50] ${reclassifCount} produits reclassifiés`);
+} catch(e) { console.warn('v50 reclassif error', e); }
+
+// ── 3. RECHERCHE AMÉLIORÉE — support multi-mots, accents, abbréviations ──────
+// Override renderSearch pour une meilleure UX
+// v50 renderSearch override disabled (replaced by v51)
+
+// ── 4. ÉQUIVALENCES AMÉLIORÉES — affichage plus visible ──────────────────────
+// Ajouter style CSS pour les équivalences
+const styleEquiv = document.createElement('style');
+styleEquiv.textContent = `
+.equivBox { margin-top:12px; border-top:2px solid #e8f0fb; padding-top:10px; background:#f8faff; border-radius:10px; padding:10px; }
+.equivBox.emptyEquiv { background:#fafafa; border-color:#eee; }
+.equivTitle { font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:#0b4f9c; font-weight:900; margin-bottom:8px; }
+.equivRow { font-size:12px; border-top:1px solid #e8f0fb; padding:6px 0; display:flex; flex-direction:column; gap:2px; }
+.equivRow:first-of-type { border-top:0; }
+.equivSupplier { font-weight:900; color:#0c1d34; font-size:13px; }
+.equivBest { background:#176b28; color:white; border-radius:999px; padding:2px 7px; font-size:10px; margin-left:5px; }
+.equivMaybe { background:#fff4de; color:#9a5b00; border-radius:999px; padding:2px 7px; font-size:10px; margin-left:5px; }
+.equivPrice { font-weight:900; color:#f1642a; font-size:13px; }
+.equivMeta { color:#697386; font-size:11px; }
+.synHint { display:none; } /* cacher les tokens bruts, trop verbeux */
+`;
+document.head.appendChild(styleEquiv);
+
+// ── 5. RE-ENRICHIR les synonymes après reclassification ──────────────────────
+try {
+  PRODUCTS.forEach(p => {
+    p.synonymes = Array.from(new Set(
+      (String(p.synonymes || '') + ' ' + enrichTokensV49([p.designation, p.descriptif, p.famille, p.sousFamille].join(' ')).join(' '))
+      .split(/\s+/).filter(Boolean)
+    )).join(' ');
+  });
+} catch(e) {}
+
+console.log('[v50] Patch appliqué : synonymes BTP enrichis, reclassification intelligente, recherche améliorée, équivalences stylisées');
+/* === fin patch v50 === */
+
+let _searchTimer=null;
+document.getElementById('searchBox').addEventListener('input',function(){
+  clearTimeout(_searchTimer);
+  const q=this.value.trim();
+  if(!q){render();return;}
+  _searchTimer=setTimeout(render,280);
+});
+updateCart(); render();
+</script>
 <script>
 function updateHgcPreview(){
   var el=document.getElementById('site');
@@ -849,9 +1281,7 @@ async function sendOrderByEmail(e) {
           'Cordialement,\n' + userName + '\nInduni SA'
         );
         clearCartInduni();
-        fetch('/api/orders', { headers: { 'Accept': 'application/json' } })
-          .then(r => r.json()).then(orders => { window._serverOrders = orders; renderDashboard(); renderAnalysis(); })
-          .catch(() => {});
+        fetch('/api/orders',{headers:{'Accept':'application/json'}}).then(r=>r.json()).then(orders=>{window._serverOrders=orders;renderDashboard();renderAnalysis();}).catch(()=>{});
         closeModal('orderModal');
         window.location.href = 'mailto:' + toEmail + '?subject=' + subject + '&body=' + body;
       }
