@@ -13,4 +13,10 @@ class ApplicationController < ActionController::Base
     @current_user ||= User.find_by(id: session[:user_id]) if session[:user_id]
   end
   helper_method :current_user
+
+  def render_order_pdf(order)
+    @order = order
+    html = render_to_string(template: "orders/bon_de_commande", layout: false, formats: [:html])
+    WickedPdf.new.pdf_from_string(html)
+  end
 end

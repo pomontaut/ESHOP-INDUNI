@@ -77,7 +77,9 @@ class Api::OrdersController < ApplicationController
         message:          "Commande #{order.number} enregistrée. Votre commande dépasse votre plafond de #{number_with_commas(limit)} CHF — une demande d'approbation a été envoyée à #{current_user.approver_email}."
       }, status: :ok
     else
-      # Return supplier email so the client can open a mailto: link in Outlook
+      # Send the order directly to the supplier, with the bon de commande PDF attached
+      pdf_content = render_order_pdf(order)
+      OrderMailer.send_order(order, pdf_content).deliver_now
       render json: {
         success:        true,
         needs_approval: false,

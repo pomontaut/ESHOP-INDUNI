@@ -6,7 +6,7 @@
   delai_match    = notes.match(/Délai[^:]*:\s*(.+)/)
   chantier_val   = chantier_match ? chantier_match[1].strip : '—'
   delai_val      = delai_match    ? delai_match[1].strip    : '—'
-  fmt = ->(n) { "#{'%.2f' % n.to_f}".sub('.', "'") rescue n.to_s }
+  fmt = ->(n) { i, d = ('%.2f' % n.to_f).split('.'); "#{i.reverse.gsub(/(\d{3})(?=\d)/, '\\1' + "'").reverse}.#{d}" rescue n.to_s }
 %><!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>
 @page{size:A4;margin:14mm 15mm 18mm 15mm}

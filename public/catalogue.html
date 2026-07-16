@@ -1365,38 +1365,12 @@ async function sendOrderByEmail(e) {
         closeModal('orderModal');
         alert(data.message || "Demande d'approbation envoyée à votre N+1.");
       } else {
-        // Build mailto: — opens Outlook with supplier email + full order in body
-        const toEmail  = data.supplier_email || '';
-        const subject  = encodeURIComponent('Commande ' + data.order_number + ' — Induni SA');
-        const userName = (window._userPerms && window._userPerms.full_name) || 'Induni SA';
-        const total    = cart.reduce((s, i) => s + i.prix * i.qty, 0);
-        const lignes   = cart.map((i, k) =>
-          (k+1) + '. ' + (i.designation || '') +
-          (i.article ? ' [' + i.article + ']' : '') +
-          ' — Qté : ' + i.qty + ' ' + (i.unite || 'PCE') +
-          ' x CHF ' + Number(i.prix).toFixed(2) +
-          ' = CHF ' + (i.prix * i.qty).toFixed(2)
-        ).join('\n');
-        const body = encodeURIComponent(
-          'Bonjour,\n\n' +
-          'Veuillez trouver ci-dessous notre commande ' + data.order_number + '.\n\n' +
-          '──────────────────────────────\n' +
-          'N° de commande  : ' + data.order_number + '\n' +
-          'N° de chantier  : ' + chantier + '\n' +
-          'Délai souhaité  : ' + delai + '\n' +
-          (adresse ? 'Livraison        : ' + adresse.replace(/\n/g, ', ') + '\n' : '') +
-          (contact ? 'Contact chantier : ' + contact + (phone ? ' — ' + phone : '') + '\n' : '') +
-          '──────────────────────────────\n\n' +
-          'ARTICLES :\n' + lignes + '\n\n' +
-          'TOTAL MARCHANDISES : CHF ' + total.toFixed(2) + '\n' +
-          (remarks ? '\nRemarques : ' + remarks + '\n' : '') +
-          '\n──────────────────────────────\n' +
-          'Cordialement,\n' + userName + '\nInduni SA'
-        );
+        // The server has already emailed the supplier directly, with the bon de
+        // commande PDF (incl. CGA) attached — no client-side mailto needed.
         clearCartInduni();
         fetch('/api/orders',{headers:{'Accept':'application/json'}}).then(r=>r.json()).then(orders=>{window._serverOrders=orders;renderDashboard();renderAnalysis();}).catch(()=>{});
         closeModal('orderModal');
-        window.location.href = 'mailto:' + toEmail + '?subject=' + subject + '&body=' + body;
+        alert('Commande ' + data.order_number + ' envoyée à ' + (data.supplier_name || 'le fournisseur') + ' avec le bon de commande en pièce jointe (PDF).');
       }
     } else {
       alert('Erreur : ' + (data.error || 'Enregistrement échoué'));

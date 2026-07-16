@@ -47,7 +47,7 @@ class OrdersController < ApplicationController
     unless @order.approved? || @order.approval_status == 'approved' || @order.approval_status.nil?
       return redirect_to @order, alert: "Cette commande doit être approuvée avant d'être envoyée."
     end
-    OrderMailer.send_order_plain(@order).deliver_now
+    OrderMailer.send_order(@order, render_order_pdf(@order)).deliver_now
     @order.update(status: 'sent')
     redirect_to @order, notice: "Commande envoyée au fournisseur."
   rescue => e
