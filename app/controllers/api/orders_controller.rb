@@ -48,26 +48,20 @@ class Api::OrdersController < ApplicationController
       # Send approval request to N+1 instead of order to supplier
       OrderMailer.approval_request(order).deliver_now rescue nil
       render json: {
-        success:      true,
-        order_number: order.number,
-        message:      "Commande #{order.number} enregistrée. Votre commande dépasse votre plafond de #{number_with_commas(limit)} CHF — une demande d'approbation a été envoyée à #{current_user.approver_email}."
+        success:          true,
+        needs_approval:   true,
+        order_id:         order.id,
+        order_number:     order.number,
+        message:          "Commande #{order.number} enregistrée. Votre commande dépasse votre plafond de #{number_with_commas(limit)} CHF — une demande d'approbation a été envoyée à #{current_user.approver_email}."
       }, status: :ok
     else
-      @order = order
-      begin
-        html = render_to_string(template: 'orders/bon_de_commande', layout: false)
-        pdf_content = WickedPdf.new.pdf_from_string(html)
-        OrderMailer.send_order(order, pdf_content).deliver_now
-        render json: { success: true, order_number: order.number, message: 'Commande enregistrée et email envoyé avec PDF.' }, status: :ok
-      rescue => e
-        if e.message.include?('wkhtmltopdf') || e.message.include?('command not found')
-          OrderMailer.send_order_plain(order).deliver_now rescue nil
-          render json: { success: true, order_number: order.number, message: 'Commande enregistrée. Email envoyé sans PDF.' }, status: :ok
-        else
-          OrderMailer.send_order_plain(order).deliver_now rescue nil
-          render json: { success: true, order_number: order.number, message: 'Commande enregistrée. Email envoyé: ' + e.message }, status: :ok
-        end
-      end
+      # Return order_id so the client can download the EML and open it in Outlook
+      render json: {
+        success:      true,
+        needs_approval: false,
+        order_id:     order.id,
+        order_number: order.number
+      }, status: :ok
     end
   rescue => e
     render json: { error: e.message }, status: :unprocessable_entity
