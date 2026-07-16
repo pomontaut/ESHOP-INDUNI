@@ -1,5 +1,4 @@
 class OrdersController < ApplicationController
-  skip_before_action :verify_authenticity_token, only: [:send_to_supplier]
   before_action :set_order, only: [:show, :edit, :update, :destroy, :send_to_supplier, :download_eml, :resubmit_approval]
 
   def index
@@ -46,27 +45,13 @@ class OrdersController < ApplicationController
 
   def send_to_supplier
     unless @order.approved? || @order.approval_status == 'approved' || @order.approval_status.nil?
-      respond_to do |format|
-        format.json { render json: { error: "Commande non approuvée." }, status: :unprocessable_entity }
-        format.html { redirect_to @order, alert: "Cette commande doit être approuvée avant d'être envoyée." }
-      end
-      return
-    end
-    override_email = params[:override_email].presence
-    if override_email
-      @order.supplier.update(email: override_email)
+      return redirect_to @order, alert: "Cette commande doit être approuvée avant d'être envoyée."
     end
     OrderMailer.send_order_plain(@order).deliver_now
     @order.update(status: 'sent')
-    respond_to do |format|
-      format.json { render json: { success: true, message: "Email envoyé à #{@order.supplier.email}." } }
-      format.html { redirect_to @order, notice: "Commande envoyée au fournisseur." }
-    end
+    redirect_to @order, notice: "Commande envoyée au fournisseur."
   rescue => e
-    respond_to do |format|
-      format.json { render json: { error: e.message }, status: :unprocessable_entity }
-      format.html { redirect_to @order, alert: "Erreur lors de l'envoi: #{e.message}" }
-    end
+    redirect_to @order, alert: "Erreur lors de l'envoi: #{e.message}"
   end
 
   def download_eml

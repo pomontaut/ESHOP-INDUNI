@@ -1211,11 +1211,11 @@ let _pendingOrder = null;
 async function sendOrderByEmail(e) {
   e.preventDefault();
   const chantier = document.getElementById('chantier').value;
-  const delai = document.getElementById('delai').value;
-  const adresse = document.getElementById('adresse') ? document.getElementById('adresse').value : '';
-  const contact = document.getElementById('contact') ? document.getElementById('contact').value : '';
-  const phone = document.getElementById('phone') ? document.getElementById('phone').value : '';
-  const remarks = document.getElementById('remarks') ? document.getElementById('remarks').value : '';
+  const delai    = document.getElementById('delai').value;
+  const adresse  = document.getElementById('adresse')  ? document.getElementById('adresse').value  : '';
+  const contact  = document.getElementById('contact')  ? document.getElementById('contact').value  : '';
+  const phone    = document.getElementById('phone')    ? document.getElementById('phone').value    : '';
+  const remarks  = document.getElementById('remarks')  ? document.getElementById('remarks').value  : '';
   if (!chantier || !delai) { alert('Veuillez remplir le N° de chantier et le délai.'); return; }
   if (!cart.length) { alert('Le panier est vide.'); return; }
 
@@ -1237,61 +1237,53 @@ async function sendOrderByEmail(e) {
     const text = await res.text();
     let data = {};
     try { data = JSON.parse(text); } catch(ex) { data = { error: text || 'Réponse invalide du serveur' }; }
-    if (res.ok && data.success) {
-      btn.disabled = false;
-      btn.textContent = '📧 Envoyer la commande';
-      if (data.needs_approval) {
-        closeModal('orderModal');
-        alert(data.message || 'Demande d’approbation envoyée à votre N+1.');
-      } else {
-        // Show confirmation modal with editable supplier email
-        _pendingOrder = data;
-        document.getElementById('confirmSupplierEmail').value = data.supplier_email || '';
-        document.getElementById('confirmOrderNumber').textContent = data.order_number || '';
-        closeModal('orderModal');
-        openModal('sendConfirmModal');
-      }
-    } else {
-      alert('Erreur : ' + (data.error || 'Enregistrement échoué'));
-      btn.disabled = false;
-      btn.textContent = '📧 Envoyer la commande';
-    }
-  } catch(err) {
-    alert('Erreur : ' + err.message);
+
     btn.disabled = false;
     btn.textContent = '📧 Envoyer la commande';
-  }
-}
 
-async function confirmSendOrder() {
-  if (!_pendingOrder) return;
-  const email = document.getElementById('confirmSupplierEmail').value.trim();
-  if (!email) { alert('Veuillez saisir une adresse email.'); return; }
-  const btn = document.getElementById('confirmSendBtn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Envoi en cours...';
-  try {
-    const res = await fetch('/orders/' + _pendingOrder.order_id + '/send_to_supplier', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': document.querySelector('meta[name=csrf-token]')?.content || '' },
-      body: JSON.stringify({ override_email: email })
-    });
-    if (res.ok || res.redirected) {
-      closeModal('sendConfirmModal');
-      _pendingOrder = null;
-      // Refresh server orders in background
-      fetch('/api/orders').then(r=>r.json()).then(d=>{ window._serverOrders=d; }).catch(()=>{});
-      alert('✅ Commande envoyée par email à : ' + email);
+    if (res.ok && data.success) {
+      if (data.needs_approval) {
+        closeModal('orderModal');
+        alert(data.message || "Demande d'approbation envoyée à votre N+1.");
+      } else {
+        // Build mailto: — opens Outlook with supplier email + full order in body
+        const toEmail  = data.supplier_email || '';
+        const subject  = encodeURIComponent('Commande ' + data.order_number + ' — Induni SA');
+        const userName = (window._userPerms && window._userPerms.full_name) || 'Induni SA';
+        const total    = cart.reduce((s, i) => s + i.prix * i.qty, 0);
+        const lignes   = cart.map((i, k) =>
+          (k+1) + '. ' + (i.designation || '') +
+          (i.article ? ' [' + i.article + ']' : '') +
+          ' — Qté : ' + i.qty + ' ' + (i.unite || 'PCE') +
+          ' x CHF ' + Number(i.prix).toFixed(2) +
+          ' = CHF ' + (i.prix * i.qty).toFixed(2)
+        ).join('\n');
+        const body = encodeURIComponent(
+          'Bonjour,\n\n' +
+          'Veuillez trouver ci-dessous notre commande ' + data.order_number + '.\n\n' +
+          '──────────────────────────────\n' +
+          'N° de commande  : ' + data.order_number + '\n' +
+          'N° de chantier  : ' + chantier + '\n' +
+          'Délai souhaité  : ' + delai + '\n' +
+          (adresse ? 'Livraison        : ' + adresse.replace(/\n/g, ', ') + '\n' : '') +
+          (contact ? 'Contact chantier : ' + contact + (phone ? ' — ' + phone : '') + '\n' : '') +
+          '──────────────────────────────\n\n' +
+          'ARTICLES :\n' + lignes + '\n\n' +
+          'TOTAL MARCHANDISES : CHF ' + total.toFixed(2) + '\n' +
+          (remarks ? '\nRemarques : ' + remarks + '\n' : '') +
+          '\n──────────────────────────────\n' +
+          'Cordialement,\n' + userName + '\nInduni SA'
+        );
+        closeModal('orderModal');
+        window.location.href = 'mailto:' + toEmail + '?subject=' + subject + '&body=' + body;
+      }
     } else {
-      const t = await res.text();
-      alert('Erreur lors de l’envoi : ' + t);
-      btn.disabled = false;
-      btn.textContent = '📧 Confirmer et envoyer';
+      alert('Erreur : ' + (data.error || 'Enregistrement échoué'));
     }
   } catch(err) {
-    alert('Erreur : ' + err.message);
+    alert('Erreur : ' + err.message);
     btn.disabled = false;
-    btn.textContent = '📧 Confirmer et envoyer';
+    btn.textContent = '📧 Envoyer la commande';
   }
 }
 </script>
