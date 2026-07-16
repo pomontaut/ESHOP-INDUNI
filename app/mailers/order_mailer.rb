@@ -11,4 +11,13 @@ class OrderMailer < ApplicationMailer
     @order = order
     mail(to: @order.supplier.email, subject: "Commande #{@order.number}")
   end
+
+  def approval_request(order)
+    @order = order
+    @user  = order.user
+    mail(
+      to:      order.approver_email,
+      subject: "Approbation requise — Commande #{order.number} (#{number_with_delimiter(order.total.to_i)} CHF)"
+    )
+  end
 end

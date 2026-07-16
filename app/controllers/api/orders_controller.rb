@@ -13,11 +13,22 @@ class Api::OrdersController < ApplicationController
       s.email = "commandes@#{supplier_name.downcase.gsub(/[^a-z0-9]/, '')}.ch"
     end
 
+    # Calculate total to check against user's order limit
+    total = items.sum { |item| item[:prix].to_f * item[:qty].to_i }
+    limit = current_user&.order_limit
+    needs_approval = limit.present? && total > limit.to_f
+
+    approval_status = needs_approval ? 'pending_approval' : 'approved'
+    order_status    = needs_approval ? 'pending_approval' : 'sent'
+
     order = Order.create!(
-      supplier: supplier,
-      status: 'sent',
-      order_date: Date.today,
-      notes: "Chantier: #{chantier} | Délai souhaité: #{delai}"
+      supplier:        supplier,
+      user:            current_user,
+      status:          order_status,
+      approval_status: approval_status,
+      approver_email:  current_user&.approver_email,
+      order_date:      Date.today,
+      notes:           "Chantier: #{chantier} | Délai souhaité: #{delai}"
     )
 
     items.each do |item|
@@ -33,26 +44,38 @@ class Api::OrdersController < ApplicationController
       )
     end
 
-    # Generate PDF in controller context (has route helpers), then pass to mailer
-    @order = order
-    begin
-      html = render_to_string(
-        template: 'orders/bon_de_commande',
-        layout: false
-      )
-      pdf_content = WickedPdf.new.pdf_from_string(html)
-      OrderMailer.send_order(order, pdf_content).deliver_now
-      render json: { success: true, order_number: order.number, message: 'Commande enregistrée et email envoyé avec PDF.' }, status: :ok
-    rescue => e
-      if e.message.include?('wkhtmltopdf') || e.message.include?('command not found')
-        OrderMailer.send_order_plain(order).deliver_now rescue nil
-        render json: { success: true, order_number: order.number, message: 'Commande enregistrée. Email envoyé sans PDF (wkhtmltopdf non installé).' }, status: :ok
-      else
-        OrderMailer.send_order_plain(order).deliver_now rescue nil
-        render json: { success: true, order_number: order.number, message: 'Commande enregistrée. Email envoyé (sans PDF): ' + e.message }, status: :ok
+    if needs_approval
+      # Send approval request to N+1 instead of order to supplier
+      OrderMailer.approval_request(order).deliver_now rescue nil
+      render json: {
+        success:      true,
+        order_number: order.number,
+        message:      "Commande #{order.number} enregistrée. Votre commande dépasse votre plafond de #{number_with_commas(limit)} CHF — une demande d'approbation a été envoyée à #{current_user.approver_email}."
+      }, status: :ok
+    else
+      @order = order
+      begin
+        html = render_to_string(template: 'orders/bon_de_commande', layout: false)
+        pdf_content = WickedPdf.new.pdf_from_string(html)
+        OrderMailer.send_order(order, pdf_content).deliver_now
+        render json: { success: true, order_number: order.number, message: 'Commande enregistrée et email envoyé avec PDF.' }, status: :ok
+      rescue => e
+        if e.message.include?('wkhtmltopdf') || e.message.include?('command not found')
+          OrderMailer.send_order_plain(order).deliver_now rescue nil
+          render json: { success: true, order_number: order.number, message: 'Commande enregistrée. Email envoyé sans PDF.' }, status: :ok
+        else
+          OrderMailer.send_order_plain(order).deliver_now rescue nil
+          render json: { success: true, order_number: order.number, message: 'Commande enregistrée. Email envoyé: ' + e.message }, status: :ok
+        end
       end
     end
   rescue => e
     render json: { error: e.message }, status: :unprocessable_entity
+  end
+
+  private
+
+  def number_with_commas(n)
+    n.to_i.to_s.reverse.gsub(/(\d{3})(?=\d)/, "\\1'").reverse
   end
 end

@@ -1,0 +1,54 @@
+<p>Bonjour,</p>
+
+<p>
+  <strong><%= @user&.full_name %></strong> a soumis une commande qui dépasse son plafond d'autorisation et nécessite votre approbation.
+</p>
+
+<table style="border-collapse:collapse;width:100%;max-width:500px;">
+  <tr>
+    <td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Numéro de commande</td>
+    <td style="padding:8px;border:1px solid #ddd;"><%= @order.number %></td>
+  </tr>
+  <tr>
+    <td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Fournisseur</td>
+    <td style="padding:8px;border:1px solid #ddd;"><%= @order.supplier.name %></td>
+  </tr>
+  <tr>
+    <td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Montant total</td>
+    <td style="padding:8px;border:1px solid #ddd;font-weight:bold;color:#c0392b;"><%= number_with_delimiter(@order.total.to_i) %> CHF</td>
+  </tr>
+  <tr>
+    <td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Notes</td>
+    <td style="padding:8px;border:1px solid #ddd;"><%= @order.notes %></td>
+  </tr>
+</table>
+
+<h3 style="margin-top:20px;">Détail des articles</h3>
+<table style="border-collapse:collapse;width:100%;max-width:600px;">
+  <thead>
+    <tr style="background:#0c1d34;color:white;">
+      <th style="padding:8px;text-align:left;">Article</th>
+      <th style="padding:8px;text-align:right;">Qté</th>
+      <th style="padding:8px;text-align:right;">Prix unit.</th>
+      <th style="padding:8px;text-align:right;">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @order.order_lines.each do |line| %>
+      <tr>
+        <td style="padding:8px;border:1px solid #ddd;"><%= line.product.name %></td>
+        <td style="padding:8px;border:1px solid #ddd;text-align:right;"><%= line.quantity %></td>
+        <td style="padding:8px;border:1px solid #ddd;text-align:right;"><%= number_with_delimiter(line.unit_price.to_f, separator: '.') %> CHF</td>
+        <td style="padding:8px;border:1px solid #ddd;text-align:right;"><%= number_with_delimiter(line.subtotal.to_f, separator: '.') %> CHF</td>
+      </tr>
+    <% end %>
+    <tr style="background:#f1642a;color:white;font-weight:bold;">
+      <td colspan="3" style="padding:8px;">TOTAL</td>
+      <td style="padding:8px;text-align:right;"><%= number_with_delimiter(@order.total.to_i) %> CHF</td>
+    </tr>
+  </tbody>
+</table>
+
+<p style="margin-top:20px;color:#666;">
+  Cette commande est en attente d'approbation. Veuillez contacter <%= @user&.full_name %> (<%= @user&.email %>) pour donner suite.
+</p>

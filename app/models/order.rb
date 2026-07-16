@@ -1,7 +1,11 @@
 class Order < ApplicationRecord
   belongs_to :supplier
+  belongs_to :user, optional: true
   has_many :order_lines, dependent: :destroy
   has_many :products, through: :order_lines
+
+  def pending_approval? = approval_status == 'pending_approval'
+  def approved?         = approval_status == 'approved'
 
   before_create :set_number
 
