@@ -54,7 +54,7 @@ class Api::OrdersController < ApplicationController
     )
 
     items.each do |item|
-      product = Product.find_or_create_by!(reference: item[:article].to_s) do |p|
+      product = Product.find_or_create_by!(supplier: supplier, reference: item[:article].to_s) do |p|
         p.name       = item[:designation].to_s
         p.unit_price = item[:prix].to_f
         p.supplier   = supplier

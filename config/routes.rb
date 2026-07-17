@@ -11,6 +11,7 @@ Rails.application.routes.draw do
   end
   namespace :api do
     resources :orders, only: [:create, :index]
+    resources :products, only: [:index]
     get :me, to: 'sessions#me'
   end
 
