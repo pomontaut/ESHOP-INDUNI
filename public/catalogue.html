@@ -196,6 +196,13 @@ function showDashboard(){state={view:'dashboard',catalog:null,famille:null,sous:
 function showAnalysis(){state={view:'analysis',catalog:null,famille:null,sous:null};document.getElementById('searchBox').value='';render()}
 
 function catalogLogoInduni(c){return c==='HGC'?HGC_LOGO:(c==='Canplast'?CAN_LOGO:(c==='Sika'?SIKA_LOGO:(c==='Alzo'?ALZO_LOGO:(c==='Leuba HIAG'?HIAG_LOGO:INDUNI_LOGO))))}
+const SUPPLIER_INFO={
+  'HGC':{email:'yannick.mace@hgc.ch',phone:'0041 22 343 85 50'},
+  'Sika':{address:'Tueffenwies 16-22',postal_code:'8048',city:'Zurich',email:'brugger.patrick@ch.sika.com',phone:'0041 1 436 40 40'},
+  'Canplast':{address:'Route de Sollens 2B',postal_code:'1029',city:'Villars-Ste-Croix',email:'commandes@canplast.ch',phone:'0041 21 637 37 77'},
+  'Alzo':{address:'Unterleh 12',postal_code:'6300',city:'Zug',email:'info@alzo.ch',phone:'0041 41 500 50 16'},
+  'Leuba HIAG':{address:'Planchettes 1',postal_code:'1032',city:'Romanel-s-Lausanne',email:'william.bouquet@leubahiag.ch',phone:'0041 58 470 66 66'}
+};
 function chooseCatalog(c){const p=window._userPerms;if(p&&p.allowed_suppliers&&p.allowed_suppliers.length>0&&!p.allowed_suppliers.includes(c)){return;}
 
   setCartSupplierIfNeeded(c);
@@ -786,6 +793,7 @@ td:not(:first-child){text-align:right}
   <div class="hcol">
     <div class="htitle">FOURNISSEUR</div>
     <div class="cname">${esc(supplier)}</div>
+    ${(()=>{const info=SUPPLIER_INFO[supplier]; if(!info) return ''; const addr=[info.address,[info.postal_code,info.city].filter(Boolean).join(' ')].filter(Boolean).join('<br>'); return `${addr?`<div class="ir"><span class="il">Adresse :</span></div><div class="ir" style="padding-left:10px">${addr}</div>`:''}${info.email?`<div class="ir"><span class="il">Mail :</span> ${esc(info.email)}</div>`:''}${info.phone?`<div class="ir"><span class="il">Tél :</span> ${esc(info.phone)}</div>`:''}`;})()}
     ${supplier==='HGC'?`<div class="ir"><span class="il">Site :</span></div><div class="ir" style="padding-left:10px">${esc(document.getElementById('site').value)}</div>`:''}
   </div>
 </div>
