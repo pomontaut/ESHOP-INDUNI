@@ -1042,7 +1042,13 @@ function loadEquivCard(idx, el){
 }
 function renderSearch(q){
   const locked=cartSupplier();
-  const scored=PRODUCTS.filter(p=>locked?p.catalog===locked:true).map(p=>({p,score:scoreProductV49(p,q)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score||String(a.p.designation).localeCompare(String(b.p.designation),'fr')).slice(0,120);
+  const all=PRODUCTS.filter(p=>locked?p.catalog===locked:true).map(p=>({p,score:scoreProductV49(p,q)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score||String(a.p.designation).localeCompare(String(b.p.designation),'fr'));
+  // Coupure de confiance : quand un ou deux articles se détachent nettement du
+  // reste (match quasi exact — n° d'article, désignation précise complète), on
+  // ne garde que ceux-là. Si beaucoup d'articles partagent le meilleur score
+  // (terme générique du type "tube"), ils restent tous — rien n'est perdu.
+  const top=all[0]?.score||0;
+  const scored=(top?all.filter(x=>x.score>=top*0.7):all).slice(0,120);
   const expanded=enrichTokensV49(q).slice(0,15).join(', ');
   app.innerHTML=`<h2>Recherche : "${esc(q)}"</h2>${locked?`<p class="muted">Panier verrouillé sur ${locked}.</p>`:''}<div class="searchExplain"><b>🔍 Recherche experte</b> : matching exact, synonymes BTP, DN, matières. Cliquez sur un article pour voir le comparatif fournisseurs.<br><span class="spark">Termes interprétés : ${esc(expanded)}</span></div><p class="muted">${scored.length} résultat(s)</p><div class="products">${scored.length?scored.map(x=>productCardFast(x.p,Math.round(x.score))).join(''):'<div class="empty">Aucun article trouvé.</div>'}</div>`;
 }
