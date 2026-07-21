@@ -73,4 +73,4 @@ COPY --chown=rails:rails --from=build /rails /rails
 # Start: migrate DB then launch Puma on $PORT
 EXPOSE 3000
 ENV PORT=3000
-CMD ["bash", "-c", "./bin/rails db:prepare && exec bundle exec puma -b tcp://0.0.0.0:3000"]
+CMD ["bash", "-c", "./bin/rails db:prepare && exec bundle exec puma -b tcp://0.0.0.0:${PORT}"]
