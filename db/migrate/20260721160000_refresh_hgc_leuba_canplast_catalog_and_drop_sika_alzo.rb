@@ -49,6 +49,11 @@ class RefreshHgcLeubaCanplastCatalogAndDropSikaAlzo < ActiveRecord::Migration[8.
       }
     end
 
+    # Guard against duplicate (supplier_id, reference) pairs in the seed data:
+    # upsert_all's ON CONFLICT DO UPDATE raises PG::CardinalityViolation if the
+    # same conflict target appears twice in a single statement.
+    rows = rows.uniq { |r| [ r[:supplier_id], r[:reference] ] }
+
     rows.each_slice(500) do |slice|
       Product.upsert_all(slice, unique_by: :index_products_on_supplier_id_and_reference)
     end

@@ -37,8 +37,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_170000) do
 
   create_table "order_lines", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.integer "order_id", null: false
-    t.integer "product_id", null: false
+    t.bigint "order_id", null: false
+    t.bigint "product_id", null: false
     t.integer "quantity"
     t.decimal "unit_price"
     t.datetime "updated_at", null: false
@@ -56,9 +56,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_170000) do
     t.string "number"
     t.date "order_date"
     t.string "status"
-    t.integer "supplier_id", null: false
+    t.bigint "supplier_id", null: false
     t.datetime "updated_at", null: false
-    t.integer "user_id"
+    t.bigint "user_id"
     t.index ["supplier_id"], name: "index_orders_on_supplier_id"
     t.index ["user_id"], name: "index_orders_on_user_id"
   end
@@ -73,7 +73,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_170000) do
     t.string "reference"
     t.string "sous_famille"
     t.string "sous_sous_famille"
-    t.integer "supplier_id", null: false
+    t.bigint "supplier_id", null: false
     t.decimal "unit_price"
     t.string "unite"
     t.datetime "updated_at", null: false
