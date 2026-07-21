@@ -10,8 +10,6 @@ class User < ApplicationRecord
   SUPPLIERS = [
     { key: "HGC",        label: "HGC" },
     { key: "Canplast",   label: "Canplast" },
-    { key: "Sika",       label: "Sika" },
-    { key: "Alzo",       label: "Alzo" },
     { key: "Leuba HIAG", label: "Leuba HIAG SA" }
   ].freeze
 
