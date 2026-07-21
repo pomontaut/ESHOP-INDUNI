@@ -7,12 +7,12 @@ class AddCatalogFieldsAndSeedProducts < ActiveRecord::Migration[8.1]
     add_column :products, :sous_sous_famille, :string
     add_column :products, :icone, :string
     add_column :products, :image, :string
-    add_index :products, [:supplier_id, :reference], unique: true, name: "index_products_on_supplier_id_and_reference"
+    add_index :products, [ :supplier_id, :reference ], unique: true, name: "index_products_on_supplier_id_and_reference"
 
     path = Rails.root.join("db/seed_data/catalog_products.json")
     return unless File.exist?(path)
 
-    supplier_ids = Supplier.where(name: ["HGC", "Sika", "Canplast", "Alzo", "Leuba HIAG"]).pluck(:name, :id).to_h
+    supplier_ids = Supplier.where(name: [ "HGC", "Sika", "Canplast", "Alzo", "Leuba HIAG" ]).pluck(:name, :id).to_h
     items = JSON.parse(File.read(path))
     now = Time.current
 

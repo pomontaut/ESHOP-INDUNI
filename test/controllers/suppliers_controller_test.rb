@@ -1,23 +1,28 @@
 require "test_helper"
 
 class SuppliersControllerTest < ActionDispatch::IntegrationTest
+  setup do
+    post login_url, params: { email: users(:one).email, password: "password123" }
+    @supplier = suppliers(:one)
+  end
+
   test "should get index" do
-    get suppliers_index_url
+    get suppliers_url
     assert_response :success
   end
 
   test "should get show" do
-    get suppliers_show_url
+    get supplier_url(@supplier)
     assert_response :success
   end
 
   test "should get new" do
-    get suppliers_new_url
+    get new_supplier_url
     assert_response :success
   end
 
   test "should get edit" do
-    get suppliers_edit_url
+    get edit_supplier_url(@supplier)
     assert_response :success
   end
 end

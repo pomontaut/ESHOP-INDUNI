@@ -16,7 +16,7 @@ class ApplicationController < ActionController::Base
 
   def render_order_pdf(order)
     @order = order
-    html = render_to_string(template: "orders/bon_de_commande", layout: false, formats: [:html])
+    html = render_to_string(template: "orders/bon_de_commande", layout: false, formats: [ :html ])
     WickedPdf.new.pdf_from_string(html)
   end
 end

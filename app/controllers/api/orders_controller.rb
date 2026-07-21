@@ -9,7 +9,7 @@ class Api::OrdersController < ApplicationController
       {
         id:              o.id,
         no:              o.number,
-        date:            o.order_date&.strftime('%d.%m.%Y') || o.created_at.strftime('%d.%m.%Y'),
+        date:            o.order_date&.strftime("%d.%m.%Y") || o.created_at.strftime("%d.%m.%Y"),
         supplier:        o.supplier&.name,
         chantier:        chantier,
         total:           o.total.to_f.round(2),
@@ -29,7 +29,7 @@ class Api::OrdersController < ApplicationController
     supplier_name = params[:supplier].to_s.strip
     items         = params[:items] || []
 
-    return render json: { error: 'Panier vide' }, status: :unprocessable_entity if items.blank?
+    return render json: { error: "Panier vide" }, status: :unprocessable_entity if items.blank?
 
     supplier = Supplier.find_or_create_by!(name: supplier_name) do |s|
       s.email = "commandes@#{supplier_name.downcase.gsub(/[^a-z0-9]/, '')}.ch"
@@ -40,8 +40,8 @@ class Api::OrdersController < ApplicationController
     limit = current_user&.order_limit
     needs_approval = limit.present? && total > limit.to_f
 
-    approval_status = needs_approval ? 'pending_approval' : 'approved'
-    order_status    = needs_approval ? 'pending_approval' : 'sent'
+    approval_status = needs_approval ? "pending_approval" : "approved"
+    order_status    = needs_approval ? "pending_approval" : "sent"
 
     order = Order.create!(
       supplier:        supplier,

@@ -11,7 +11,7 @@ class SessionsController < ApplicationController
       if user.must_change_password?
         redirect_to change_password_path, notice: "Bienvenue ! Veuillez choisir votre mot de passe personnel."
       else
-        redirect_to '/catalogue.html', notice: "Bienvenue #{user.full_name} !"
+        redirect_to "/catalogue.html", notice: "Bienvenue #{user.full_name} !"
       end
     else
       flash.now[:alert] = "Email ou mot de passe incorrect."

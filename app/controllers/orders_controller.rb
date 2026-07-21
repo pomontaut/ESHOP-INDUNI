@@ -1,5 +1,5 @@
 class OrdersController < ApplicationController
-  before_action :set_order, only: [:show, :edit, :update, :destroy, :send_to_supplier, :download_eml, :resubmit_approval]
+  before_action :set_order, only: [ :show, :edit, :update, :destroy, :send_to_supplier, :download_eml, :resubmit_approval ]
 
   def index
     @orders = Order.all.includes(:supplier, :user)
@@ -30,7 +30,7 @@ class OrdersController < ApplicationController
     if @order.update(order_params)
       # If editing a refused order, reset approval status to pending for resubmission
       if @order.refused?
-        @order.update(approval_status: 'pending_approval', status: 'pending_approval', approval_comment: nil)
+        @order.update(approval_status: "pending_approval", status: "pending_approval", approval_comment: nil)
       end
       redirect_to @order, notice: "Commande mise à jour."
     else
@@ -44,11 +44,11 @@ class OrdersController < ApplicationController
   end
 
   def send_to_supplier
-    unless @order.approved? || @order.approval_status == 'approved' || @order.approval_status.nil?
+    unless @order.approved? || @order.approval_status == "approved" || @order.approval_status.nil?
       return redirect_to @order, alert: "Cette commande doit être approuvée avant d'être envoyée."
     end
     OrderMailer.send_order(@order, render_order_pdf(@order)).deliver_now
-    @order.update(status: 'sent')
+    @order.update(status: "sent")
     redirect_to @order, notice: "Commande envoyée au fournisseur."
   rescue => e
     redirect_to @order, alert: "Erreur lors de l'envoi: #{e.message}"
@@ -58,8 +58,8 @@ class OrdersController < ApplicationController
     mail = OrderMailer.send_order(@order)
     send_data mail.to_s,
               filename: "commande_#{@order.number}.eml",
-              type: 'message/rfc822',
-              disposition: 'inline'
+              type: "message/rfc822",
+              disposition: "inline"
   end
 
   def resubmit_approval
@@ -67,8 +67,8 @@ class OrdersController < ApplicationController
       return redirect_to @order, alert: "Seules les commandes refusées peuvent être renvoyées."
     end
     @order.update!(
-      approval_status: 'pending_approval',
-      status:          'pending_approval',
+      approval_status: "pending_approval",
+      status:          "pending_approval",
       approval_comment: nil
     )
     OrderMailer.approval_request(@order).deliver_now rescue nil

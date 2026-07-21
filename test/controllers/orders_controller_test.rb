@@ -1,23 +1,28 @@
 require "test_helper"
 
 class OrdersControllerTest < ActionDispatch::IntegrationTest
+  setup do
+    post login_url, params: { email: users(:one).email, password: "password123" }
+    @order = orders(:one)
+  end
+
   test "should get index" do
-    get orders_index_url
+    get orders_url
     assert_response :success
   end
 
   test "should get show" do
-    get orders_show_url
+    get order_url(@order)
     assert_response :success
   end
 
   test "should get new" do
-    get orders_new_url
+    get new_order_url
     assert_response :success
   end
 
   test "should get edit" do
-    get orders_edit_url
+    get edit_order_url(@order)
     assert_response :success
   end
 end

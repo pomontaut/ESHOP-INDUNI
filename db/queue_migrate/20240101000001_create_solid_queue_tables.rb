@@ -14,8 +14,8 @@ class CreateSolidQueueTables < ActiveRecord::Migration[7.1]
     add_index :solid_queue_jobs, :active_job_id, if_not_exists: true
     add_index :solid_queue_jobs, :class_name, if_not_exists: true
     add_index :solid_queue_jobs, :finished_at, if_not_exists: true
-    add_index :solid_queue_jobs, [:queue_name, :finished_at], if_not_exists: true
-    add_index :solid_queue_jobs, [:scheduled_at, :finished_at], if_not_exists: true
+    add_index :solid_queue_jobs, [ :queue_name, :finished_at ], if_not_exists: true
+    add_index :solid_queue_jobs, [ :scheduled_at, :finished_at ], if_not_exists: true
 
     create_table :solid_queue_ready_executions, if_not_exists: true do |t|
       t.bigint :job_id, null: false
@@ -24,8 +24,8 @@ class CreateSolidQueueTables < ActiveRecord::Migration[7.1]
       t.datetime :created_at, null: false
     end
     add_index :solid_queue_ready_executions, :job_id, unique: true, if_not_exists: true
-    add_index :solid_queue_ready_executions, [:priority, :job_id], if_not_exists: true
-    add_index :solid_queue_ready_executions, [:queue_name, :priority, :job_id], if_not_exists: true
+    add_index :solid_queue_ready_executions, [ :priority, :job_id ], if_not_exists: true
+    add_index :solid_queue_ready_executions, [ :queue_name, :priority, :job_id ], if_not_exists: true
 
     create_table :solid_queue_scheduled_executions, if_not_exists: true do |t|
       t.bigint :job_id, null: false
@@ -35,7 +35,7 @@ class CreateSolidQueueTables < ActiveRecord::Migration[7.1]
       t.datetime :created_at, null: false
     end
     add_index :solid_queue_scheduled_executions, :job_id, unique: true, if_not_exists: true
-    add_index :solid_queue_scheduled_executions, [:scheduled_at, :priority, :job_id], if_not_exists: true
+    add_index :solid_queue_scheduled_executions, [ :scheduled_at, :priority, :job_id ], if_not_exists: true
 
     create_table :solid_queue_claimed_executions, if_not_exists: true do |t|
       t.bigint :job_id, null: false
@@ -43,7 +43,7 @@ class CreateSolidQueueTables < ActiveRecord::Migration[7.1]
       t.datetime :created_at, null: false
     end
     add_index :solid_queue_claimed_executions, :job_id, unique: true, if_not_exists: true
-    add_index :solid_queue_claimed_executions, [:process_id, :job_id], if_not_exists: true
+    add_index :solid_queue_claimed_executions, [ :process_id, :job_id ], if_not_exists: true
 
     create_table :solid_queue_blocked_executions, if_not_exists: true do |t|
       t.bigint :job_id, null: false
@@ -54,8 +54,8 @@ class CreateSolidQueueTables < ActiveRecord::Migration[7.1]
       t.datetime :created_at, null: false
     end
     add_index :solid_queue_blocked_executions, :job_id, unique: true, if_not_exists: true
-    add_index :solid_queue_blocked_executions, [:concurrency_key, :priority, :job_id], if_not_exists: true
-    add_index :solid_queue_blocked_executions, [:expires_at, :concurrency_key], if_not_exists: true
+    add_index :solid_queue_blocked_executions, [ :concurrency_key, :priority, :job_id ], if_not_exists: true
+    add_index :solid_queue_blocked_executions, [ :expires_at, :concurrency_key ], if_not_exists: true
 
     create_table :solid_queue_failed_executions, if_not_exists: true do |t|
       t.bigint :job_id, null: false
@@ -81,7 +81,7 @@ class CreateSolidQueueTables < ActiveRecord::Migration[7.1]
       t.string :name, null: false
     end
     add_index :solid_queue_processes, :last_heartbeat_at, if_not_exists: true
-    add_index :solid_queue_processes, [:name, :supervisor_id], unique: true, if_not_exists: true
+    add_index :solid_queue_processes, [ :name, :supervisor_id ], unique: true, if_not_exists: true
     add_index :solid_queue_processes, :supervisor_id, if_not_exists: true
 
     create_table :solid_queue_semaphores, if_not_exists: true do |t|
@@ -91,7 +91,7 @@ class CreateSolidQueueTables < ActiveRecord::Migration[7.1]
       t.timestamps null: false
     end
     add_index :solid_queue_semaphores, :expires_at, if_not_exists: true
-    add_index :solid_queue_semaphores, [:key, :value], if_not_exists: true
+    add_index :solid_queue_semaphores, [ :key, :value ], if_not_exists: true
     add_index :solid_queue_semaphores, :key, unique: true, if_not_exists: true
 
     create_table :solid_queue_recurring_tasks, if_not_exists: true do |t|
@@ -116,6 +116,6 @@ class CreateSolidQueueTables < ActiveRecord::Migration[7.1]
       t.datetime :created_at, null: false
     end
     add_index :solid_queue_recurring_executions, :job_id, unique: true, if_not_exists: true
-    add_index :solid_queue_recurring_executions, [:task_key, :run_at], unique: true, if_not_exists: true
+    add_index :solid_queue_recurring_executions, [ :task_key, :run_at ], unique: true, if_not_exists: true
   end
 end

@@ -14,6 +14,6 @@ class ChangePasswordController < ApplicationController
     end
 
     current_user.update!(password: params[:password], must_change_password: false)
-    redirect_to '/catalogue.html', notice: "Mot de passe mis à jour. Bienvenue #{current_user.full_name} !"
+    redirect_to "/catalogue.html", notice: "Mot de passe mis à jour. Bienvenue #{current_user.full_name} !"
   end
 end

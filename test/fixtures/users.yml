@@ -1,0 +1,8 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  email: admin@induni.ch
+  password_digest: <%= BCrypt::Password.create("password123") %>
+  first_name: Admin
+  last_name: Test
+  admin: true

@@ -1,6 +1,6 @@
 class Admin::UsersController < ApplicationController
   before_action :require_admin
-  before_action :set_user, only: [:edit, :update, :destroy, :resend_welcome]
+  before_action :set_user, only: [ :edit, :update, :destroy, :resend_welcome ]
 
   def index
     @users = User.order(:last_name, :first_name)

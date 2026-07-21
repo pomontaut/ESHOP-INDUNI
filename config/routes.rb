@@ -7,16 +7,16 @@ Rails.application.routes.draw do
       post :resubmit_approval
       get  :download_eml
     end
-    resources :order_lines, only: [:create, :destroy]
+    resources :order_lines, only: [ :create, :destroy ]
   end
   namespace :api do
-    resources :orders, only: [:create, :index]
-    resources :products, only: [:index]
-    get :me, to: 'sessions#me'
+    resources :orders, only: [ :create, :index ]
+    resources :products, only: [ :index ]
+    get :me, to: "sessions#me"
   end
 
   namespace :admin do
-    resources :users, only: [:index, :new, :create, :edit, :update, :destroy] do
+    resources :users, only: [ :index, :new, :create, :edit, :update, :destroy ] do
       member { post :resend_welcome }
     end
   end
@@ -33,7 +33,7 @@ Rails.application.routes.draw do
 
   get "setup/admin", to: "setup#admin"
 
-  root to: redirect('/catalogue.html')
+  root to: redirect("/catalogue.html")
 
   if Rails.env.development?
     mount LetterOpenerWeb::Engine, at: "/emails"

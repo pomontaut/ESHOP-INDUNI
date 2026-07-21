@@ -1,5 +1,6 @@
 class User < ApplicationRecord
   has_secure_password
+  serialize :allowed_suppliers, coder: JSON, type: Array
 
   SECTORS = [
     "BAT GE", "BAT VD", "GC", "EG VS", "EG VD", "EG GE", "DEPOT",
@@ -22,7 +23,7 @@ class User < ApplicationRecord
   before_save { self.email = email.downcase }
 
   def full_name
-    [first_name, last_name].compact_blank.join(' ').presence || email
+    [ first_name, last_name ].compact_blank.join(" ").presence || email
   end
 
   def effective_can_create_users?  = admin? || can_create_users?

@@ -8,7 +8,7 @@ class ApprovalsController < ApplicationController
 
   def approve
     if @order.pending_approval?
-      @order.update!(approval_status: 'approved', status: 'approved')
+      @order.update!(approval_status: "approved", status: "approved")
       OrderMailer.approval_approved(@order).deliver_now rescue nil
     end
     render plain: "✅ Commande #{@order.number} approuvée. Le rédacteur a été notifié.", content_type: "text/plain"
@@ -17,7 +17,7 @@ class ApprovalsController < ApplicationController
   def refuse
     comment = params[:comment].to_s.strip
     if @order.pending_approval?
-      @order.update!(approval_status: 'refused', status: 'refused', approval_comment: comment)
+      @order.update!(approval_status: "refused", status: "refused", approval_comment: comment)
       OrderMailer.approval_refused(@order).deliver_now rescue nil
     end
     render plain: "❌ Commande #{@order.number} refusée. Le rédacteur a été notifié.", content_type: "text/plain"

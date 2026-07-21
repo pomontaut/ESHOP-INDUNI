@@ -1,20 +1,20 @@
-require 'net/http'
-require 'json'
+require "net/http"
+require "json"
 
 class SupabaseService
-  URL  = ENV.fetch('SUPABASE_URL', 'https://udlwkwryehrnjaqisvab.supabase.co')
-  KEY  = ENV.fetch('SUPABASE_SERVICE_KEY', '')
+  URL  = ENV.fetch("SUPABASE_URL", "https://udlwkwryehrnjaqisvab.supabase.co")
+  KEY  = ENV.fetch("SUPABASE_SERVICE_KEY", "")
 
   HEADERS = {
-    'apikey'        => KEY,
-    'Authorization' => "Bearer #{KEY}",
-    'Content-Type'  => 'application/json',
-    'Prefer'        => 'return=representation'
+    "apikey"        => KEY,
+    "Authorization" => "Bearer #{KEY}",
+    "Content-Type"  => "application/json",
+    "Prefer"        => "return=representation"
   }.freeze
 
   # Retourne tous les fournisseurs depuis Supabase
   def self.fetch_suppliers
-    get('/rest/v1/suppliers?select=*&order=name.asc')
+    get("/rest/v1/suppliers?select=*&order=name.asc")
   end
 
   # Retourne un fournisseur par nom (insensible à la casse)
@@ -26,7 +26,7 @@ class SupabaseService
 
   # Crée un fournisseur dans Supabase
   def self.create_supplier(attrs)
-    post('/rest/v1/suppliers', attrs)
+    post("/rest/v1/suppliers", attrs)
   end
 
   # Met à jour un fournisseur dans Supabase
@@ -42,22 +42,22 @@ class SupabaseService
   # Synchronise les fournisseurs Supabase → SQLite local
   def self.sync_to_local!
     remote = fetch_suppliers
-    return { synced: 0, errors: ['Impossible de contacter Supabase'] } if remote.nil?
+    return { synced: 0, errors: [ "Impossible de contacter Supabase" ] } if remote.nil?
 
     synced = 0
     remote.each do |s|
-      supplier = Supplier.find_or_initialize_by(name: s['name'])
+      supplier = Supplier.find_or_initialize_by(name: s["name"])
       supplier.assign_attributes(
-        email:   s['email'].presence || supplier.email,
-        phone:   s['phone'].presence || supplier.phone,
-        address: s['address'].presence || supplier.address
+        email:   s["email"].presence || supplier.email,
+        phone:   s["phone"].presence || supplier.phone,
+        address: s["address"].presence || supplier.address
       )
       supplier.save! if supplier.changed?
       synced += 1
     end
     { synced: synced, errors: [] }
   rescue => e
-    { synced: 0, errors: [e.message] }
+    { synced: 0, errors: [ e.message ] }
   end
 
   private

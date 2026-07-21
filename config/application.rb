@@ -9,7 +9,7 @@ Bundler.require(*Rails.groups)
 module EshopInduni
   class Application < Rails::Application
     config.i18n.default_locale = :fr
-    config.i18n.available_locales = [:fr, :en]
+    config.i18n.available_locales = [ :fr, :en ]
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.1
 

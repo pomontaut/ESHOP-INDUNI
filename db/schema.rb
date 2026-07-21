@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_25_062146) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_17_150000) do
   create_table "order_lines", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "order_id", null: false
@@ -23,6 +23,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_062146) do
   end
 
   create_table "orders", force: :cascade do |t|
+    t.text "approval_comment"
+    t.string "approval_status", default: "approved"
+    t.string "approval_token"
+    t.string "approver_email"
     t.datetime "created_at", null: false
     t.text "notes"
     t.string "number"
@@ -30,30 +34,70 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_062146) do
     t.string "status"
     t.integer "supplier_id", null: false
     t.datetime "updated_at", null: false
+    t.integer "user_id"
     t.index ["supplier_id"], name: "index_orders_on_supplier_id"
+    t.index ["user_id"], name: "index_orders_on_user_id"
   end
 
   create_table "products", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.text "descriptif"
+    t.string "famille"
+    t.string "icone"
+    t.string "image"
     t.string "name"
     t.string "reference"
+    t.string "sous_famille"
+    t.string "sous_sous_famille"
     t.integer "supplier_id", null: false
     t.decimal "unit_price"
+    t.string "unite"
     t.datetime "updated_at", null: false
+    t.index ["supplier_id", "reference"], name: "index_products_on_supplier_id_and_reference", unique: true
     t.index ["supplier_id"], name: "index_products_on_supplier_id"
   end
 
   create_table "suppliers", force: :cascade do |t|
     t.text "address"
+    t.string "city"
+    t.string "country_code"
     t.datetime "created_at", null: false
     t.string "email"
+    t.string "fax"
+    t.string "ide_number"
+    t.boolean "inactive", default: false
     t.string "name"
+    t.string "payment_condition"
     t.string "phone"
+    t.string "postal_code"
+    t.string "supplier_number"
     t.datetime "updated_at", null: false
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.boolean "admin", default: false
+    t.text "allowed_suppliers"
+    t.string "approver_email"
+    t.boolean "can_create_orders", default: false, null: false
+    t.boolean "can_create_users", default: false, null: false
+    t.boolean "can_modify_orders", default: false, null: false
+    t.boolean "can_read", default: true, null: false
+    t.datetime "created_at", null: false
+    t.string "email", null: false
+    t.string "first_name"
+    t.string "job_function"
+    t.string "last_name"
+    t.boolean "must_change_password", default: false, null: false
+    t.decimal "order_limit", precision: 10, scale: 2
+    t.string "password_digest", null: false
+    t.string "sector"
+    t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_users_on_email", unique: true
   end
 
   add_foreign_key "order_lines", "orders"
   add_foreign_key "order_lines", "products"
   add_foreign_key "orders", "suppliers"
+  add_foreign_key "orders", "users"
   add_foreign_key "products", "suppliers"
 end
