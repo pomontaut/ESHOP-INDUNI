@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
   resources :suppliers
   resources :products
+  resources :chantiers, only: [ :index, :show ]
   resources :orders do
     member do
       post :send_to_supplier

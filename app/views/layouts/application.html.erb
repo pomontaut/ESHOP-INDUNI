@@ -29,6 +29,9 @@
             <li class="nav-item">
               <%= link_to "Bon de commande", "/bon_de_commande.html", class: "nav-link", target: "_blank" %>
             </li>
+            <li class="nav-item">
+              <%= link_to "Chantiers", chantiers_path, class: "nav-link" %>
+            </li>
             <% if current_user&.admin? %>
               <li class="nav-item">
                 <%= link_to "Admin", admin_users_path, class: "nav-link" %>

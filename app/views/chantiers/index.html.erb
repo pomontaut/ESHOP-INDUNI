@@ -1,0 +1,34 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1>Chantiers</h1>
+  <%= form_with url: chantiers_path, method: :get, class: "d-flex" do %>
+    <%= text_field_tag :q, params[:q], placeholder: "Rechercher un chantier...", class: "form-control" %>
+    <%= submit_tag "Rechercher", class: "btn btn-secondary ms-2" %>
+  <% end %>
+</div>
+
+<% if @chantiers.empty? %>
+  <p class="text-muted">Aucun chantier ne vous est actuellement affecté.</p>
+<% else %>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Chantier</th>
+        <th>Adresse</th>
+        <th>Technicien</th>
+        <th>Contremaître</th>
+        <th>Chef d'équipe</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @chantiers.each do |chantier| %>
+        <tr>
+          <td><%= link_to chantier.nom, chantier %></td>
+          <td><%= [ chantier.adresse, chantier.npa, chantier.ville ].compact_blank.join(", ") %></td>
+          <td><%= chantier.technicien %></td>
+          <td><%= chantier.contremaitre %></td>
+          <td><%= chantier.chef_equipe %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

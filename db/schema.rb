@@ -10,7 +10,31 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_21_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_21_170000) do
+  create_table "chantiers", force: :cascade do |t|
+    t.string "adresse"
+    t.string "carte_interactive"
+    t.string "chef_equipe"
+    t.boolean "consortium", default: false, null: false
+    t.text "contraintes_acces"
+    t.string "contremaitre"
+    t.datetime "created_at", null: false
+    t.string "email_chef_equipe"
+    t.string "email_contremaitre"
+    t.string "email_technicien"
+    t.string "natel_chef_equipe"
+    t.string "natel_contremaitre"
+    t.string "natel_technicien"
+    t.string "nom", null: false
+    t.string "npa"
+    t.string "technicien"
+    t.datetime "updated_at", null: false
+    t.string "ville"
+    t.index ["email_chef_equipe"], name: "index_chantiers_on_email_chef_equipe"
+    t.index ["email_contremaitre"], name: "index_chantiers_on_email_contremaitre"
+    t.index ["email_technicien"], name: "index_chantiers_on_email_technicien"
+  end
+
   create_table "order_lines", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "order_id", null: false
