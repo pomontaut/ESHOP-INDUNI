@@ -557,8 +557,12 @@ function equivalentScore(a,b){
   if(['poutrelle_h20','lambourde'].includes(ka) && !(la&&lb&&Math.abs(la-lb)<=20)) score-=45;
   return score;
 }
-function confidenceLabel(score){if(score>=155)return'<span class="equivBest">équivalent fort</span>'; if(score>=115)return'<span class="equivMaybe">équiv. probable</span>'; return'<span class="equivMaybe">à valider</span>'}
-function findEquivalents(p){return PRODUCTS.map(x=>({p:x,score:equivalentScore(p,x)})).filter(x=>x.score>=110).sort((a,b)=>b.score-a.score||((comparablePrice(a.p)?.value||Number(a.p.prix)||0)-(comparablePrice(b.p)?.value||Number(b.p.prix)||0))).slice(0,4).map(x=>({...x.p,score:x.score}));}
+function confidenceLabel(score){return '<span class="equivBest">équivalent</span>';}
+// Équivalence exacte issue de la base article Induni (même ligne du fichier de référence) — pas de suggestion probabiliste.
+function findEquivalents(p){
+  if(!p.equivalenceKey) return [];
+  return PRODUCTS.filter(x=>x.equivalenceKey===p.equivalenceKey && x._idx!==p._idx);
+}
 function equivPriceText(p){const c=comparablePrice(p); if(!c)return `${fmt(p.prix)} / ${esc(p.unite)}`; const raw=`${fmt(p.prix)} / ${esc(p.unite)}`; const comp=(c.unit&&String(c.unit).toUpperCase()!==String(p.unite).toUpperCase())?` <span class="equivMeta">≈ ${fmt(c.value)} / ${esc(c.unit)}${c.note?' · '+esc(c.note):''}</span>`:''; return raw+comp;}
 function equivalentBlock(p){
   const eq=findEquivalents(p); const cp=comparablePrice(p);

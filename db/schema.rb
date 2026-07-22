@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_21_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_22_110000) do
   create_table "chantiers", force: :cascade do |t|
     t.string "adresse"
     t.string "carte_interactive"
@@ -37,8 +37,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_170000) do
 
   create_table "order_lines", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.bigint "order_id", null: false
-    t.bigint "product_id", null: false
+    t.integer "order_id", null: false
+    t.integer "product_id", null: false
     t.integer "quantity"
     t.decimal "unit_price"
     t.datetime "updated_at", null: false
@@ -56,9 +56,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_170000) do
     t.string "number"
     t.date "order_date"
     t.string "status"
-    t.bigint "supplier_id", null: false
+    t.integer "supplier_id", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id"
+    t.integer "user_id"
     t.index ["supplier_id"], name: "index_orders_on_supplier_id"
     t.index ["user_id"], name: "index_orders_on_user_id"
   end
@@ -66,6 +66,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_170000) do
   create_table "products", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "descriptif"
+    t.string "equivalence_key"
     t.string "famille"
     t.string "icone"
     t.string "image"
@@ -73,10 +74,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_170000) do
     t.string "reference"
     t.string "sous_famille"
     t.string "sous_sous_famille"
-    t.bigint "supplier_id", null: false
+    t.integer "supplier_id", null: false
     t.decimal "unit_price"
     t.string "unite"
     t.datetime "updated_at", null: false
+    t.index ["equivalence_key"], name: "index_products_on_equivalence_key"
     t.index ["supplier_id", "reference"], name: "index_products_on_supplier_id_and_reference", unique: true
     t.index ["supplier_id"], name: "index_products_on_supplier_id"
   end
