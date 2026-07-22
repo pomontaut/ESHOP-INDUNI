@@ -16,8 +16,9 @@ Rails.application.configure do
   config.action_controller.perform_caching = true
 
   # public/ holds live app pages (catalogue.html, bon_de_commande.html), not
-  # digest-stamped assets — force revalidation so deploys aren't masked by stale caches.
-  config.public_file_server.headers = { "cache-control" => "public, max-age=0, must-revalidate" }
+  # digest-stamped assets — disable caching entirely so deploys aren't masked
+  # by a stale copy (browser or an intermediary proxy) requiring a hard refresh.
+  config.public_file_server.headers = { "cache-control" => "no-store, no-cache, must-revalidate" }
 
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
