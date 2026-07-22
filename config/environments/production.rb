@@ -47,9 +47,11 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
-  # Use SECRET_KEY_BASE env var if set; otherwise generate a random key per-boot
-  # (set SECRET_KEY_BASE in Railway variables for persistent sessions)
-  config.secret_key_base = ENV.fetch("SECRET_KEY_BASE") { SecureRandom.hex(64) }
+  # Use SECRET_KEY_BASE env var if set; otherwise fall back to a fixed key so
+  # sessions survive redeploys even when Railway variables aren't configured.
+  # Prefer setting SECRET_KEY_BASE in Railway variables when possible.
+  config.secret_key_base = ENV.fetch("SECRET_KEY_BASE",
+    "1da4ade4ee59cb39402175eaa6d30050190b43cc52b68ecb09f590d1f3eec820734b1115da7b61bfcabdb50ae36e85310e6d968800944650b49c9b8f171dec4d")
 
   # Allow all hosts (Railway proxy sets Host header dynamically)
   config.hosts = nil

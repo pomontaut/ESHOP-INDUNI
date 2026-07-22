@@ -477,7 +477,7 @@ function eqTokens(p){return normEqText(`${p.designation} ${p.descriptif} ${p.fam
 function fullTxt(p){return String(`${p.designation||''} ${p.descriptif||''} ${p.famille||''} ${p.sousFamille||''} ${p.sousSousFamille||''}`)}
 function dimsArray(p){const txt=fullTxt(p).replace(/,/g,'.'); const found=[]; const re=/\b(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)(?:\s*x\s*(\d+(?:\.\d+)?))?\s*(mm|cm|m)?\b/gi; let m; while((m=re.exec(txt))){let unit=(m[4]||'mm').toLowerCase(); let mult=unit==='m'?1000:(unit==='cm'?10:1); found.push([m[1],m[2],m[3]].filter(Boolean).map(Number).map(v=>Math.round(v*mult)).join('x'))} return [...new Set(found)]}
 function dimsNums(p){return dimsArray(p).map(d=>d.split('x').map(Number))}
-function lengthMm(p){const txt=fullTxt(p).replace(/,/g,'.'); let m=txt.match(/\bL\s*(\d+(?:\.\d+)?)\s*(mm|cm|m)\b/i); if(m){const mult=m[2].toLowerCase()==='m'?1000:(m[2].toLowerCase()==='cm'?10:1); return Math.round(Number(m[1])*mult)} const dn=dimsNums(p); for(const a of dn){if(a.length>=3) return Math.max(...a)} return null}
+function lengthMm(p){const txt=fullTxt(p).replace(/,/g,'.'); let m=txt.match(/\bL\s*=?\s*(\d+(?:\.\d+)?)\s*(mm|cm|m)\b/i); if(m){const mult=m[2].toLowerCase()==='m'?1000:(m[2].toLowerCase()==='cm'?10:1); return Math.round(Number(m[1])*mult)} const dn=dimsNums(p); for(const a of dn){if(a.length>=3) return Math.max(...a)} return null}
 function thicknessMm(p){const ds=dimsNums(p); for(const a of ds){if(a.length>=3) return Math.min(...a)} const m=fullTxt(p).replace(/,/g,'.').match(/\b(\d+(?:\.\d+)?)\s*mm\b/i); return m?Math.round(Number(m[1])):null}
 function areaM2(p){for(const a of dimsNums(p)){if(a.length>=3){const sorted=[...a].sort((x,y)=>x-y); return +(sorted[1]*sorted[2]/1000000).toFixed(4)}}return null}
 function dnValue(p){const m=fullTxt(p).match(/DN\s*([0-9]+)/i); return m?Number(m[1]):null}
@@ -591,7 +591,7 @@ function openOutlookDraft(no,chantier,supplier){
 
 function productCard(p){const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation); return `<div class="prod"><div class="prodImg" style="background-image:url('${img(p.image)}')"><span class="tag">${esc(p.catalog)}</span></div><div class="prodBody"><h4>${esc(p.designation)}</h4><div class="desc">${esc(p.descriptif)}</div><div class="article">N° article : ${esc(p.article)}</div>${p.synonymes?`<div class="synHint">Recherche aussi : ${esc(p.synonymes.split(/\s+/).slice(0,8).join(", "))}</div>`:""}<div class="price">${fmt(p.prix)} <span class="unit">/ ${esc(p.unite)}</span></div>${(()=>{
   const eq=findEquivalents(p);
-  if(!eq.length) return '<div class="equivBox emptyEquiv"><div class="equivTitle">Comparatif fournisseurs</div><div class="equivMeta">Aucun équivalent fiable détecté.</div></div>';
+  if(!eq.length) return '';
   const cp=comparablePrice(p);
   const all=[p,...eq];
   const compUnit=cp?.unit;
@@ -956,6 +956,17 @@ function scoreProductV49(p,q){
     const ftp=fullTxt(p);
     if(dr1.test(ftp)||dr2.test(ftp)) score+=90;
   }
+  // Longueur explicite dans la requête (ex. "5m", "L=5 M") : bonus fort si
+  // l'article correspond exactement, pénalité s'il correspond à une autre longueur.
+  const qLenMatch=normV49(q).match(/\b(\d+(?:[.,]\d+)?)\s*m\b(?!m)/i);
+  if(qLenMatch){
+    const qLenMm=Math.round(parseFloat(qLenMatch[1].replace(',','.'))*1000);
+    const pLen=lengthMm(p);
+    if(pLen!=null){
+      if(Math.abs(pLen-qLenMm)<1) score+=200;
+      else score-=150;
+    }
+  }
   _scoreCache.set(cacheKey, score);
   return score;
 }
@@ -964,7 +975,7 @@ function productCardFast(p, scoreVal){
   const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation);
   const cp=comparablePrice(p);
   const cpHtml=cp&&cp.unit&&cp.unit!==String(p.unite||'').toUpperCase()?`<div class="unit equivMeta">≈ ${fmt(cp.value)} / ${esc(cp.unit)}</div>`:'';
-  return `<div class="prod"><div class="prodImg" style="background-image:url('${img(p.image)}')"><span class="tag">${esc(p.catalog)}</span></div><div class="prodBody"><h4>${esc(p.designation)} <span class="scoreBadge">⭐${scoreVal}</span></h4><div class="desc">${esc(p.descriptif)}</div><div class="article">N° ${esc(p.article)}</div><div class="price">${fmt(p.prix)} <span class="unit">/ ${esc(p.unite)}</span></div>${cpHtml}<div id="eq_${p._idx}" class="equivBox emptyEquiv" style="cursor:pointer" onclick="loadEquivCard(${p._idx},this)"><div class="equivTitle">🔄 Voir comparatif fournisseurs</div></div><button class="add ${inCart?'ok':''}" onclick="addCartByIndex(${Number(p._idx)})">${inCart?'✓ Dans le panier':'+ Ajouter au panier'}</button></div></div>`;
+  return `<div class="prod"><div class="prodImg" style="background-image:url('${img(p.image)}')"><span class="tag">${esc(p.catalog)}</span></div><div class="prodBody"><h4>${esc(p.designation)} <span class="scoreBadge">⭐${scoreVal}</span></h4><div class="desc">${esc(p.descriptif)}</div><div class="article">N° ${esc(p.article)}</div><div class="price">${fmt(p.prix)} <span class="unit">/ ${esc(p.unite)}</span></div>${cpHtml}${p.equivalenceKey?`<div id="eq_${p._idx}" class="equivBox emptyEquiv" style="cursor:pointer" onclick="loadEquivCard(${p._idx},this)"><div class="equivTitle">🔄 Voir comparatif fournisseurs</div></div>`:""}<button class="add ${inCart?'ok':''}" onclick="addCartByIndex(${Number(p._idx)})">${inCart?'✓ Dans le panier':'+ Ajouter au panier'}</button></div></div>`;
 }
 function loadEquivCard(idx, el){
   el.onclick=null;
