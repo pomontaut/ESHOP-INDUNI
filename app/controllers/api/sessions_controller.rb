@@ -12,7 +12,8 @@ class Api::SessionsController < ApplicationController
         can_create_users:  current_user.effective_can_create_users?,
         can_create_orders: current_user.effective_can_create_orders?,
         can_modify_orders: current_user.effective_can_modify_orders?,
-        allowed_suppliers: current_user.allowed_suppliers
+        allowed_suppliers: current_user.allowed_suppliers,
+        chantiers:         Chantier.visible_to(current_user).order(:nom).pluck(:nom)
       }
     else
       render json: { logged_in: false, admin: false, allowed_suppliers: [] }
