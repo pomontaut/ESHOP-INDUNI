@@ -86,7 +86,7 @@
 .equivRow{font-size:12px;line-height:1.25;border-top:1px solid #eef2f7;padding:6px 0}
 .equivRow:first-of-type{border-top:0}
 .equivSupplier{font-weight:1000;color:#10233e}
-.equivBest{display:inline-block;background:#176b28;color:white;border-radius:999px;padding:2px 6px;font-size:10px;margin-left:4px}
+.equivBest{display:inline-block;background:#b91c1c;color:white;border-radius:999px;padding:2px 6px;font-size:10px;margin-left:4px}
 .equivMaybe{display:inline-block;background:#fff4de;color:#9a5b00;border-radius:999px;padding:2px 6px;font-size:10px;margin-left:4px}
 .equivMeta{color:#697386}.equivPrice{font-weight:1000;color:#f1642a}
 
@@ -563,6 +563,16 @@ function findEquivalents(p){
   if(!p.equivalenceKey) return [];
   return PRODUCTS.filter(x=>x.equivalenceKey===p.equivalenceKey && x._idx!==p._idx);
 }
+function selfBestBadge(p){
+  const eq=findEquivalents(p);
+  if(!eq.length) return '';
+  const cp=comparablePrice(p);
+  const all=[p,...eq];
+  const compUnit=cp?.unit;
+  const comparable=all.map(x=>({x,c:comparablePrice(x)})).filter(o=>o.c&&o.c.unit===compUnit);
+  const min=comparable.length?Math.min(...comparable.map(o=>o.c.value)):Math.min(...all.map(x=>Number(x.prix)||Infinity));
+  return (cp&&Math.abs(cp.value-min)<0.0001)?'<span class="equivBest">✓ le moins cher</span>':'';
+}
 function equivPriceText(p){const c=comparablePrice(p); if(!c)return `${fmt(p.prix)} / ${esc(p.unite)}`; const raw=`${fmt(p.prix)} / ${esc(p.unite)}`; const comp=(c.unit&&String(c.unit).toUpperCase()!==String(p.unite).toUpperCase())?` <span class="equivMeta">≈ ${fmt(c.value)} / ${esc(c.unit)}${c.note?' · '+esc(c.note):''}</span>`:''; return raw+comp;}
 function equivalentBlock(p){
   const eq=findEquivalents(p); const cp=comparablePrice(p);
@@ -571,8 +581,7 @@ function equivalentBlock(p){
   const min=comparable.length?Math.min(...comparable.map(o=>o.c.value)):Math.min(...all.map(x=>Number(x.prix)||Infinity));
   const base=cp?.value||Number(p.prix)||0;
   const rows=eq.map(e=>{const ce=comparablePrice(e); const val=ce?.value||Number(e.prix)||0; const diff=(base&&val&&ce&&cp&&ce.unit===cp.unit)?(((val-base)/base)*100):null; const isBest=ce&&cp&&ce.unit===cp.unit&&Math.abs(val-min)<0.0001; const best=isBest?'<span class="equivBest">meilleur prix comparable</span>':confidenceLabel(e.score); const delta=diff!==null?` · écart ${diff>0?'+':''}${diff.toFixed(1)}%`:''; return `<div class="equivRow"><div><span class="equivSupplier">${esc(e.catalog)}</span>${best}</div><div>${esc(e.designation)}</div><div class="equivMeta">N° ${esc(e.article)} · <span class="equivPrice">${equivPriceText(e)}</span>${delta}</div></div>`}).join('');
-  const selfBest=(cp&&Math.abs(cp.value-min)<0.0001)?'<span class="equivBest">cet article est le moins cher comparable</span>':'';
-  return `<div class="equivBox"><div class="equivTitle">Comparatif fournisseurs ${selfBest}</div><div class="equivMeta">Base comparaison : ${esc(cp?cp.unit:p.unite)}${cp?.note?' · '+esc(cp.note):''}</div>${rows}</div>`;
+  return `<div class="equivBox"><div class="equivTitle">Comparatif fournisseurs</div><div class="equivMeta">Base comparaison : ${esc(cp?cp.unit:p.unite)}${cp?.note?' · '+esc(cp.note):''}</div>${rows}</div>`;
 }
 
 function getOrderHistory(){if(window._serverOrders&&window._serverOrders.length>=0)return window._serverOrders;try{return JSON.parse(localStorage.getItem('induni_orders_v1')||'[]')}catch(e){return []}}
@@ -589,7 +598,7 @@ function openOutlookDraft(no,chantier,supplier){
   window.location.href='mailto:?subject='+subject+'&body='+body;
 }
 
-function productCard(p){const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation); return `<div class="prod"><div class="prodImg" style="background-image:url('${img(p.image)}')"><span class="tag">${esc(p.catalog)}</span></div><div class="prodBody"><h4>${esc(p.designation)}</h4><div class="desc">${esc(p.descriptif)}</div><div class="article">N° article : ${esc(p.article)}</div>${p.synonymes?`<div class="synHint">Recherche aussi : ${esc(p.synonymes.split(/\s+/).slice(0,8).join(", "))}</div>`:""}<div class="price">${fmt(p.prix)} <span class="unit">/ ${esc(p.unite)}</span></div>${(()=>{
+function productCard(p){const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation); return `<div class="prod"><div class="prodImg" style="background-image:url('${img(p.image)}')"><span class="tag">${esc(p.catalog)}</span></div><div class="prodBody"><h4>${esc(p.designation)}</h4><div class="desc">${esc(p.descriptif)}</div><div class="article">N° article : ${esc(p.article)}</div>${selfBestBadge(p)}${p.synonymes?`<div class="synHint">Recherche aussi : ${esc(p.synonymes.split(/\s+/).slice(0,8).join(", "))}</div>`:""}<div class="price">${fmt(p.prix)} <span class="unit">/ ${esc(p.unite)}</span></div>${(()=>{
   const eq=findEquivalents(p);
   if(!eq.length) return '';
   const cp=comparablePrice(p);
@@ -599,8 +608,7 @@ function productCard(p){const inCart=cart.some(i=>normalizeSupplierName(i.catalo
   const min=comparable.length?Math.min(...comparable.map(o=>o.c.value)):Math.min(...all.map(x=>Number(x.prix)||Infinity));
   const base=cp?.value||Number(p.prix)||0;
   const rows=eq.map(e=>{const ce=comparablePrice(e);const val=ce?.value||Number(e.prix)||0;const diff=(base&&val&&ce&&cp&&ce.unit===cp.unit)?(((val-base)/base)*100):null;const isBest=ce&&cp&&ce.unit===cp.unit&&Math.abs(val-min)<0.0001;const best=isBest?'<span class="equivBest">meilleur prix</span>':confidenceLabel(e.score);const delta=diff!==null?` · ${diff>0?'+':''}${diff.toFixed(1)}%`:'';return `<div class="equivRow"><span class="equivSupplier">${esc(e.catalog)}</span>${best} ${esc(e.designation.slice(0,40))}<br><span class="equivMeta">N°${esc(e.article)} · <span class="equivPrice">${equivPriceText(e)}</span>${delta}</span></div>`;}).join('');
-  const selfBest=(cp&&Math.abs(cp.value-min)<0.0001)?'<span class="equivBest">✓ meilleur prix</span>':'';
-  return `<div class="equivBox"><div class="equivTitle">🔄 Comparatif fournisseurs ${selfBest}</div><div class="equivMeta">Base : ${esc(cp?cp.unit:p.unite)}</div>${rows}</div>`;
+  return `<div class="equivBox"><div class="equivTitle">🔄 Comparatif fournisseurs</div><div class="equivMeta">Base : ${esc(cp?cp.unit:p.unite)}</div>${rows}</div>`;
 })()}<button class="add ${inCart?'ok':''}" onclick="addCartByIndex(${Number(p._idx)})">${inCart?'✓ Dans le panier':'+ Ajouter au panier'}</button></div></div>`}
 function renderProducts(){const rawItems=PRODUCTS.filter(p=>p.catalog===state.catalog&&p.famille===state.famille&&(state.sous==='__ALL__'||p.sousFamille===state.sous)&&(!state.sous2||state.sous2==='__ALL__'||p.sousSousFamille===state.sous2)); const items=sortProductsInduni(rawItems); const label=state.sous==='__ALL__'?'Voir tout':(state.sous2&&state.sous2!=='__ALL__'?state.sous2:state.sous); app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a> › <a onclick='state.view="family";render()'>${esc(state.famille)}</a> ${state.sous&&state.sous!=='__ALL__'?`› <a onclick='state.view="subfamily";render()'>${esc(state.sous)}</a>`:''} › <b>${esc(label)}</b></div><div class="toolbar"><h2>${esc(label)}</h2><p class="muted">${items.length} articles</p></div>${sortBarInduni()}<div class="products">${items.map(productCard).join('')}<div class="generic" onclick="openModal('genericModal')"><div style="text-align:center"><div style="font-size:48px">＋</div><h3>Article générique</h3><p>Créer un article personnalisé<br>avec descriptif et prix libre</p></div></div></div>`}
 function renderSearch(q){
@@ -975,7 +983,7 @@ function productCardFast(p, scoreVal){
   const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation);
   const cp=comparablePrice(p);
   const cpHtml=cp&&cp.unit&&cp.unit!==String(p.unite||'').toUpperCase()?`<div class="unit equivMeta">≈ ${fmt(cp.value)} / ${esc(cp.unit)}</div>`:'';
-  return `<div class="prod"><div class="prodImg" style="background-image:url('${img(p.image)}')"><span class="tag">${esc(p.catalog)}</span></div><div class="prodBody"><h4>${esc(p.designation)} <span class="scoreBadge">⭐${scoreVal}</span></h4><div class="desc">${esc(p.descriptif)}</div><div class="article">N° ${esc(p.article)}</div><div class="price">${fmt(p.prix)} <span class="unit">/ ${esc(p.unite)}</span></div>${cpHtml}${p.equivalenceKey?`<div id="eq_${p._idx}" class="equivBox emptyEquiv" style="cursor:pointer" onclick="loadEquivCard(${p._idx},this)"><div class="equivTitle">🔄 Voir comparatif fournisseurs</div></div>`:""}<button class="add ${inCart?'ok':''}" onclick="addCartByIndex(${Number(p._idx)})">${inCart?'✓ Dans le panier':'+ Ajouter au panier'}</button></div></div>`;
+  return `<div class="prod"><div class="prodImg" style="background-image:url('${img(p.image)}')"><span class="tag">${esc(p.catalog)}</span></div><div class="prodBody"><h4>${esc(p.designation)} <span class="scoreBadge">⭐${scoreVal}</span></h4><div class="desc">${esc(p.descriptif)}</div><div class="article">N° ${esc(p.article)}</div>${selfBestBadge(p)}<div class="price">${fmt(p.prix)} <span class="unit">/ ${esc(p.unite)}</span></div>${cpHtml}${p.equivalenceKey?`<div id="eq_${p._idx}" class="equivBox emptyEquiv" style="cursor:pointer" onclick="loadEquivCard(${p._idx},this)"><div class="equivTitle">🔄 Voir comparatif fournisseurs</div></div>`:""}<button class="add ${inCart?'ok':''}" onclick="addCartByIndex(${Number(p._idx)})">${inCart?'✓ Dans le panier':'+ Ajouter au panier'}</button></div></div>`;
 }
 function loadEquivCard(idx, el){
   el.onclick=null;
@@ -990,8 +998,7 @@ function loadEquivCard(idx, el){
   const min=comparable.length?Math.min(...comparable.map(o=>o.c.value)):Number(p.prix);
   const base=cp?.value||Number(p.prix)||0;
   const rows=eq.map(e=>{const ce=comparablePrice(e);const val=ce?.value||Number(e.prix)||0;const diff=(base&&val&&ce&&cp&&ce.unit===cp.unit)?(((val-base)/base)*100):null;const isBest=ce&&cp&&ce.unit===cp.unit&&Math.abs(val-min)<0.0001;const best=isBest?'<span class="equivBest">✓ meilleur prix</span>':confidenceLabel(e.score);const delta=diff!==null?` · ${diff>0?'+':''}${diff.toFixed(1)}%`:'';return `<div class="equivRow"><span class="equivSupplier">${esc(e.catalog)}</span>${best} — ${esc(e.designation.slice(0,45))}<br><span class="equivMeta">N°${esc(e.article)} · <span class="equivPrice">${equivPriceText(e)}</span>${delta}</span></div>`;}).join('');
-  const selfBest=(cp&&Math.abs(cp.value-min)<0.0001)?'<span class="equivBest">✓ cet article est le moins cher</span>':'';
-  el.innerHTML=`<div class="equivTitle">🔄 Comparatif fournisseurs ${selfBest}</div><div class="equivMeta">Base : ${esc(cp?cp.unit:p.unite)}</div>${rows}`;
+  el.innerHTML=`<div class="equivTitle">🔄 Comparatif fournisseurs</div><div class="equivMeta">Base : ${esc(cp?cp.unit:p.unite)}</div>${rows}`;
 }
 function renderSearch(q){
   const locked=cartSupplier();
@@ -1210,7 +1217,7 @@ styleEquiv.textContent = `
 .equivRow { font-size:12px; border-top:1px solid #e8f0fb; padding:6px 0; display:flex; flex-direction:column; gap:2px; }
 .equivRow:first-of-type { border-top:0; }
 .equivSupplier { font-weight:900; color:#0c1d34; font-size:13px; }
-.equivBest { background:#176b28; color:white; border-radius:999px; padding:2px 7px; font-size:10px; margin-left:5px; }
+.equivBest { background:#b91c1c; color:white; border-radius:999px; padding:2px 7px; font-size:10px; margin-left:5px; }
 .equivMaybe { background:#fff4de; color:#9a5b00; border-radius:999px; padding:2px 7px; font-size:10px; margin-left:5px; }
 .equivPrice { font-weight:900; color:#f1642a; font-size:13px; }
 .equivMeta { color:#697386; font-size:11px; }
