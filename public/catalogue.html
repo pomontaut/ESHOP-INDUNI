@@ -1349,11 +1349,25 @@ Promise.all([
   window._userPerms = perms;
   window._serverOrders = Array.isArray(orders) ? orders : [];
   const chantiersList = document.getElementById('chantiersList');
-  if(chantiersList && Array.isArray(perms.chantiers)) {
-    chantiersList.innerHTML = perms.chantiers.map(function(c){ return '<option value="'+esc(c)+'"></option>'; }).join('');
+  window._chantiers = Array.isArray(perms.chantiers) ? perms.chantiers : [];
+  if(chantiersList) {
+    chantiersList.innerHTML = window._chantiers.map(function(c){ return '<option value="'+esc(c.nom)+'"></option>'; }).join('');
   }
+  const chantierInput = document.getElementById('chantier');
+  if(chantierInput) chantierInput.addEventListener('input', fillChantierContact);
   if(perms.admin||perms.can_create_users) document.getElementById('adminNavLink').style.display='inline-flex';
   render();
 }).catch(()=>{});
+function fillChantierContact(){
+  const val=this.value;
+  const c=(window._chantiers||[]).find(function(x){ return x.nom===val; });
+  if(!c) return;
+  const adresseEl=document.getElementById('adresse');
+  const contactEl=document.getElementById('contact');
+  const phoneEl=document.getElementById('phone');
+  if(adresseEl) adresseEl.value=[c.adresse,[c.npa,c.ville].filter(Boolean).join(' ')].filter(Boolean).join('\n');
+  if(contactEl && c.contact) contactEl.value=c.contact;
+  if(phoneEl && c.telephone) phoneEl.value=c.telephone;
+}
 </script>
 </body></html>
