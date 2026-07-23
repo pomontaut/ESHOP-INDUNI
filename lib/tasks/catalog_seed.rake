@@ -1,0 +1,99 @@
+namespace :catalog do
+  # The real catalog/chantiers data is only ever created inside data-migration
+  # `up` methods. That's fragile: on a fresh/empty database Rails' db:migrate
+  # takes a "load db/schema.rb + stamp schema_migrations" shortcut instead of
+  # replaying every migration's `up`, which silently skips all that seeding
+  # (schema.rb only ever contains structure, never data). This task
+  # idempotently (re)creates the essential reference data — suppliers,
+  # catalog products, chantiers — so it can be run unconditionally on every
+  # boot as a safety net, regardless of how the schema got there.
+  desc "Idempotently (re)seed suppliers, catalog products and chantiers from db/seed_data"
+  task seed: :environment do
+    REQUIRED_SUPPLIERS = {
+      "HGC" => {
+        email: "yannick.mace@hgc.ch", phone: "0041 22 343 85 50", fax: "0041 22 343 40 92",
+        address: "Stauffacherquai 46", postal_code: "8022", city: "Zürich", country_code: "CH",
+        supplier_number: "230977", ide_number: "CHE-105.836.561", payment_condition: "30 jours 2%"
+      },
+      "Canplast" => {
+        email: "commandes@canplast.ch", phone: "0041 21 637 37 77", fax: "0041 21 637 37 78",
+        address: "Route de Sollens 2B", postal_code: "1029", city: "Villars-Ste-Croix", country_code: "CH",
+        supplier_number: "883849", ide_number: "CHE-106.016.827", payment_condition: "30 jours 5%"
+      },
+      "Leuba HIAG" => {
+        email: "william.bouquet@leubahiag.ch", phone: "0041 58 470 66 66",
+        address: "Planchettes 1", postal_code: "1032", city: "Romanel-s-Lausanne", country_code: "CH",
+        supplier_number: "100123867", ide_number: "CHE-100.123.867", payment_condition: "30 jours 2%"
+      }
+    }.freeze
+
+    Supplier.where(name: [ "Sika", "Alzo" ]).find_each do |supplier|
+      supplier.products.delete_all
+      supplier.destroy
+    end
+
+    REQUIRED_SUPPLIERS.each do |name, attrs|
+      Supplier.find_or_initialize_by(name: name).update!(attrs)
+    end
+
+    catalog_path = Rails.root.join("db/seed_data/catalog_products.json")
+    if File.exist?(catalog_path)
+      supplier_ids = Supplier.where(name: REQUIRED_SUPPLIERS.keys).pluck(:name, :id).to_h
+      items = JSON.parse(File.read(catalog_path)).select { |it| supplier_ids.key?(it["catalog"]) }
+      now = Time.current
+
+      rows = items.map do |it|
+        {
+          supplier_id:       supplier_ids[it["catalog"]],
+          reference:         it["article"],
+          name:              it["designation"],
+          unit_price:        it["prix"],
+          descriptif:        it["descriptif"],
+          unite:             it["unite"],
+          famille:           it["famille"],
+          sous_famille:      it["sousFamille"],
+          sous_sous_famille: it["sousSousFamille"],
+          icone:             it["icone"],
+          image:             it["image"],
+          equivalence_key:   it["equivalenceKey"].presence,
+          created_at:        now,
+          updated_at:        now
+        }
+      end.uniq { |r| [ r[:supplier_id], r[:reference] ] }
+
+      rows.each_slice(500) do |slice|
+        Product.upsert_all(slice, unique_by: :index_products_on_supplier_id_and_reference)
+      end
+
+      # HGC and Leuba HIAG sheets cover ~99% of the known catalog: treat them
+      # as a full refresh (items missing from the current JSON are discontinued).
+      [ "HGC", "Leuba HIAG" ].each do |catalog|
+        supplier_id = supplier_ids[catalog]
+        next unless supplier_id
+
+        current_refs = items.select { |it| it["catalog"] == catalog }.map { |it| it["article"] }.to_set
+        Product.where(supplier_id: supplier_id).where.not(reference: current_refs.to_a).delete_all
+      end
+    end
+
+    chantiers_path = Rails.root.join("db/seed_data/chantiers.json")
+    if File.exist?(chantiers_path)
+      now = Time.current
+      rows = JSON.parse(File.read(chantiers_path)).map do |it|
+        it.slice(
+          "nom", "contraintes_acces", "adresse", "npa", "ville", "carte_interactive",
+          "technicien", "natel_technicien", "email_technicien",
+          "contremaitre", "natel_contremaitre", "email_contremaitre",
+          "chef_equipe", "natel_chef_equipe", "email_chef_equipe", "consortium"
+        ).merge("created_at" => now, "updated_at" => now)
+      end
+
+      # Chantiers have no natural unique key to upsert on and nothing else
+      # references their id, so a full replace is the simplest correct move.
+      Chantier.delete_all
+      rows.each_slice(500) { |slice| Chantier.insert_all(slice) }
+    end
+
+    puts "catalog:seed — #{Supplier.count} fournisseurs, #{Product.count} produits, #{Chantier.count} chantiers"
+  end
+end
