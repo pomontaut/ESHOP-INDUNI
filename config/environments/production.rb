@@ -73,8 +73,15 @@ Rails.application.configure do
   # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: ENV.fetch("RAILWAY_PUBLIC_DOMAIN", "eshop-induni-production.up.railway.app"), protocol: "https" }
 
+  # Prefer Resend's HTTPS API over SMTP: Railway (and several other hosts)
+  # block outbound SMTP ports, which makes :smtp delivery hang until
+  # Net::OpenTimeout. The API runs over plain HTTPS, which isn't blocked.
+  if ENV["RESEND_API_KEY"].present?
+    ActionMailer::Base.add_delivery_method :resend, ResendDeliveryMethod, api_key: ENV["RESEND_API_KEY"]
+    config.action_mailer.delivery_method = :resend
+    config.action_mailer.raise_delivery_errors = true
   # SMTP via Microsoft 365 — configure SMTP_USERNAME and SMTP_PASSWORD in Railway variables
-  if ENV["SMTP_USERNAME"].present?
+  elsif ENV["SMTP_USERNAME"].present?
     config.action_mailer.delivery_method = :smtp
     config.action_mailer.smtp_settings = {
       address:              ENV["SMTP_ADDRESS"].to_s.strip.presence || "smtp.office365.com",
