@@ -18,12 +18,14 @@ namespace :users do
       user.first_name = user.first_name.presence || "Admin"
       user.last_name  = user.last_name.presence || "Induni"
       user.admin = true
-      if creating
-        user.password = password
-        user.password_confirmation = password
-      end
+      # Always sync the password from the env var, not just on creation:
+      # this is a controlled recovery account, so changing
+      # BOOTSTRAP_ADMIN_PASSWORD in Railway and redeploying must reliably
+      # update it, even after the account already exists.
+      user.password = password
+      user.password_confirmation = password
       user.save!
-      puts "users:ensure_admin — #{user.email} (#{creating ? 'créé' : 'statut admin garanti'})"
+      puts "users:ensure_admin — #{user.email} (#{creating ? 'créé' : 'mot de passe et statut admin synchronisés'})"
     else
       puts "users:ensure_admin — ignoré (BOOTSTRAP_ADMIN_EMAIL/BOOTSTRAP_ADMIN_PASSWORD non définis)"
     end
