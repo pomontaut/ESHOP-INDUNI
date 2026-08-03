@@ -70,9 +70,12 @@ USER 1000:1000
 COPY --chown=rails:rails --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
 COPY --chown=rails:rails --from=build /rails /rails
 
-# Start: migrate DB, guarantee catalog/chantiers data is present, then launch Puma on $PORT.
+# Start: migrate DB, guarantee catalog/chantiers data and the admin account are
+# present, then launch Puma on $PORT.
 # db:prepare alone isn't enough: on a fresh/empty database Rails loads schema.rb
 # structure-only and skips replaying data-seeding migrations (see lib/tasks/catalog_seed.rake).
+# users:ensure_admin is chained with `|| true`: it must never block Puma from
+# starting even if it errors (see lib/tasks/users_seed.rake).
 EXPOSE 3000
 ENV PORT=3000
-CMD ["bash", "-c", "./bin/rails db:prepare && ./bin/rails catalog:seed && exec bundle exec puma -b tcp://0.0.0.0:${PORT}"]
+CMD ["bash", "-c", "./bin/rails db:prepare && ./bin/rails catalog:seed && (./bin/rails users:ensure_admin || true) && exec bundle exec puma -b tcp://0.0.0.0:${PORT}"]
