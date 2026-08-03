@@ -1,4 +1,7 @@
 require "active_support/core_ext/integer/time"
+# Explicit require: this file runs during Rails.application.configure, before
+# Zeitwerk's autoload paths are ready to resolve app/ constants on reference.
+require_relative "../../app/mailers/resend_delivery_method"
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
