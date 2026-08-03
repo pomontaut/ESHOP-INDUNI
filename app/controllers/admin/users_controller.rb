@@ -14,8 +14,12 @@ class Admin::UsersController < ApplicationController
     @user = User.new(user_params)
     temporary_password = params.dig(:user, :password).to_s
     if @user.save
-      UserMailer.welcome(@user, temporary_password).deliver_later
-      redirect_to admin_users_path, notice: "Utilisateur #{@user.full_name} créé. Un email avec ses identifiants lui a été envoyé."
+      begin
+        UserMailer.welcome(@user, temporary_password).deliver_now
+        redirect_to admin_users_path, notice: "Utilisateur #{@user.full_name} créé. Un email avec ses identifiants lui a été envoyé."
+      rescue => e
+        redirect_to admin_users_path, alert: "Utilisateur #{@user.full_name} créé, mais l'email n'a pas pu être envoyé : #{e.message}"
+      end
     else
       render :new, status: :unprocessable_entity
     end
@@ -37,10 +41,10 @@ class Admin::UsersController < ApplicationController
   def resend_welcome
     new_password = SecureRandom.hex(6)
     @user.update!(password: new_password, must_change_password: true)
-    UserMailer.welcome(@user, new_password).deliver_later
+    UserMailer.welcome(@user, new_password).deliver_now
     redirect_to admin_users_path, notice: "Nouveau mot de passe envoyé à #{@user.email}."
   rescue => e
-    redirect_to admin_users_path, alert: "Erreur : #{e.message}"
+    redirect_to admin_users_path, alert: "Erreur d'envoi de l'email : #{e.message}"
   end
 
   def destroy
