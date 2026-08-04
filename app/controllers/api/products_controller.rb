@@ -16,7 +16,8 @@ class Api::ProductsController < ApplicationController
         sousSousFamille:  p.sous_sous_famille,
         icone:            p.icone,
         image:            p.image,
-        equivalenceKey:   p.equivalence_key
+        equivalenceKey:   p.equivalence_key,
+        qtePalette:       p.qte_palette
       }
     }
   end

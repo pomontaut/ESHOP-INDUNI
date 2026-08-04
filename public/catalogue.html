@@ -14,7 +14,7 @@
 .prodBody{padding:9px}
 .prod h4{font-size:12px;line-height:1.2;min-height:32px;margin:0 0 4px}
 .desc{font-size:10px;line-height:1.2;min-height:16px}
-.article{font-size:10px;margin:4px 0}
+.article{font-size:10px;margin:4px 0}.qtePalette{font-size:10px;color:#8994a3;text-align:right;margin:0 0 6px}
 .price{font-size:22px;padding-top:8px}
 .unit{font-size:12px}
 .add{margin-top:10px;padding:9px;font-size:14px}
@@ -618,7 +618,7 @@ function openOutlookDraft(no,chantier,supplier){
   window.location.href='mailto:?subject='+subject+'&body='+body;
 }
 
-function productCard(p){const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation); return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':`<span class="iconGlyph">${esc(p.icone||'📦')}</span>`}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}</div><div class="prodBody"><h4>${esc(p.designation)}</h4><div class="desc">${esc(p.descriptif)}</div><div class="article">N° article : ${esc(p.article)}</div>${p.synonymes?`<div class="synHint">Recherche aussi : ${esc(p.synonymes.split(/\s+/).slice(0,8).join(", "))}</div>`:""}<div class="price">${fmt(p.prix)} <span class="unit">/ ${esc(p.unite)}</span></div>${(()=>{
+function productCard(p){const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation); return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':`<span class="iconGlyph">${esc(p.icone||'📦')}</span>`}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}</div><div class="prodBody"><h4>${esc(p.designation)}</h4><div class="desc">${esc(p.descriptif)}</div><div class="article">N° article : ${esc(p.article)}</div>${p.qtePalette?`<div class="qtePalette">Quantité par palette : ${esc(p.qtePalette)}</div>`:""}${p.synonymes?`<div class="synHint">Recherche aussi : ${esc(p.synonymes.split(/\s+/).slice(0,8).join(", "))}</div>`:""}<div class="price">${fmt(p.prix)} <span class="unit">/ ${esc(p.unite)}</span></div>${(()=>{
   const eq=findEquivalents(p);
   if(!eq.length) return '';
   const cp=comparablePrice(p);
@@ -1040,7 +1040,7 @@ function productCardFast(p, scoreVal){
   const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation);
   const cp=comparablePrice(p);
   const cpHtml=cp&&cp.unit&&cp.unit!==String(p.unite||'').toUpperCase()?`<div class="unit equivMeta">≈ ${fmt(cp.value)} / ${esc(cp.unit)}</div>`:'';
-  return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':`<span class="iconGlyph">${esc(p.icone||'📦')}</span>`}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}</div><div class="prodBody"><h4>${esc(p.designation)} <span class="scoreBadge">⭐${scoreVal}</span></h4><div class="desc">${esc(p.descriptif)}</div><div class="article">N° ${esc(p.article)}</div><div class="price">${fmt(p.prix)} <span class="unit">/ ${esc(p.unite)}</span></div>${cpHtml}${p.equivalenceKey?`<div id="eq_${p._idx}" class="equivBox emptyEquiv" style="cursor:pointer" onclick="loadEquivCard(${p._idx},this)"><div class="equivTitle">🔄 Voir comparatif fournisseurs</div></div>`:""}<button class="add ${inCart?'ok':''}" onclick="addCartByIndex(${Number(p._idx)})">${inCart?'✓ Dans le panier':'+ Ajouter au panier'}</button></div></div>`;
+  return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':`<span class="iconGlyph">${esc(p.icone||'📦')}</span>`}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}</div><div class="prodBody"><h4>${esc(p.designation)} <span class="scoreBadge">⭐${scoreVal}</span></h4><div class="desc">${esc(p.descriptif)}</div><div class="article">N° ${esc(p.article)}</div>${p.qtePalette?`<div class="qtePalette">Quantité par palette : ${esc(p.qtePalette)}</div>`:""}<div class="price">${fmt(p.prix)} <span class="unit">/ ${esc(p.unite)}</span></div>${cpHtml}${p.equivalenceKey?`<div id="eq_${p._idx}" class="equivBox emptyEquiv" style="cursor:pointer" onclick="loadEquivCard(${p._idx},this)"><div class="equivTitle">🔄 Voir comparatif fournisseurs</div></div>`:""}<button class="add ${inCart?'ok':''}" onclick="addCartByIndex(${Number(p._idx)})">${inCart?'✓ Dans le panier':'+ Ajouter au panier'}</button></div></div>`;
 }
 function loadEquivCard(idx, el){
   el.onclick=null;

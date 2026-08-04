@@ -56,6 +56,7 @@ namespace :catalog do
           icone:             it["icone"],
           image:             it["image"],
           equivalence_key:   it["equivalenceKey"].presence,
+          qte_palette:       it["qtePalette"],
           created_at:        now,
           updated_at:        now
         }
