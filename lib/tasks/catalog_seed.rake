@@ -77,8 +77,13 @@ namespace :catalog do
       end
     end
 
+    # Chantiers are now managed by admins through /admin/chantiers, so this is
+    # a one-time bootstrap (and a recovery net if the table is ever found
+    # empty, e.g. after a schema-only DB reset) rather than a full refresh:
+    # re-running it unconditionally would wipe out every admin edit on each
+    # container boot.
     chantiers_path = Rails.root.join("db/seed_data/chantiers.json")
-    if File.exist?(chantiers_path)
+    if File.exist?(chantiers_path) && Chantier.count.zero?
       now = Time.current
       rows = JSON.parse(File.read(chantiers_path)).map do |it|
         it.slice(
@@ -89,9 +94,6 @@ namespace :catalog do
         ).merge("created_at" => now, "updated_at" => now)
       end
 
-      # Chantiers have no natural unique key to upsert on and nothing else
-      # references their id, so a full replace is the simplest correct move.
-      Chantier.delete_all
       rows.each_slice(500) { |slice| Chantier.insert_all(slice) }
     end
 
