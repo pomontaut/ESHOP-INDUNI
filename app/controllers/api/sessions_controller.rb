@@ -20,7 +20,8 @@ class Api::SessionsController < ApplicationController
             npa:         c.npa,
             ville:       c.ville,
             contact:     c.contremaitre,
-            telephone:   c.natel_contremaitre
+            telephone:   c.natel_contremaitre,
+            consortium:  c.consortium
           }
         }
       }

@@ -7,6 +7,9 @@
   chantier_val   = chantier_match ? chantier_match[1].strip : '—'
   delai_val      = delai_match    ? delai_match[1].strip    : '—'
   fmt = ->(n) { i, d = ('%.2f' % n.to_f).split('.'); "#{i.reverse.gsub(/(\d{3})(?=\d)/, '\\1' + "'").reverse}.#{d}" rescue n.to_s }
+  # Chantier en consortium : gabarit sans notre logo ni nos CGA (pas de
+  # visibilité sur le partenaire), le bloc CLIENT affiche juste "CONSORTIUM".
+  is_consortium  = Chantier.find_by(nom: chantier_val)&.consortium? || false
 %><!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>
 @page{size:A4;margin:14mm 15mm 18mm 15mm}
@@ -37,7 +40,7 @@ td:not(:first-child){text-align:right}
 .sigbox{border-top:1px solid #111;padding-top:3px;font-size:9pt}
 </style></head><body>
 
-<img src="data:image/png;base64,<%= logo_b64 %>" class="logo" alt="INDUNI">
+<% unless is_consortium %><img src="data:image/png;base64,<%= logo_b64 %>" class="logo" alt="INDUNI"><% end %>
 
 <div class="title-box">
   <h1>BON DE COMMANDE N° <%= @order.number %></h1>
@@ -47,7 +50,7 @@ td:not(:first-child){text-align:right}
 <div class="hgrid">
   <div class="hcol">
     <div class="htitle">CLIENT</div>
-    <div class="cname">INDUNI &amp; CIE SA</div>
+    <div class="cname"><%= is_consortium ? 'CONSORTIUM' : 'INDUNI &amp; CIE SA'.html_safe %></div>
     <div class="ir"><span class="il">Contact :</span> Pierre-Olivier MONTAUT</div>
     <div class="ir"><span class="il">Chantier :</span> <%= chantier_val %></div>
     <div class="ir"><span class="il">Délai livraison :</span> <%= delai_val %></div>
@@ -124,6 +127,7 @@ td:not(:first-child){text-align:right}
 </div>
 
 
+<% unless is_consortium %>
 <!-- PAGE 2 : CONDITIONS GÉNÉRALES D'ACHAT -->
 <div style="page-break-before:always"></div>
 
@@ -215,5 +219,6 @@ td:not(:first-child){text-align:right}
   </div>
 
 </div>
+<% end %>
 
 </body></html>

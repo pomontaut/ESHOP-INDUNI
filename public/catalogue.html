@@ -981,7 +981,10 @@ function renderCartComparatif(el){
 function qty(k,d){cart[k].qty+=d;if(cart[k].qty<=0)cart.splice(k,1);save();render()} function setQty(k,v){const n=parseFloat(String(v).replace(',','.'));if(!isFinite(n)||n<=0){cart.splice(k,1);}else{cart[k].qty=n;}save();render()} function removeItem(k){cart.splice(k,1);save();render()} function openCart(){document.getElementById('drawer').classList.add('open')} function closeCart(){document.getElementById('drawer').classList.remove('open')} function openModal(id){document.getElementById(id).classList.add('open'); if(id==='orderModal'){toggleCanplastOptions();toggleSupplierFields();toggleBillingMerchant();updateRequiredSupplierFields();}toggleSupplierFields();toggleBillingMerchant();updateRequiredSupplierFields();} function closeModal(id){document.getElementById(id).classList.remove('open')} function checkout(){if(!cart.length){alert('Le panier est vide.');return} openModal('orderModal')}
 function addGeneric(e){e.preventDefault(); const p={catalog:state.catalog||'Libre',article:document.getElementById('genArticle').value||'GEN-'+Date.now(),designation:document.getElementById('genDesc').value,descriptif:'Article générique',prix:parseFloat(document.getElementById('genPrice').value),unite:'PCE',famille:'Article générique',sousFamille:'Libre',icone:'＋',image:'construction material'}; cart.push({...p,qty:1}); closeModal('genericModal'); save(); openCart();}
 function downloadOrder(e){e.preventDefault(); const no='BC-'+Math.floor(100000+Math.random()*900000), today=new Date().toLocaleDateString('fr-CH'); const billingMerchant=document.getElementById('billingMerchant')?document.getElementById('billingMerchant').value:''; const sub=cart.reduce((s,i)=>s+i.prix*i.qty,0), supplier=cartSupplier(), tdet=transportDetailsInduni(sub,supplier), total=sub+tdet.totalTransport; if((supplier==='Canplast')&&!billingMerchant){alert('Veuillez choisir le marchand pour facturation.');return;} const rows=cart.map((i,k)=>`<tr><td>${k+1}</td><td><b>${esc(i.designation)}</b><br><small>${esc(i.descriptif)}</small></td><td>${esc(i.article)}</td><td>${i.qty}<br><small>${esc(i.unite)}</small></td><td>${fmt(i.prix)}</td><td><b>${fmt(i.prix*i.qty)}</b></td></tr>`).join(''); const order=buildOrderHtml(no,today,chantier,delai,billingMerchant,supplier,rows,sub,tdet,total); const blob=new Blob([order],{type:'text/html;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=no+'_bon_de_commande.html'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); const chantierVal=document.getElementById('chantier').value; saveOrderRecord({no:no,date:today,supplier:supplier,chantier:chantierVal,total:total,html:order,items:cart.map(i=>({catalog:i.catalog,article:i.article,designation:i.designation,prix:i.prix,qty:i.qty,unite:i.unite}))}); alert('Commande enregistrée dans le dashboard. Outlook va s’ouvrir avec un message prérempli. Pour joindre le PDF, ouvrez le bon téléchargé puis Imprimer / PDF, puis attachez-le dans Outlook.'); openOutlookDraft(no,chantierVal,supplier)}
-function buildOrderHtml(no,today,chantier,delai,billingMerchant,supplier,rows,sub,tdet,total){return `<!doctype html><html><head><meta charset="utf-8"><title>${no}</title><style>
+function isChantierConsortium(nom){const c=(window._chantiers||[]).find(x=>x.nom===nom); return !!(c&&c.consortium);}
+function buildOrderHtml(no,today,chantier,delai,billingMerchant,supplier,rows,sub,tdet,total){
+const isConsortium=isChantierConsortium(document.getElementById('chantier').value);
+return `<!doctype html><html><head><meta charset="utf-8"><title>${no}</title><style>
 @page{size:A4;margin:14mm 15mm 18mm 15mm}
 *{box-sizing:border-box}
 body{font-family:Arial,sans-serif;font-size:10pt;color:#111;margin:0}
@@ -1010,7 +1013,7 @@ td:not(:first-child){text-align:right}
 </style></head><body>
 <button onclick="window.print()" style="position:fixed;right:18px;top:18px;padding:12px 18px;background:#f1642a;color:white;border:0;border-radius:8px;font-weight:bold">Imprimer / PDF</button>
 
-<img src="${INDUNI_LOGO}" class="logo" alt="INDUNI">
+${isConsortium?'':`<img src="${INDUNI_LOGO}" class="logo" alt="INDUNI">`}
 
 <div class="title-box">
   <h1>BON DE COMMANDE N° ${no}</h1>
@@ -1020,7 +1023,7 @@ td:not(:first-child){text-align:right}
 <div class="hgrid">
   <div class="hcol">
     <div class="htitle">CLIENT</div>
-    <div class="cname">INDUNI &amp; CIE SA</div>
+    <div class="cname">${isConsortium?'CONSORTIUM':'INDUNI &amp; CIE SA'}</div>
     <div class="ir"><span class="il">Contact :</span> Pierre-Olivier Montaut</div>
     <div class="ir"><span class="il">Chantier :</span> ${esc(document.getElementById('chantier').value)}</div>
     <div class="ir"><span class="il">Délai de livraison :</span> ${esc(document.getElementById('delai').value)}</div>
@@ -1056,7 +1059,7 @@ td:not(:first-child){text-align:right}
   <div class="sigbox">&nbsp;</div>
 </div>
 
-<!-- PAGE 2 : CONDITIONS GÉNÉRALES D'ACHAT (obligatoire, prévalent sur toute CGV fournisseur) -->
+${isConsortium?'':`<!-- PAGE 2 : CONDITIONS GÉNÉRALES D'ACHAT (obligatoire, prévalent sur toute CGV fournisseur) -->
 <div style="page-break-before:always"></div>
 <img src="${INDUNI_LOGO}" class="logo" alt="INDUNI">
 <div style="margin-top:8px;margin-bottom:14px">
@@ -1140,7 +1143,7 @@ td:not(:first-child){text-align:right}
       <strong>Paraphe Entrepreneur :</strong> ……………………………………………
     </div>
   </div>
-</div>
+</div>`}
 
 <script>window.onload=function(){window.print();}<\/script>
 </body></html>`}
