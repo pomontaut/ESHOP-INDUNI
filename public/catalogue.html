@@ -552,6 +552,18 @@ function renderFamily(){const items=PRODUCTS.filter(p=>p.catalog===state.catalog
 function extractAngleInduni(d){const m=String(d||'').match(/(\d+)\s*°/); return m?m[1]+'°':null;}
 function extractDiamInduni(d){const m=String(d||'').match(/Ø\s*(\d[\d.,]*)/); return m?parseFloat(m[1].replace(',','.')):null;}
 function extractLongInduni(d){const m=String(d||'').match(/L\s*=\s*([\d.,]+)\s*M/i); return m?parseFloat(m[1].replace(',','.')):null;}
+function splitTuyauLongueurInduni(d){const m=String(d||'').match(/^(.*?)\s+(L\s*=\s*.+)$/i); return m?{main:m[1].trim(),suffix:m[2].trim()}:null;}
+function productTitleHtmlInduni(p){
+  const isTuyau=isTuyauContextInduni(p.sousFamille,p.sousSousFamille);
+  const split=isTuyau?splitTuyauLongueurInduni(p.designation):null;
+  return esc(split?split.main:p.designation).replace(/(Ø\s*\d[\d.,]*)/i,m=>`<b>${m}</b>`);
+}
+function productMetaHtmlInduni(p){
+  const isTuyau=isTuyauContextInduni(p.sousFamille,p.sousSousFamille);
+  const split=isTuyau?splitTuyauLongueurInduni(p.designation):null;
+  const desc=esc(p.descriptif);
+  return (split&&split.suffix)?`${desc}${desc?' · ':''}<small>${esc(split.suffix)}</small>`:desc;
+}
 function isAngleContextInduni(sous,sous2){
   const t=normEqText((sous||'')+' '+(sous2||''));
   return t.includes('coude')||t.includes('embranchement');
@@ -753,7 +765,7 @@ function piecePriceHtmlInduni(p){
   if(!isFinite(total)||total<=0) return '';
   return `<div class="piecePrice">≈ ${fmt(total)} / pièce (L=${len} m)</div>`;
 }
-function productCard(p){const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation); return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':`<span class="iconGlyph">${esc(p.icone||'📦')}</span>`}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}</div><div class="prodBody"><h4>${esc(p.designation)}</h4><div class="desc">${esc(p.descriptif)}</div><div class="article">N° article : ${esc(p.article)}</div>${p.qtePalette?`<div class="qtePalette">Quantité par palette : ${esc(p.qtePalette)}</div>`:""}${p.synonymes?`<div class="synHint">Recherche aussi : ${esc(p.synonymes.split(/\s+/).slice(0,8).join(", "))}</div>`:""}<div class="price">${fmt(p.prix)} <span class="unit">/ ${esc(p.unite)}</span></div>${piecePriceHtmlInduni(p)}${(()=>{
+function productCard(p){const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation); return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':`<span class="iconGlyph">${esc(p.icone||'📦')}</span>`}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}</div><div class="prodBody"><h4>${productTitleHtmlInduni(p)}</h4><div class="desc">${productMetaHtmlInduni(p)}</div><div class="article">N° article : ${esc(p.article)}</div>${p.qtePalette?`<div class="qtePalette">Quantité par palette : ${esc(p.qtePalette)}</div>`:""}${p.synonymes?`<div class="synHint">Recherche aussi : ${esc(p.synonymes.split(/\s+/).slice(0,8).join(", "))}</div>`:""}<div class="price">${fmt(p.prix)} <span class="unit">/ ${esc(p.unite)}</span></div>${piecePriceHtmlInduni(p)}${(()=>{
   const eq=findEquivalents(p);
   if(!eq.length) return '';
   const cp=comparablePrice(p);
@@ -1260,7 +1272,7 @@ function productCardFast(p, scoreVal){
   const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation);
   const cp=comparablePrice(p);
   const cpHtml=cp&&cp.unit&&cp.unit!==String(p.unite||'').toUpperCase()?`<div class="unit equivMeta">≈ ${fmt(cp.value)} / ${esc(cp.unit)}</div>`:'';
-  return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':`<span class="iconGlyph">${esc(p.icone||'📦')}</span>`}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}</div><div class="prodBody"><h4>${esc(p.designation)} <span class="scoreBadge">⭐${scoreVal}</span></h4><div class="desc">${esc(p.descriptif)}</div><div class="article">N° ${esc(p.article)}</div>${p.qtePalette?`<div class="qtePalette">Quantité par palette : ${esc(p.qtePalette)}</div>`:""}<div class="price">${fmt(p.prix)} <span class="unit">/ ${esc(p.unite)}</span></div>${piecePriceHtmlInduni(p)}${cpHtml}${p.equivalenceKey?`<div id="eq_${p._idx}" class="equivBox emptyEquiv" style="cursor:pointer" onclick="loadEquivCard(${p._idx},this)"><div class="equivTitle">🔄 Voir comparatif fournisseurs</div></div>`:""}<button class="add ${inCart?'ok':''}" onclick="addCartByIndex(${Number(p._idx)})">${inCart?'✓ Dans le panier':'+ Ajouter au panier'}</button></div></div>`;
+  return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':`<span class="iconGlyph">${esc(p.icone||'📦')}</span>`}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}</div><div class="prodBody"><h4>${productTitleHtmlInduni(p)} <span class="scoreBadge">⭐${scoreVal}</span></h4><div class="desc">${productMetaHtmlInduni(p)}</div><div class="article">N° ${esc(p.article)}</div>${p.qtePalette?`<div class="qtePalette">Quantité par palette : ${esc(p.qtePalette)}</div>`:""}<div class="price">${fmt(p.prix)} <span class="unit">/ ${esc(p.unite)}</span></div>${piecePriceHtmlInduni(p)}${cpHtml}${p.equivalenceKey?`<div id="eq_${p._idx}" class="equivBox emptyEquiv" style="cursor:pointer" onclick="loadEquivCard(${p._idx},this)"><div class="equivTitle">🔄 Voir comparatif fournisseurs</div></div>`:""}<button class="add ${inCart?'ok':''}" onclick="addCartByIndex(${Number(p._idx)})">${inCart?'✓ Dans le panier':'+ Ajouter au panier'}</button></div></div>`;
 }
 function loadEquivCard(idx, el){
   el.onclick=null;
