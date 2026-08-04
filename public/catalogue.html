@@ -216,8 +216,8 @@ function sortBarInduni(){
   return `<div class="sortbar"><span class="sortbarLabel">Trier par</span>${b('variants','🔠 Produit + variantes')}${b('priceAsc','💰 Prix croissant')}${b('priceDesc','💰 Prix décroissant')}${b('az','🔤 A → Z')}</div>`;
 }
 
-const CANPLAST_SUB_ORDERS={"Canalisations PE/HDPE":["Tuyaux PEHD","Tuyaux de drainage","Tuyaux ondulés/annelés","Tuyaux SN8","Tuyaux SN4","Tuyaux SN2","Coudes","Manchons","Embranchements","Réductions","Bouchons","Joints"],"Canalisations PP":["Tuyaux PP","Tuyaux SN8","Tuyaux SN4","Tuyaux SN2","Coudes","Manchons","Raccords","Embranchements","Réductions","Bouchons","Joints"],"Chambres & Regards":["Chambres","Regards","Rehausses","Couvercles & tampons","Cadres & grilles","Fonds","Accessoires"],"Fournitures & Divers":["Colliers & fixations","Adaptateurs","Accessoires de montage","Joints & étanchéité","Outillage & divers"],"Protection Câbles":["Tubes de protection","Gaines & fourreaux","Coudes","Manchons","Raccords","Accessoires"]};
-const HGC_SUB_ORDERS={"Armatures & Distanceurs":["Armatures","Distanceurs","Treillis & accessoires","Divers"],"Ciments & Bétons":["Ciments en sac","Bétons & Mortiers","Liants & additifs","Divers"],"Coffrage & Étaiement":["Coffrage","Étaiement","Panneaux & accessoires","Divers"],"Drainage & Canalisation":["Tuyaux","Regards & chambres","Raccords","Coudes","Manchons","Grilles & caniveaux","Divers"],"EPI & Sécurité":["Protection tête & visage","Gants","Chaussures","Vêtements","Signalisation","Sécurité chantier","Divers"],"Fournitures Diverses":["Fixations","Visserie & quincaillerie","Accessoires","Produits d'entretien","Divers"],"Granulats & Agrégats":["Gravier","Sable","Gravillons","Concassés","Divers"],"Isolation & Étanchéité":["Isolation","Étanchéité","Membranes & films","Mousses & bandes","Divers"],"Manutention & Chantier":["Bacs & seaux","Levage & manutention","Nettoyage chantier","Stockage","Divers"],"Mastics & Colles":["Mastics","Colles","Silicones","Mortiers-colles","Accessoires","Divers"],"Maçonnerie & Briques":["Briques","Blocs","Linteaux","Mortiers","Accessoires","Divers"],"Mesure & Traçage":["Mesure","Traçage","Niveaux","Lasers","Accessoires","Divers"],"Mortiers & Produits Spéciaux":["Mortiers","Enduits","Réparations","Adjuvants","Produits spéciaux","Divers"],"Outillage & Machines":["Outillage à main","Machines","Consommables machines","Accessoires","Divers"],"Outils à Main & Plâtrerie":["Outils à main","Plâtrerie","Taloche & truelles","Spatules & couteaux","Divers"],"Plaques & Panneaux":["Plaques","Panneaux","Accessoires","Divers"],"Voirie & Aménagement":["Voirie","Bordures","Pavés & dalles","Caniveaux","Aménagement extérieur","Divers"],"Équipement de Chantier":["Équipement","Protection chantier","Signalisation","Balisage","Divers"]};
+const CANPLAST_SUB_ORDERS={"Chambres & Regards":["Chambres","Regards","Rehausses","Couvercles & tampons","Cadres & grilles","Fonds","Accessoires"],"Fournitures & Divers":["Colliers & fixations","Adaptateurs","Accessoires de montage","Joints & étanchéité","Outillage & divers"]};
+const HGC_SUB_ORDERS={"Armatures & Distanceurs":["Armatures","Distanceurs","Treillis & accessoires","Divers"],"Ciments & Bétons":["Ciments en sac","Bétons & Mortiers","Liants & additifs","Divers"],"Coffrage & Étaiement":["Coffrage","Étaiement","Panneaux & accessoires","Divers"],"EPI & Sécurité":["Protection tête & visage","Gants","Chaussures","Vêtements","Signalisation","Sécurité chantier","Divers"],"Fournitures Diverses":["Fixations","Visserie & quincaillerie","Accessoires","Produits d'entretien","Divers"],"Granulats & Agrégats":["Gravier","Sable","Gravillons","Concassés","Divers"],"Isolation & Étanchéité":["Isolation","Étanchéité","Membranes & films","Mousses & bandes","Divers"],"Manutention & Chantier":["Bacs & seaux","Levage & manutention","Nettoyage chantier","Stockage","Divers"],"Mastics & Colles":["Mastics","Colles","Silicones","Mortiers-colles","Accessoires","Divers"],"Maçonnerie & Briques":["Briques","Blocs","Linteaux","Mortiers","Accessoires","Divers"],"Mesure & Traçage":["Mesure","Traçage","Niveaux","Lasers","Accessoires","Divers"],"Mortiers & Produits Spéciaux":["Mortiers","Enduits","Réparations","Adjuvants","Produits spéciaux","Divers"],"Outillage & Machines":["Outillage à main","Machines","Consommables machines","Accessoires","Divers"],"Outils à Main & Plâtrerie":["Outils à main","Plâtrerie","Taloche & truelles","Spatules & couteaux","Divers"],"Plaques & Panneaux":["Plaques","Panneaux","Accessoires","Divers"],"Voirie & Aménagement":["Voirie","Bordures","Pavés & dalles","Caniveaux","Aménagement extérieur","Divers"],"Équipement de Chantier":["Équipement","Protection chantier","Signalisation","Balisage","Divers"]};
 function subFamilySortInduni(a,b){const orders=(state.catalog==='Canplast'?CANPLAST_SUB_ORDERS:HGC_SUB_ORDERS);if(orders&&orders[state.famille]){const order=orders[state.famille];const ia=order.indexOf(a),ib=order.indexOf(b);return (ia===-1?999:ia)-(ib===-1?999:ib)}return String(a).localeCompare(String(b),'fr')}
 let funnelSel={catalog:null,famille:null,sous:null,sous2:null};
 function funnelOptions(items,key){return [...new Set(items.map(p=>p[key]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'fr'));}
@@ -293,19 +293,19 @@ const CANPLAST_CONFIG = {
   'Canalisations PE/HDPE': {
     gradient:'linear-gradient(135deg,#166534,#22c55e)', icone:'🟢', badge:'PE / HDPE',
     desc:'PEHD · Drainage · Ondulés · Ø63→1200mm',
-    subs:['Tuyaux SN4','Tuyaux SN2','Tuyaux de drainage','Tuyaux ondulés/annelés','Coudes','Embranchements','Manchons','Réductions','Bouchons','Joints'],
+    subs:['Autres produits PE/HDPE','Bouchons','Coudes','Embranchements','Joints','Manchons','Réductions','Tuyau de drainage','Tuyaux annelés','Tuyaux lisses','Tuyaux manchonnés'],
     order:2
   },
   'Canalisations PP': {
     gradient:'linear-gradient(135deg,#c2410c,#fb923c)', icone:'🟠', badge:'PP',
     desc:'Polypropylène · SN4 · SN8 · Ø110→630mm',
-    subs:['Tuyaux SN8','Tuyaux SN4','Tuyaux de drainage','Coudes','Embranchements','Manchons','Réductions','Joints'],
+    subs:['Coudes','Embranchements','Joints','Manchons','Réductions','Tuyaux','Tuyaux de drainage'],
     order:3
   },
   'Protection Câbles': {
     gradient:'linear-gradient(135deg,#6b21a8,#a855f7)', icone:'🟣', badge:'Câbles',
     desc:'PELD · PEHD · HDPE · Ø20→160mm',
-    subs:['Tubes de protection','Coudes','Manchons'],
+    subs:['Autres produits Protection Câbles','Bouchons','Coudes','Joints','Manchons','Réductions','Tubes de protection'],
     order:4
   },
   'Chambres & Regards': {
@@ -342,7 +342,7 @@ const HGC_CONFIG = {
   'Drainage & Canalisation': {
     gradient:'linear-gradient(135deg,#0b4f9c,#2563eb)', icone:'🔩', badge:'Drainage',
     desc:'Tuyaux · Coudes · Manchons · Regards · Grilles',
-    subs:['Tuyaux','Coudes','Manchons','Raccords','Regards & chambres','Grilles & caniveaux'],
+    subs:['Arrosage & raccords rapides','Autres produits Drainage & Canalisation','Bouchons','Coudes','Embranchements','Manchons','Protection câbles','Réductions','Regards, chambres & caniveaux','Tuyaux','Tuyaux drainage'],
     order:1
   },
   'Ciments & Bétons': {
@@ -1290,7 +1290,7 @@ const RECLASSIF_RULES = [
   // Tuyau béton dans Ciments → Drainage & Canalisation
   { match: p => /tuyau.*b[eé]ton/i.test(p.designation) && p.famille === 'Ciments & Bétons', famille: 'Drainage & Canalisation', sousFamille: 'Tuyaux', icone: '🔩' },
   // Cadre béton TE ovale dans Ciments → Drainage
-  { match: p => /cadre.*b[eé]ton/i.test(p.designation), famille: 'Drainage & Canalisation', sousFamille: 'Regards & chambres', icone: '🔩' },
+  { match: p => /cadre.*b[eé]ton/i.test(p.designation), famille: 'Drainage & Canalisation', sousFamille: 'Regards, chambres & caniveaux', icone: '🔩' },
   // Géotextile dans Fournitures → Isolation & Étanchéité
   { match: p => /g[eé]otextile/i.test(p.designation) && p.famille === 'Fournitures Diverses', famille: 'Isolation & Étanchéité', sousFamille: 'Membranes & films', icone: '🛡️' },
   // Géonontissés dans Fournitures → Isolation & Étanchéité
