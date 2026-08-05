@@ -310,12 +310,14 @@ const CANPLAST_CONFIG = {
   },
   'Canalisations PE/HDPE': {
     gradient:'linear-gradient(135deg,#166534,#22c55e)', icone:'🟢', badge:'PE / HDPE',
+    photo:'/images/categories/pehd-famille.png',
     desc:'PEHD · Drainage · Ondulés · Ø63→1200mm',
     subs:['Autres produits PE/HDPE','Bouchons','Coudes','Embranchements','Joints','Manchons','Réductions','Tuyau de drainage','Tuyaux annelés','Tuyaux lisses','Tuyaux manchonnés'],
     order:2
   },
   'Canalisations PP': {
     gradient:'linear-gradient(135deg,#c2410c,#fb923c)', icone:'🟠', badge:'PP',
+    photo:'/images/categories/pp-famille.png',
     desc:'Polypropylène · SN4 · SN8 · Ø110→630mm',
     subs:['Coudes','Embranchements','Joints','Manchons','Réductions','Tuyaux','Tuyaux de drainage'],
     order:3
@@ -353,6 +355,22 @@ const SUBFAMILY_PHOTOS = {
   'Canalisations PVC|Raccord PVC ciment': '/images/categories/pvc-raccord-ciment.png',
   'Canalisations PVC|Embranchement/manchettes': '/images/categories/pvc-embranchement-manchettes.png',
   'Canalisations PVC|Joint Frank': '/images/categories/pvc-joint-frank.png',
+  'Canalisations PE/HDPE|Coudes': '/images/categories/pehd-coudes.png',
+  'Canalisations PE/HDPE|Réductions': '/images/categories/pehd-reductions.png',
+  'Canalisations PE/HDPE|Embranchements': '/images/categories/pehd-embranchements.png',
+  'Canalisations PE/HDPE|Bouchons': '/images/categories/pehd-bouchons.png',
+  'Canalisations PE/HDPE|Manchons': '/images/categories/pehd-manchons.png',
+  'Canalisations PE/HDPE|Tuyau de drainage': '/images/categories/pehd-tuyau-drainage.png',
+  'Canalisations PE/HDPE|Tuyaux annelés': '/images/categories/pehd-tuyaux-anneles.png',
+  'Canalisations PE/HDPE|Tuyaux lisses': '/images/categories/pehd-tuyaux-lisses.png',
+  'Canalisations PE/HDPE|Tuyaux manchonnés': '/images/categories/pehd-tuyaux-manchonnes.png',
+  'Canalisations PP|Coudes': '/images/categories/pp-coudes.png',
+  'Canalisations PP|Embranchements': '/images/categories/pp-embranchements.png',
+  'Canalisations PP|Manchons': '/images/categories/pp-manchons.png',
+  'Canalisations PP|Réductions': '/images/categories/pp-reductions.png',
+  'Canalisations PP|Tuyaux': '/images/categories/pp-tuyaux.png',
+  'Canalisations PP|Tuyaux de drainage': '/images/categories/pp-tuyau-drainage.png',
+  'Canalisations PP|Joints': '/images/categories/pp-joints.png',
 };
 
 // ── HGC : par domaine métier ──────────────────────────────────────────────────
@@ -544,7 +562,7 @@ function renderCatalog(){
 function renderFamily(){const items=PRODUCTS.filter(p=>p.catalog===state.catalog&&p.famille===state.famille), subs=group(items,'sousFamille');
   const famCfg=(CANPLAST_CONFIG[state.famille]||HGC_CONFIG[state.famille]||{});
   const famPhoto=famCfg.photo||null;
-  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a> › ${esc(state.famille)}</div><div class="banner"><div style="font-size:70px">${esc(items[0]?.icone||'📦')}</div><div><h2>${esc(state.famille)}</h2><p>${items.length} articles · ${Object.keys(subs).length} sous-familles</p></div>${renderFunnelWidget(state.catalog,state.famille)}</div><div class="sectionTitle">Sommaire intermédiaire des sous-familles</div><div class="subgrid">${Object.entries(subs).sort((a,b)=>subFamilySortInduni(a[0],b[0])).map(([s,it])=>{const photo=SUBFAMILY_PHOTOS[state.famille+'|'+s]||(s==='Autres produits PVC'?famPhoto:null);return `<div class="sub" onclick='state.view="subfamily";state.sous=${JSON.stringify(s)};state.sous2=null;render()'>${photo?`<div class="subPhoto" style="background-image:url(${photo})"></div>`:''}<b>${esc(s)}</b><p class="muted">${it.length} articles<span class="sub2Badge">${hasLevel2Induni(it)?'détaillé':''}</span></p></div>`;}).join('')}<div class="sub" onclick='state.view="products";state.sous="__ALL__";state.sous2="__ALL__";render()'>${famPhoto?`<div class="subPhoto" style="background-image:url(${famPhoto})"></div>`:''}<b>Voir tous les articles</b><p class="muted">${items.length} articles</p></div></div>`}
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a> › ${esc(state.famille)}</div><div class="banner"><div style="font-size:70px">${esc(items[0]?.icone||'📦')}</div><div><h2>${esc(state.famille)}</h2><p>${items.length} articles · ${Object.keys(subs).length} sous-familles</p></div>${renderFunnelWidget(state.catalog,state.famille)}</div><div class="sectionTitle">Sommaire intermédiaire des sous-familles</div><div class="subgrid">${Object.entries(subs).sort((a,b)=>subFamilySortInduni(a[0],b[0])).map(([s,it])=>{const photo=SUBFAMILY_PHOTOS[state.famille+'|'+s]||(s.startsWith('Autres produits')?famPhoto:null);return `<div class="sub" onclick='state.view="subfamily";state.sous=${JSON.stringify(s)};state.sous2=null;render()'>${photo?`<div class="subPhoto" style="background-image:url(${photo})"></div>`:''}<b>${esc(s)}</b><p class="muted">${it.length} articles<span class="sub2Badge">${hasLevel2Induni(it)?'détaillé':''}</span></p></div>`;}).join('')}<div class="sub" onclick='state.view="products";state.sous="__ALL__";state.sous2="__ALL__";render()'>${famPhoto?`<div class="subPhoto" style="background-image:url(${famPhoto})"></div>`:''}<b>Voir tous les articles</b><p class="muted">${items.length} articles</p></div></div>`}
 
 /* ============================================================
    NIVEAU 4 — angle (Coudes/Embranchements) ou plage de diamètre
