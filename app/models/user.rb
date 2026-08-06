@@ -20,6 +20,15 @@ class User < ApplicationRecord
 
   before_save { self.email = email.downcase }
 
+  # Garantie permanente : ce compte reste administrateur même si la
+  # synchronisation au démarrage (BOOTSTRAP_ADMIN_EMAIL) ou la colonne
+  # `admin` en base venait à diverger.
+  PERMANENT_ADMIN_EMAILS = [ "pomontaut@induni.ch" ].freeze
+
+  def admin?
+    super || PERMANENT_ADMIN_EMAILS.include?(email&.downcase)
+  end
+
   def full_name
     [ first_name, last_name ].compact_blank.join(" ").presence || email
   end
