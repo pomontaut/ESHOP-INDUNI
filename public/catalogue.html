@@ -642,6 +642,17 @@ function hasLevel2Induni(items){
   return vals.length>1;
 }
 
+const LEVEL2_PHOTOS={
+  'Canalisations PVC|Bouchons|Bouchon PVC pour emboîtement': '/images/categories/pvc-bouchon-emboitement.png',
+  'Canalisations PVC|Bouchons|Bouchons PVC intérieur': '/images/categories/pvc-bouchon-interieur.png',
+  'Canalisations PVC|Bouchons|Bouchons PVC fileté': '/images/categories/pvc-bouchon-filete.png',
+  'Canalisations PVC|Coudes|Coude standard SN4': '/images/categories/pvc-coude-standard.png',
+  'Canalisations PVC|Coudes|Coude standard SN2': '/images/categories/pvc-coude-standard.png',
+  'Canalisations PVC|Coudes|Coude plongeur': '/images/categories/pvc-coude-plongeur.png',
+  'Canalisations PVC|Clapets|Clapet anti-refoulement avec flotteurs': '/images/categories/pvc-clapet-avec-flotteur.png',
+  'Canalisations PVC|Clapets|Clapet anti-refoulement sans flotteurs': '/images/categories/pvc-clapet-sans-flotteur.png',
+};
+
 const LEVEL2_ORDER_INDUNI={
   'HGC|Ciments & Bétons|Ciments en sac':['CEM I','CEM II','CEM II 42.5','Ciments spéciaux','Prise rapide / scellement','Autres ciments','Autres liants']
 };
@@ -661,7 +672,7 @@ function renderSubFamily(){
   }
   const groups=group(base,'sousSousFamille');
   delete groups['__DIRECT__'];
-  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a> › <a onclick='state.view="family";render()'>${esc(state.famille)}</a> › <b>${esc(state.sous)}</b></div><div class="banner"><div style="font-size:70px">${esc(base[0]?.icone||'📦')}</div><div><h2>${esc(state.sous)}</h2><p>${base.length} articles · ${Object.keys(groups).length} sous-familles détaillées</p></div></div><div class="sectionTitle">Choisissez une sous-famille détaillée</div><p class="sub2Note">Ce niveau apparaît uniquement quand il y a assez d’articles pour que le classement soit utile.</p><div class="subgrid">${Object.entries(groups).sort((a,b)=>level2SortInduni(a[0],b[0])).map(([s,it])=>{const kind=level4KindInduni(state.sous,s,it);const onclick=kind?`state.view="level4";state.sous2=${JSON.stringify(s)};state.sous3=null;render()`:`state.view="products";state.sous2=${JSON.stringify(s)};state.sous3=null;render()`;return `<div class="sub" onclick='${onclick}'><b>${esc(s)}</b><p class="muted">${it.length} articles</p></div>`;}).join('')}<div class="sub" onclick='state.view="products";state.sous2="__ALL__";state.sous3=null;render()'><b>Voir tout</b><p class="muted">${base.length} articles</p></div></div>`;
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a> › <a onclick='state.view="family";render()'>${esc(state.famille)}</a> › <b>${esc(state.sous)}</b></div><div class="banner"><div style="font-size:70px">${esc(base[0]?.icone||'📦')}</div><div><h2>${esc(state.sous)}</h2><p>${base.length} articles · ${Object.keys(groups).length} sous-familles détaillées</p></div></div><div class="sectionTitle">Choisissez une sous-famille détaillée</div><p class="sub2Note">Ce niveau apparaît uniquement quand il y a assez d’articles pour que le classement soit utile.</p><div class="subgrid">${Object.entries(groups).sort((a,b)=>level2SortInduni(a[0],b[0])).map(([s,it])=>{const kind=level4KindInduni(state.sous,s,it);const onclick=kind?`state.view="level4";state.sous2=${JSON.stringify(s)};state.sous3=null;render()`:`state.view="products";state.sous2=${JSON.stringify(s)};state.sous3=null;render()`;const photo=LEVEL2_PHOTOS[state.famille+'|'+state.sous+'|'+s];return `<div class="sub" onclick='${onclick}'>${photo?`<div class="subPhoto" style="background-image:url(${photo})"></div>`:''}<b>${esc(s)}</b><p class="muted">${it.length} articles</p></div>`;}).join('')}<div class="sub" onclick='state.view="products";state.sous2="__ALL__";state.sous3=null;render()'><b>Voir tout</b><p class="muted">${base.length} articles</p></div></div>`;
 }
 
 function normEqText(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[\'’]/g,' ').replace(/[^a-z0-9]+/g,' ').trim()}
