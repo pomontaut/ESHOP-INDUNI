@@ -1,4 +1,7 @@
 fr:
+  errors:
+    messages:
+      confirmation: "ne correspond pas à la confirmation"
   date:
     formats:
       default: "%d.%m.%Y"
