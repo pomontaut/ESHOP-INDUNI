@@ -502,6 +502,43 @@ const HIAG_CONFIG = {
 };
 
 
+// ── HGC : familles regroupées sous un dossier commun ──────────────────────────
+const HGC_GROUP_FAMILIES = { 'Canalisation': [ 'Canalisations PVC', 'Protection Câbles' ] };
+function hgcParentGroupOf(famille){
+  for(const [g,fams] of Object.entries(HGC_GROUP_FAMILIES)){ if(fams.includes(famille)) return g; }
+  return null;
+}
+function renderFamilyGroupCard(groupName, groupFams, allItems, catalog){
+  const items = allItems.filter(p=>groupFams.includes(p.famille));
+  const heroCfg = HGC_CONFIG[groupFams[0]]||{};
+  const heroStyle = heroCfg.photo
+    ? `background-image:url(${heroCfg.photo});background-size:cover;background-position:center`
+    : `background:${heroCfg.gradient||'linear-gradient(135deg,#0c1d34,#335c8d)'}`;
+  const tags = groupFams.map(gf=>{
+    const cnt = allItems.filter(p=>p.famille===gf).length;
+    return `<span class="canplastSubTag" onclick='event.stopPropagation();state={view:"family",catalog:${JSON.stringify(catalog)},famille:${JSON.stringify(gf)},sous:null};render()' title="${cnt} articles">${esc(gf)} <span class="subTagCount">${cnt}</span></span>`;
+  }).join('');
+  return `<button class="card canplastCard" onclick='state={view:"family",catalog:${JSON.stringify(catalog)},famille:${JSON.stringify(groupName)},sous:null};render()'>
+    <div class="cardHero" style="${heroStyle};height:110px;flex-direction:column;gap:6px;align-items:center;justify-content:${heroCfg.photo?'flex-end':'center'}">
+      ${heroCfg.photo?'':`<span style="font-size:34px">${heroCfg.icone||'📦'}</span>`}
+      <span style="background:rgba(15,23,42,0.6);color:white;border-radius:999px;padding:3px 14px;font-size:13px;font-weight:900;letter-spacing:.04em;${heroCfg.photo?'margin-bottom:8px':''}">Canalisation</span>
+    </div>
+    <div class="cardFooter" style="background:#1a2f48">
+      <b style="font-size:16px">${esc(groupName)}</b>
+      <div style="font-size:11px;color:#94a3b8;margin:3px 0 8px">${groupFams.map(esc).join(' · ')}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">${tags}</div>
+      <div style="color:#64748b;font-size:11px">${items.length} articles</div>
+    </div>
+  </button>`;
+}
+function renderFamilyGroupPage(groupName){
+  const groupFams = HGC_GROUP_FAMILIES[groupName];
+  const allItems = PRODUCTS.filter(p=>p.catalog===state.catalog&&groupFams.includes(p.famille));
+  const fams = group(allItems,'famille');
+  const grid = renderFamilyGrid(fams, HGC_CONFIG, state.catalog);
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${esc(state.catalog)}</a> › ${esc(groupName)}</div><div class="banner"><div style="font-size:70px">🔩</div><div><h2>${esc(groupName)}</h2><p>${allItems.length} articles · ${Object.keys(fams).length} familles</p></div></div><div class="sectionTitle">Familles d'articles</div><div class="grid canplastGrid">${grid}</div>`;
+}
+
 // ── Rendu générique d'une grille de famille ──────────────────────────────────
 function renderFamilyGrid(fams, config, catalog){
   const entries = Object.entries(fams).sort((a,b)=>{
@@ -547,9 +584,11 @@ function renderFamilyGrid(fams, config, catalog){
 
 function renderCatalog(){
   const items = PRODUCTS.filter(p=>p.catalog===state.catalog);
-  const fams  = group(items,'famille');
-  const logo  = catalogLogoInduni(state.catalog);
   const cat   = state.catalog;
+  const groups = (cat==='HGC') ? HGC_GROUP_FAMILIES : null;
+  const groupedFamNames = groups ? new Set(Object.values(groups).flat()) : new Set();
+  const fams  = group(items.filter(p=>!groupedFamNames.has(p.famille)),'famille');
+  const logo  = catalogLogoInduni(state.catalog);
 
   // Choisir la config selon le catalogue
   const configMap = {
@@ -558,10 +597,12 @@ function renderCatalog(){
     'Leuba HIAG':  HIAG_CONFIG,
   };
   const cfg = configMap[cat];
+  const famCount = Object.keys(fams).length + (groups?Object.keys(groups).length:0);
 
   let bodyHtml;
   if(cfg){
-    const grid = renderFamilyGrid(fams, cfg, cat);
+    const groupCards = groups ? Object.entries(groups).map(([gName,gFams])=>renderFamilyGroupCard(gName,gFams,items,cat)).join('') : '';
+    const grid = groupCards + renderFamilyGrid(fams, cfg, cat);
     bodyHtml = `<div class="sectionTitle">Familles d'articles</div><div class="grid canplastGrid">${grid}</div>`;
   } else {
     // Fallback générique
@@ -578,14 +619,18 @@ function renderCatalog(){
   app.innerHTML = `<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › ${esc(cat)}</div>
     <div class="banner"><img src="${logo}" alt="${esc(cat)}"><div>
       <h2>E-shop ${esc(cat)}</h2>
-      <p>${items.length} articles · ${Object.keys(fams).length} familles</p>
+      <p>${items.length} articles · ${famCount} familles</p>
     </div>${renderFunnelWidget(cat)}</div>
     ${bodyHtml}`;
 }
-function renderFamily(){const items=PRODUCTS.filter(p=>p.catalog===state.catalog&&p.famille===state.famille), subs=group(items,'sousFamille');
+function renderFamily(){
+  if(state.catalog==='HGC'&&HGC_GROUP_FAMILIES[state.famille]) return renderFamilyGroupPage(state.famille);
+  const items=PRODUCTS.filter(p=>p.catalog===state.catalog&&p.famille===state.famille), subs=group(items,'sousFamille');
   const famCfg=(CANPLAST_CONFIG[state.famille]||HGC_CONFIG[state.famille]||{});
   const famPhoto=famCfg.photo||null;
-  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a> › ${esc(state.famille)}</div><div class="banner"><div style="font-size:70px">${esc(items[0]?.icone||'📦')}</div><div><h2>${esc(state.famille)}</h2><p>${items.length} articles · ${Object.keys(subs).length} sous-familles</p></div>${renderFunnelWidget(state.catalog,state.famille)}</div><div class="sectionTitle">Sommaire intermédiaire des sous-familles</div><div class="subgrid">${Object.entries(subs).sort((a,b)=>subFamilySortInduni(a[0],b[0])).map(([s,it])=>{const photo=SUBFAMILY_PHOTOS[state.famille+'|'+s]||famPhoto;return `<div class="sub" onclick='state.view="subfamily";state.sous=${JSON.stringify(s)};state.sous2=null;render()'>${photo?`<div class="subPhoto" style="background-image:url(${photo})"></div>`:''}<b>${esc(s)}</b><p class="muted">${it.length} articles<span class="sub2Badge">${hasLevel2Induni(it)?'détaillé':''}</span></p></div>`;}).join('')}</div>`}
+  const parentGroup=state.catalog==='HGC'?hgcParentGroupOf(state.famille):null;
+  const groupCrumb=parentGroup?` › <a onclick='state.view="family";state.famille=${JSON.stringify(parentGroup)};state.sous=null;render()'>${esc(parentGroup)}</a>`:'';
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a>${groupCrumb} › ${esc(state.famille)}</div><div class="banner"><div style="font-size:70px">${esc(items[0]?.icone||'📦')}</div><div><h2>${esc(state.famille)}</h2><p>${items.length} articles · ${Object.keys(subs).length} sous-familles</p></div>${renderFunnelWidget(state.catalog,state.famille)}</div><div class="sectionTitle">Sommaire intermédiaire des sous-familles</div><div class="subgrid">${Object.entries(subs).sort((a,b)=>subFamilySortInduni(a[0],b[0])).map(([s,it])=>{const photo=SUBFAMILY_PHOTOS[state.famille+'|'+s]||famPhoto;return `<div class="sub" onclick='state.view="subfamily";state.sous=${JSON.stringify(s)};state.sous2=null;render()'>${photo?`<div class="subPhoto" style="background-image:url(${photo})"></div>`:''}<b>${esc(s)}</b><p class="muted">${it.length} articles<span class="sub2Badge">${hasLevel2Induni(it)?'détaillé':''}</span></p></div>`;}).join('')}</div>`}
 
 /* ============================================================
    NIVEAU 4 — angle (Coudes/Embranchements) ou plage de diamètre
