@@ -1,0 +1,27 @@
+<%= form_with(model: order, class: "mt-3") do |form| %>
+  <% if order.errors.any? %>
+    <div class="alert alert-danger">
+      <% order.errors.full_messages.each do |msg| %>
+        <p><%= msg %></p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="mb-3">
+    <%= form.label :supplier_id, "Fournisseur", class: "form-label" %>
+    <%= form.collection_select :supplier_id, Supplier.all, :id, :name, { prompt: "Choisir un fournisseur" }, { class: "form-select" } %>
+  </div>
+  <div class="mb-3">
+    <%= form.label :order_date, "Date de commande", class: "form-label" %>
+    <%= form.date_field :order_date, class: "form-control" %>
+  </div>
+  <div class="mb-3">
+    <%= form.label :status, "Statut", class: "form-label" %>
+    <%= form.select :status, [['Brouillon', 'draft'], ['Envoyé', 'sent'], ['Confirmé', 'confirmed']], {}, class: "form-select" %>
+  </div>
+  <div class="mb-3">
+    <%= form.label :notes, "Notes", class: "form-label" %>
+    <%= form.text_area :notes, class: "form-control", rows: 3 %>
+  </div>
+  <%= form.submit "Enregistrer", class: "btn btn-primary" %>
+<% end %>

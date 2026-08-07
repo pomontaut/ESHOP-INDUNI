@@ -1,0 +1,45 @@
+<style>
+  body { background: #f6f5f3 !important; }
+  .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .login-card { background: white; border-radius: 18px; box-shadow: 0 16px 48px #0b1e3522; width: 100%; max-width: 420px; overflow: hidden; }
+  .login-header { background: #0c1d34; padding: 32px; text-align: center; }
+  .login-logo { font-size: 26px; font-weight: 900; color: white; letter-spacing: .02em; }
+  .login-logo span { color: #f1642a; }
+  .login-subtitle { color: #93a2b8; font-size: 13px; margin-top: 6px; }
+  .login-body { padding: 32px; }
+  .field-label { display: block; font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 6px; }
+  .field-input { width: 100%; border: 1.5px solid #e5e7eb; border-radius: 9px; padding: 12px 14px; font-size: 15px; outline: none; transition: border-color .15s; box-sizing: border-box; }
+  .field-input:focus { border-color: #0b4f9c; }
+  .btn-login { width: 100%; background: #f1642a; border: 0; border-radius: 10px; color: white; font-size: 16px; font-weight: 900; padding: 14px; cursor: pointer; margin-top: 8px; transition: background .15s; }
+  .btn-login:hover { background: #d9521f; }
+  .alert-box { background: #fff5f5; border: 1px solid #fecaca; color: #b91c1c; border-radius: 9px; padding: 12px 14px; margin-bottom: 20px; font-size: 14px; }
+</style>
+
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="login-logo">INDUNI<span> E-Shop</span></div>
+      <div class="login-subtitle">Connectez-vous avec votre adresse @induni.ch</div>
+    </div>
+    <div class="login-body">
+      <% if flash[:alert] %>
+        <div class="alert-box"><%= flash[:alert] %></div>
+      <% end %>
+
+      <%= form_with url: login_path, local: true do |f| %>
+        <div style="margin-bottom:18px;">
+          <label class="field-label">Adresse e-mail</label>
+          <%= f.email_field :email, placeholder: "prenom.nom@induni.ch",
+              class: "field-input", autocomplete: "email", autofocus: true %>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label class="label">Mot de passe</label>
+          <%= f.password_field :password, class: "field-input", autocomplete: "current-password" %>
+        </div>
+
+        <button type="submit" class="btn-login">Se connecter →</button>
+      <% end %>
+    </div>
+  </div>
+</div>

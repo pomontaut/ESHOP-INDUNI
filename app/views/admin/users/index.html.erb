@@ -1,0 +1,98 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="mb-1">Gestion des utilisateurs</h1>
+    <p class="text-muted mb-0"><%= @users.count %> utilisateur(s)</p>
+  </div>
+  <%= link_to "＋ Nouvel utilisateur", new_admin_user_path, class: "btn btn-primary" %>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead style="background:#0c1d34;color:white;">
+        <tr>
+          <th class="py-3 ps-3">Nom complet</th>
+          <th class="py-3">Fonction</th>
+          <th class="py-3">Secteur</th>
+          <th class="py-3">Email</th>
+          <th class="py-3 text-center">Droits e-shop</th>
+          <th class="py-3 text-center">Catalogues</th>
+          <th class="py-3 text-center">Plafond CHF</th>
+          <th class="py-3 text-center">Statut</th>
+          <th class="py-3 text-center pe-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @users.each do |user| %>
+          <tr>
+            <td class="py-3 ps-3 fw-semibold">
+              <%= user.full_name %>
+              <% if user == current_user %>
+                <span class="badge bg-info ms-1" style="font-size:10px;">moi</span>
+              <% end %>
+            </td>
+            <td class="py-3 text-muted small"><%= user.job_function.presence || "—" %></td>
+            <td class="py-3 text-muted small"><%= user.sector.presence || "—" %></td>
+            <td class="py-3 small"><%= user.email %></td>
+            <td class="py-3 text-center">
+              <% if user.admin? %>
+                <span class="badge" style="background:#f1642a;">Tous</span>
+              <% else %>
+                <div class="d-flex flex-wrap gap-1 justify-content-center">
+                  <% if user.can_read? %>
+                    <span class="badge bg-secondary" title="Lecture">👁</span>
+                  <% end %>
+                  <% if user.can_create_orders? %>
+                    <span class="badge bg-success" title="Création commande">＋</span>
+                  <% end %>
+                  <% if user.can_modify_orders? %>
+                    <span class="badge bg-primary" title="Modification commande">✏</span>
+                  <% end %>
+                  <% if user.can_create_users? %>
+                    <span class="badge bg-warning text-dark" title="Création utilisateurs">👤</span>
+                  <% end %>
+                </div>
+              <% end %>
+            </td>
+            <td class="py-3 text-center small">
+              <% if user.admin? %>
+                <span class="text-muted">Tous</span>
+              <% else %>
+                <%= user.allowed_suppliers.map { |k| User::SUPPLIERS.find { |s| s[:key] == k }&.dig(:label) }.compact.join(", ").presence || "—" %>
+              <% end %>
+            </td>
+            <td class="py-3 text-center small">
+              <% if user.order_limit.present? %>
+                <%= number_with_delimiter(user.order_limit.to_i) %> CHF
+              <% else %>
+                <span class="text-muted">—</span>
+              <% end %>
+            </td>
+            <td class="py-3 text-center">
+              <% if user.must_change_password? %>
+                <span class="badge bg-warning text-dark">En attente</span>
+              <% else %>
+                <span class="badge bg-success">Actif</span>
+              <% end %>
+            </td>
+            <td class="py-3 text-center pe-3">
+              <div class="d-flex gap-1 justify-content-center flex-wrap">
+                <%= link_to "✏ Modifier", edit_admin_user_path(user), class: "btn btn-outline-primary btn-sm" %>
+                <% if user.must_change_password? %>
+                  <%= button_to "📧 Renvoyer accès", resend_welcome_admin_user_path(user),
+                      method: :post, class: "btn btn-warning btn-sm",
+                      data: { turbo_confirm: "Envoyer un nouveau mot de passe temporaire à #{user.email} ?" } %>
+                <% end %>
+                <% unless user == current_user %>
+                  <%= button_to "✕", admin_user_path(user), method: :delete,
+                      class: "btn btn-outline-danger btn-sm",
+                      data: { turbo_confirm: "Supprimer #{user.full_name} ?" } %>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

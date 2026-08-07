@@ -1,0 +1,6 @@
+#!/bin/bash -e
+
+echo "=== ENTRYPOINT: PORT=$PORT CMD=$@ ==="
+./bin/rails db:prepare
+echo "=== DB PREPARE DONE, STARTING PUMA ==="
+exec "${@}"

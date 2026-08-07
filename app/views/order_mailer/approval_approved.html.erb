@@ -1,0 +1,13 @@
+<p>Bonjour <%= @user&.first_name %>,</p>
+
+<p>Votre commande <strong><%= @order.number %></strong> a été <strong style="color:#176b28;">approuvée</strong>.</p>
+
+<table style="border-collapse:collapse;width:100%;max-width:400px;margin-bottom:20px;">
+  <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Commande</td><td style="padding:8px;border:1px solid #ddd;"><%= @order.number %></td></tr>
+  <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Fournisseur</td><td style="padding:8px;border:1px solid #ddd;"><%= @order.supplier.name %></td></tr>
+  <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Montant</td><td style="padding:8px;border:1px solid #ddd;font-weight:bold;"><%= number_with_delimiter(@order.total.to_i) %> CHF</td></tr>
+</table>
+
+<p>Connectez-vous à l'e-shop pour envoyer la commande au fournisseur.</p>
+
+<p style="color:#666;font-size:13px;">INDUNI E-Shop</p>

@@ -1,0 +1,25 @@
+{
+  "name": "ESHOP-INDUNI",
+  "image": "mcr.microsoft.com/devcontainers/ruby:3.3",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {}
+  },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y wkhtmltopdf && bundle install && bin/rails db:migrate db:seed",
+  "postStartCommand": "bin/rails server -b 0.0.0.0 -p 3000 > /tmp/rails.log 2>&1 &",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "INDUNI Eshop",
+      "onAutoForward": "openBrowser",
+      "protocol": "http"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["Shopify.ruby-lsp", "rebornix.Ruby"]
+    }
+  },
+  "remoteEnv": {
+    "RAILS_ENV": "development"
+  }
+}

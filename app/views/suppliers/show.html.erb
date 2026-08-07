@@ -1,0 +1,15 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1><%= @supplier.name %></h1>
+  <div>
+    <%= link_to "Modifier", edit_supplier_path(@supplier), class: "btn btn-warning" %>
+    <%= link_to "Retour", suppliers_path, class: "btn btn-secondary" %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <p><strong>Email:</strong> <%= @supplier.email %></p>
+    <p><strong>Téléphone:</strong> <%= @supplier.phone %></p>
+    <p><strong>Adresse:</strong> <%= @supplier.address %></p>
+  </div>
+</div>

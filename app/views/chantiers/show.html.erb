@@ -1,0 +1,18 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1><%= @chantier.nom %></h1>
+  <%= link_to "Retour", chantiers_path, class: "btn btn-secondary" %>
+</div>
+
+<table class="table">
+  <tbody>
+    <tr><th>Adresse</th><td><%= [ @chantier.adresse, @chantier.npa, @chantier.ville ].compact_blank.join(", ") %></td></tr>
+    <tr><th>Contraintes d'accès</th><td><%= @chantier.contraintes_acces %></td></tr>
+    <% if @chantier.carte_interactive.present? %>
+      <tr><th>Carte interactive</th><td><%= link_to "Ouvrir la carte", @chantier.carte_interactive, target: "_blank" %></td></tr>
+    <% end %>
+    <tr><th>Technicien</th><td><%= [ @chantier.technicien, @chantier.natel_technicien, @chantier.email_technicien ].compact_blank.join(" · ") %></td></tr>
+    <tr><th>Contremaître</th><td><%= [ @chantier.contremaitre, @chantier.natel_contremaitre, @chantier.email_contremaitre ].compact_blank.join(" · ") %></td></tr>
+    <tr><th>Chef d'équipe</th><td><%= [ @chantier.chef_equipe, @chantier.natel_chef_equipe, @chantier.email_chef_equipe ].compact_blank.join(" · ") %></td></tr>
+    <tr><th>Chantier consortium</th><td><%= @chantier.consortium? ? "Oui" : "Non" %></td></tr>
+  </tbody>
+</table>

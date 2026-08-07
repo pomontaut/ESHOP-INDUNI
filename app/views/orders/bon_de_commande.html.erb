@@ -1,0 +1,224 @@
+<%
+  logo_path = Rails.root.join('app/assets/images/induni_logo.png')
+  logo_b64  = Base64.strict_encode64(File.binread(logo_path))
+  notes     = @order.notes.to_s
+  chantier_match = notes.match(/Chantier:\s*([^|]+)/)
+  delai_match    = notes.match(/Délai[^:]*:\s*(.+)/)
+  chantier_val   = chantier_match ? chantier_match[1].strip : '—'
+  delai_val      = delai_match    ? delai_match[1].strip    : '—'
+  fmt = ->(n) { i, d = ('%.2f' % n.to_f).split('.'); "#{i.reverse.gsub(/(\d{3})(?=\d)/, '\\1' + "'").reverse}.#{d}" rescue n.to_s }
+  # Chantier en consortium : gabarit sans notre logo ni nos CGA (pas de
+  # visibilité sur le partenaire), le bloc CLIENT affiche juste "CONSORTIUM".
+  is_consortium  = Chantier.find_by(nom: chantier_val)&.consortium? || false
+%><!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+@page{size:A4;margin:14mm 15mm 18mm 15mm}
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;font-size:10pt;color:#111;margin:0}
+.logo{width:120px;margin-bottom:6px}
+.title-box{text-align:center;border:1.5px solid #111;padding:7px 0;margin:8px 0 12px}
+.title-box h1{font-size:14pt;font-weight:bold;margin:0 0 2px}
+.title-box p{font-size:10pt;margin:0}
+.hgrid{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid #111;margin-bottom:14px}
+.hcol{padding:8px 10px}
+.hcol:first-child{border-right:1.5px solid #111}
+.htitle{background:#003087;color:white;font-weight:bold;font-size:10pt;text-align:center;padding:4px;margin:-8px -10px 7px;letter-spacing:.04em}
+.cname{font-weight:bold;font-size:11pt;text-align:center;margin-bottom:5px}
+.ir{margin:2px 0;font-size:9.5pt;line-height:1.35}
+.il{font-weight:bold}
+table{width:100%;border-collapse:collapse;margin-bottom:8px}
+th{border-bottom:2px solid #111;padding:5px 4px;font-size:9pt;text-align:left;white-space:nowrap}
+th:not(:first-child){text-align:right}
+td{padding:4px;font-size:9pt;vertical-align:top;border-bottom:1px solid #ddd}
+td:not(:first-child){text-align:right}
+.tr-total td{border-top:2px solid #111;border-bottom:none;font-weight:bold;font-size:11pt;padding-top:7px}
+.infos{margin-top:12px}
+.infos h3{font-size:11pt;font-weight:bold;margin:0 0 5px}
+.ig{display:grid;grid-template-columns:150px 1fr;gap:2px 8px;font-size:9.5pt}
+.factaddr{margin-top:10px;font-size:9.5pt;line-height:1.4}
+.sigrow{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:28px}
+.sigbox{border-top:1px solid #111;padding-top:3px;font-size:9pt}
+</style></head><body>
+
+<% unless is_consortium %><img src="data:image/png;base64,<%= logo_b64 %>" class="logo" alt="INDUNI"><% end %>
+
+<div class="title-box">
+  <h1>BON DE COMMANDE N° <%= @order.number %></h1>
+  <p>Du <%= l(@order.order_date, format: '%d/%m/%Y') if @order.order_date %></p>
+</div>
+
+<div class="hgrid">
+  <div class="hcol">
+    <div class="htitle">CLIENT</div>
+    <div class="cname"><%= is_consortium ? 'CONSORTIUM' : 'INDUNI &amp; CIE SA'.html_safe %></div>
+    <div class="ir"><span class="il">Contact :</span> Pierre-Olivier MONTAUT</div>
+    <div class="ir"><span class="il">Chantier :</span> <%= chantier_val %></div>
+    <div class="ir"><span class="il">Délai livraison :</span> <%= delai_val %></div>
+    <div class="ir"><span class="il">Adresse de livraison :</span></div>
+    <div class="ir" style="padding-left:10px">INDUNI &amp; Cie SA<br>Avenue des Grandes-Communes 6<br>1213 Petit-Lancy</div>
+  </div>
+  <div class="hcol">
+    <div class="htitle">FOURNISSEUR</div>
+    <div class="cname"><%= @order.supplier&.name&.upcase %></div>
+    <% if @order.supplier&.email.present? %>
+    <div class="ir"><span class="il">Mail :</span> <%= @order.supplier&.email %></div>
+    <% end %>
+    <% if @order.supplier.phone.present? %>
+    <div class="ir"><span class="il">Tél :</span> <%= @order.supplier.phone %></div>
+    <% end %>
+    <% if @order.supplier.address.present? %>
+    <div class="ir"><span class="il">Adresse :</span></div>
+    <div class="ir" style="padding-left:10px"><%= @order.supplier.address.gsub("\n","<br>").html_safe %></div>
+    <% end %>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:38%">Désignation</th>
+      <th style="width:12%">Date livr.</th>
+      <th style="width:7%">Qté</th>
+      <th style="width:8%">Unité</th>
+      <th style="width:13%">Réf. article</th>
+      <th style="width:10%">Prix unit.</th>
+      <th style="width:12%">Montant</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @order.order_lines.includes(:product).each do |line| %>
+    <tr>
+      <td><strong><%= line.product.name %></strong></td>
+      <td><%= delai_val %></td>
+      <td style="text-align:right"><%= '%.2f' % line.quantity %></td>
+      <td>PCE</td>
+      <td><%= line.product.reference %></td>
+      <td>CHF <%= fmt.call(line.unit_price) %></td>
+      <td><strong>CHF <%= fmt.call(line.unit_price.to_f * line.quantity) %></strong></td>
+    </tr>
+    <% end %>
+    <tr class="tr-total">
+      <td colspan="5">Montant total commande H.T.</td>
+      <td>CHF</td>
+      <td>CHF <%= fmt.call(@order.total) %></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="infos">
+  <h3>Informations complémentaires sur le chantier</h3>
+  <div class="ig">
+    <span>Contremaître :</span><span>—</span>
+    <span>Technicien :</span><span>Pierre-Olivier Montaut — pomontaut@induni.ch</span>
+  </div>
+</div>
+
+<div class="factaddr">
+  <strong>Adresse de facturation :</strong><br>
+  INDUNI &amp; Cie SA<br>
+  Avenue des Grandes-Communes 6<br>
+  1213 Petit-Lancy<br>
+  facturation@induni.ch
+</div>
+
+<div class="sigrow">
+  <div class="sigbox">Pierre-Olivier Montaut</div>
+  <div class="sigbox">&nbsp;</div>
+</div>
+
+
+<% unless is_consortium %>
+<!-- PAGE 2 : CONDITIONS GÉNÉRALES D'ACHAT -->
+<div style="page-break-before:always"></div>
+
+<img src="data:image/png;base64,<%= logo_b64 %>" class="logo" alt="INDUNI">
+
+<div style="margin-top:8px;margin-bottom:14px">
+  <p style="font-size:8pt;color:#555;margin:0">412.02 - 23.04.2024 &nbsp;&nbsp; 1/1 &nbsp;&nbsp;&nbsp; Paraphe Entrepreneur : ……………………</p>
+  <h2 style="font-size:12pt;font-weight:bold;text-transform:uppercase;margin:6px 0 12px;letter-spacing:.03em">Conditions générales d'achat de fourniture</h2>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 18px;font-size:8.5pt;line-height:1.45">
+
+  <div>
+    <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">1. &nbsp;Champ d'application</p>
+    <p style="margin:0 0 8px">Les présentes conditions générales d'achat s'appliquent à tous les contrats d'achat de fourniture conclus entre Induni &amp; Cie SA et ses fournisseurs. Elles font partie des appels d'offres d'Induni &amp; Cie SA et y sont annexées. Le dépôt d'une offre par le fournisseur vaut comme acceptation des conditions générales d'achat.</p>
+
+    <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">2. &nbsp;Offres</p>
+    <p style="margin:0 0 8px">Sauf convention contraire, l'offre est valable pour la durée du chantier. Le fournisseur précise expressément dans son offre toute divergence avec l'appel d'offres d'Induni &amp; Cie SA.</p>
+
+    <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">3. &nbsp;Commandes</p>
+    <p style="margin:0 0 8px">Les commandes ne sont valables que si elles sont établies ou confirmées par écrit par Induni &amp; Cie SA, et qu'elles mentionnent le nom et le numéro de chantier, ainsi que les coordonnées de la personne de contact. Passé un délai de deux jours ouvrés et sans confirmation de la part du fournisseur, la commande est considérée comme acceptée.</p>
+
+    <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">4. &nbsp;Prix</p>
+    <p style="margin:0 0 8px">Les prix convenus sont des prix fixes et valables jusqu'à la fin du chantier. Une réserve quant à une hausse éventuelle des prix n'est valable que si elle a fait l'objet d'un accord écrit entre les parties.</p>
+
+    <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">5. &nbsp;Factures</p>
+    <p style="margin:0 0 4px">Le fournisseur fait parvenir à Induni &amp; Cie SA une facture séparée pour chaque chantier mentionnant impérativement :</p>
+    <ul style="margin:0 0 4px;padding-left:14px">
+      <li>Le nom et le numéro de chantier ou centre de frais</li>
+      <li>La personne de contact</li>
+      <li>Le numéro de commande</li>
+      <li>Le détail des bons de livraisons</li>
+    </ul>
+    <p style="margin:0 0 8px">La facture doit être envoyée en format PDF (en un seul fichier) à l'adresse facturation@induni.ch. Elle est réglée 60 jours après réception.</p>
+
+    <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">6. &nbsp;Délai de livraison</p>
+    <p style="margin:0 0 8px">Les délais de livraison sont impératifs. Si le fournisseur estime que la livraison ne peut pas être effectuée dans les délais convenus, il en avise immédiatement Induni &amp; Cie SA en précisant les raisons et la durée probable du report. Induni &amp; Cie SA se réserve le droit de répercuter d'éventuelles pénalités de retard qu'elle aurait à supporter de la part de son client en raison d'un report de livraison.</p>
+
+    <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">7. &nbsp;Livraison</p>
+    <p style="margin:0 0 4px">Chaque livraison doit être accompagnée d'un bulletin de livraison détaillé indiquant :</p>
+    <ul style="margin:0 0 4px;padding-left:14px">
+      <li>le nom et le numéro de chantier ou centre de frais</li>
+      <li>le numéro de commande</li>
+      <li>la désignation précise de l'article</li>
+      <li>la quantité livrée</li>
+    </ul>
+    <p style="margin:0 0 8px">Le déchargement des marchandises est effectué sur demande par le livreur avec l'accord de l'interlocuteur sur site. Les livraisons partielles ou d'avance, comme celles qui sont supérieures ou inférieures aux quantités commandées ne sont admises qu'avec l'accord exprès d'Induni &amp; Cie SA.<br>La marchandise voyage aux risques et périls du fournisseur et est acheminée franco-domicile à l'adresse de livraison mentionnée sur la commande.<br>Pour les commandes à l'étranger, les conditions sont DDP selon les Incoterms Edition 2010.</p>
+
+    <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">8. &nbsp;Emballage et conditionnement</p>
+    <p style="margin:0 0 8px">Le fournisseur répond d'un emballage adéquat et doit indiquer à Induni &amp; Cie SA les particularités à respecter lors du déchargement et du déballage et les précautions à prendre pour le stockage du matériel.</p>
+
+    <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">9. &nbsp;Modes d'emploi</p>
+    <p style="margin:0 0 8px">Les fournitures / appareils doivent être livrés avec mode d'emploi en français, documentation technique, dessins et schémas complets. Si nécessaire, le vendeur assure une première instruction du personnel d'Induni &amp; Cie SA quant à la mise en service et l'exploitation de la fourniture.</p>
+  </div>
+
+  <div>
+    <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">10. &nbsp;Exécution des commandes et sous-traitance</p>
+    <p style="margin:0 0 8px">Le fournisseur est réputé connaître, tant pour lui-même que pour son ou ses éventuels sous-traitants, les conditions d'approvisionnement des matières inhérentes à l'exécution de la commande.<br>Toute cession ou sous-traitance de commande doit faire l'objet du consentement exprès d'Induni &amp; Cie SA. Dans tous les cas, le fournisseur reste solidaire de son cessionnaire ou sous-traitant.</p>
+
+    <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">11. &nbsp;Sécurité</p>
+    <p style="margin:0 0 8px">Le fournisseur prend toutes les mesures nécessaires pour respecter les règles d'accès et de sécurité en vigueur sur le site de livraison.<br>Dans le cadre de fourniture de matériel, le matériel livré est conforme aux exigences légales, normes et règles de la technique en vigueur.<br>Le fournisseur joint systématiquement aux livraisons de produits dangereux les fiches de données de sécurité (FDS).</p>
+
+    <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">12. &nbsp;Environnement</p>
+    <p style="margin:0 0 8px">Le fournisseur s'engage à respecter la législation environnementale applicable à son domaine. Il veille à minimiser l'impact de ses activités sur l'environnement en maîtrisant les consommations d'eau, d'énergie et de matières premières, en limitant les émissions de CO₂, la production de déchets et en favorisant leur valorisation et leur recyclage.</p>
+
+    <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">13. &nbsp;Garantie</p>
+    <p style="margin:0 0 8px">Le fournisseur garantit que la marchandise ne présente aucun défaut pouvant diminuer sa valeur ou nuire à l'utilité prévue, qu'elle a les caractéristiques promises et qu'elle répond aux prestations et spécifications prescrites, ainsi qu'aux dispositions en matière de sécurité, de prévention des accidents et de protection de l'environnement.<br>En cas de défaut, Induni &amp; Cie SA peut au choix réduire la rémunération à raison de la moins-value, exiger la réparation des biens défectueux ou la livraison de biens exempts de défaut (fourniture de remplacement). S'il s'agit de défauts majeurs, Induni &amp; Cie SA peut se départir du contrat.<br>La marchandise est vérifiée à réception ou, si nécessaire, à l'usage.<br>Le délai de garantie est de 24 mois à compter de la livraison ou de l'installation des biens, à moins que le contrat ne prévoie un délai de garantie différent. La dénonciation d'un défaut n'est soumise à aucun délai durant cette période. Les paiements déjà effectués n'impliquent pas la renonciation à d'éventuelles réclamations.<br>En cas d'élimination de défauts ou de remplacement de marchandise pendant le délai de garantie, un nouveau délai de garantie commence à courir pour la marchandise concernée à compter du jour de l'élimination ou du remplacement.</p>
+
+    <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">14. &nbsp;Cession et mise en gage de créances</p>
+    <p style="margin:0 0 8px">Le fournisseur n'a pas le droit de céder ni de mettre en gage les créances qu'il détient envers Induni &amp; Cie SA en vertu de la commande sans l'accord exprès de cette dernière.</p>
+
+    <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">15. &nbsp;Résiliation du contrat</p>
+    <p style="margin:0 0 4px">Induni &amp; Cie SA est en droit de résoudre le contrat en tout temps pour juste motifs. Sont notamment considérés comme de justes motifs :</p>
+    <ul style="margin:0 0 4px;padding-left:14px">
+      <li>le fournisseur n'exécute pas une part essentielle des livraisons conformément au contrat ou néglige gravement et de manière répétée ses obligations contractuelles ;</li>
+      <li>le fournisseur viole une disposition essentielle du contrat ou des conditions générales d'achat de fourniture ;</li>
+      <li>le fournisseur n'est plus en mesure d'assumer convenablement ses obligations financières ;</li>
+      <li>le fournisseur requiert lui-même sa faillite ou un sursis concordataire auprès du juge, ou une procédure de faillite ou de sursis concordataire est ouverte contre lui ;</li>
+      <li>les cas de force majeure.</li>
+    </ul>
+    <p style="margin:0 0 8px">En cas de résolution pour justes motifs, le fournisseur n'a droit à aucune rémunération pour des prestations ou des livraisons non encore exécutées ni à une quelconque indemnité.</p>
+
+    <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">16. &nbsp;Droit applicable et for juridique</p>
+    <p style="margin:0 0 8px">Les contrats d'achat conclus par Induni &amp; Cie SA, quelle que soit leur forme (bon de commande, marché, convention ou contrat) sont régis par le droit suisse. Les dispositions de la Convention de Vienne (Convention des Nations Unies sur les contrats de vente internationale de marchandises du 11 avril 1980/1er mars 1999) sont exclues.<br>Le for juridique est à Genève, siège d'Induni &amp; Cie SA.</p>
+
+    <div style="margin-top:20px;border-top:1px solid #111;padding-top:6px;font-size:9pt">
+      <strong>Paraphe Entrepreneur :</strong> ……………………………………………
+    </div>
+  </div>
+
+</div>
+<% end %>
+
+</body></html>

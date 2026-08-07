@@ -1,0 +1,16 @@
+.claude/
+.env
+
+# Ignore key files for decrypting credentials and more.
+/config/*.key
+
+/log/*
+!/log/.keep
+/tmp/*
+!/tmp/.keep
+/storage/*
+!/storage/.keep
+/log/*
+!/log/.keep
+/storage/*
+!/storage/.keep

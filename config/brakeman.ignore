@@ -1,0 +1,25 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "Mass Assignment",
+      "warning_code": 105,
+      "fingerprint": "5b864401ce72255c1b649cee667de192716b1c87da76090e471509c6d302dc6a",
+      "check_name": "PermitAttributes",
+      "message": "Potentially dangerous key allowed for mass assignment",
+      "file": "app/controllers/admin/users_controller.rb",
+      "line": 70,
+      "link": "https://brakemanscanner.org/docs/warning_types/mass_assignment/",
+      "code": "params.require(:user).permit(:email, :password, :first_name, :last_name, :job_function, :sector, :admin, :must_change_password, :can_read, :can_create_orders, :can_modify_orders, :can_create_users, :order_limit, :approver_email, :allowed_suppliers => ([]))",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::UsersController",
+        "method": "user_params"
+      },
+      "user_input": ":admin",
+      "confidence": "High",
+      "note": "Admin::UsersController is restricted to admins via require_admin; only admins can grant the admin flag to other users, which is intended."
+    }
+  ],
+  "brakeman_version": "8.0.5"
+}

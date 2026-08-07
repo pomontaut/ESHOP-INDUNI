@@ -1,0 +1,14 @@
+Demande d'approbation — Commande <%= @order.number %>
+
+<%= @user&.full_name %> a soumis une commande qui dépasse son plafond d'autorisation.
+
+Fournisseur : <%= @order.supplier.name %>
+Montant total : <%= number_with_delimiter(@order.total.to_i) %> CHF
+Notes : <%= @order.notes %>
+
+Articles :
+<% @order.order_lines.each do |line| %>
+- <%= line.product.name %> x<%= line.quantity %> — <%= number_with_delimiter(line.subtotal.to_f) %> CHF
+<% end %>
+
+Veuillez contacter <%= @user&.full_name %> (<%= @user&.email %>) pour donner suite.
