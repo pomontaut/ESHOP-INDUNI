@@ -590,6 +590,13 @@ function extractDiamDisplayInduni(d){
   const single=text.match(/Ø\s*([\d.,]+)/);
   return single?single[1]:null;
 }
+// Repli pour les rares désignations sans symbole Ø (ex. Protection Câbles|Réductions
+// "92/72 mm") : volontairement restreint à ce cas précis pour ne pas confondre
+// d'autres dimensions (ép./longueur) présentes ailleurs sous la même forme "N/N mm".
+function extractDiamDisplayFallbackInduni(d){
+  const m=String(d||'').match(/\b(\d[\d.,]*)\s*\/\s*(\d[\d.,]*)\s*mm\b/i);
+  return m?`${m[1]}/${m[2]}`:null;
+}
 function extractLongInduni(d){const m=String(d||'').match(/L\s*=\s*([\d.,]+)\s*M/i); return m?parseFloat(m[1].replace(',','.')):null;}
 function splitTuyauLongueurInduni(d){const m=String(d||'').match(/^(.*?)\s+(L\s*=\s*.+)$/i); return m?{main:m[1].trim(),suffix:m[2].trim()}:null;}
 function productTitleHtmlInduni(p){
@@ -602,7 +609,8 @@ function productTitleHtmlInduni(p){
   return esc(mainText).replace(/(Ø\s*[\d.,]+\s*(?:cm|mm)?\s*\/\s*[\d.,]+\s*mm|Ø\s*\d[\d.,]*)/i,m=>`<b>${m}</b>`);
 }
 function productIconOrDiamHtmlInduni(p){
-  const disp=extractDiamDisplayInduni(p.designation);
+  let disp=extractDiamDisplayInduni(p.designation);
+  if(disp==null&&p.catalog==='Canplast'&&p.sousFamille==='Réductions') disp=extractDiamDisplayFallbackInduni(p.designation);
   if(disp!=null){
     const isTuyau=isTuyauContextInduni(p.sousFamille,p.sousSousFamille);
     const len=isTuyau?extractLongInduni(p.designation):null;
