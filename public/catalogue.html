@@ -651,7 +651,7 @@ function extractDiamDisplayFallbackInduni(d){
   const m=String(d||'').match(/\b(\d[\d.,]*)\s*\/\s*(\d[\d.,]*)\s*mm\b/i);
   return m?`${m[1]}/${m[2]}`:null;
 }
-function extractLongInduni(d){const m=String(d||'').match(/L\s*=\s*([\d.,]+)\s*M/i); return m?parseFloat(m[1].replace(',','.')):null;}
+function extractLongInduni(d){const m=String(d||'').match(/\bL\s*=?\s*([\d.,]+)\s*M\b/i); return m?parseFloat(m[1].replace(',','.')):null;}
 // Longueur de tuyau supportée par le manchon à souder HDPE (ex. "...jusqu'à 12 M'")
 function extractSouderLongInduni(d){const m=String(d||'').match(/jusqu.[aà]\s*([\d.,]+)\s*M/i); return m?parseFloat(m[1].replace(',','.')):null;}
 function splitTuyauLongueurInduni(d){const m=String(d||'').match(/^(.*?)\s+(L\s*=\s*.+)$/i); return m?{main:m[1].trim(),suffix:m[2].trim()}:null;}
