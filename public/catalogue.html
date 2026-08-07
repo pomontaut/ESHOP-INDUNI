@@ -413,8 +413,14 @@ const HGC_CONFIG = {
   },
   'Ciments & Bétons': {
     gradient:'linear-gradient(135deg,#374151,#6b7280)', icone:'🏗️', badge:'Béton',
-    desc:'Ciments sac · Bétons & Mortiers · Grilles & caillebotis · Bordures',
-    subs:['Ciments en sac','Bétons & Mortiers','Grilles & caillebotis'],
+    desc:'Ciments sac · Bétons & Mortiers · Crépi · Grilles & caillebotis',
+    subs:['Ciments en sac','Bétons & Mortiers','Crépi','Grilles & caillebotis'],
+    order:2
+  },
+  'Préfa-béton': {
+    gradient:'linear-gradient(135deg,#57534e,#78716c)', icone:'🏢', badge:'Préfa-béton',
+    desc:'Tuyaux béton · Bordures · Linteaux · Dalles · Accessoires',
+    subs:['Tuyaux & bordures béton','Linteaux & dalles','Accessoires coffrage & béton','Outillage béton','Divers'],
     order:2
   },
   'Coffrage & Étaiement': {
@@ -708,6 +714,7 @@ const NO_DIAMETER_SPLIT_INDUNI=new Set([
   'Canalisations PE/HDPE|Manchons|Manchon double HDPE LONG',
   'Canalisations PP|Réductions|null',
   'Canalisations PVC|Autres articles|null',
+  'Préfa-béton|Accessoires coffrage & béton|null',
 ]);
 function level4KindInduni(sous,sous2,items){
   if(isAngleContextInduni(sous,sous2)) return 'angle';
