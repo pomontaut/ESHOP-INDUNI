@@ -390,10 +390,18 @@ const SUBFAMILY_PHOTOS = {
 
 // ── HGC : par domaine métier ──────────────────────────────────────────────────
 const HGC_CONFIG = {
-  'CANALISATION': {
-    gradient:'linear-gradient(135deg,#0b4f9c,#2563eb)', icone:'🔩', badge:'Canalisation',
-    desc:'Tuyaux · Coudes · Manchons · Embranchements · Protection câbles',
-    subs:['Bouchons','Coudes','Embranchements','Manchons','Protection câbles','Réductions','Tuyau compact drainage','Tuyaux compact standard','Autres articles'],
+  'Canalisations PVC': {
+    gradient:'linear-gradient(135deg,#1a56a0,#3b82f6)', icone:'🔵', badge:'PVC',
+    photo:'/images/categories/pvc-famille.png',
+    desc:'Tuyaux · Coudes · Manchons · Réductions · Bouchons',
+    subs:['Bouchons','Coudes','Embranchements','Manchons','Réductions','Tuyau compact drainage','Tuyaux compact standard','Autres articles'],
+    order:1
+  },
+  'Protection Câbles': {
+    gradient:'linear-gradient(135deg,#6b21a8,#a855f7)', icone:'🟣', badge:'Câbles',
+    photo:'/images/categories/protection-cables-famille.png',
+    desc:'PELD · PEHD · HDPE',
+    subs:['Coudes','Manchons','Tubes de protection','Autres produits Protection Câbles'],
     order:1
   },
   'Ciments & Bétons': {
@@ -647,7 +655,7 @@ const NO_DIAMETER_SPLIT_INDUNI=new Set([
   'Canalisations PE/HDPE|Manchons|Manchon double PE',
   'Canalisations PE/HDPE|Manchons|Manchon double HDPE LONG',
   'Canalisations PP|Réductions|null',
-  'CANALISATION|Autres articles|null',
+  'Canalisations PVC|Autres articles|null',
 ]);
 function level4KindInduni(sous,sous2,items){
   if(isAngleContextInduni(sous,sous2)) return 'angle';
@@ -1563,13 +1571,13 @@ const RECLASSIF_RULES = [
   // Tube halogène → Équipement de Chantier
   { match: p => /tube halog[eè]ne/i.test(p.designation), famille: 'Équipement de Chantier', sousFamille: 'Équipement', icone: '🪣' },
   // Spatules de plâtrier dans Canalisation → Fournitures Diverses
-  { match: p => /spatule.*pl[aâ]tr/i.test(p.designation) && p.famille === 'CANALISATION', famille: 'Fournitures Diverses', sousFamille: 'Divers', icone: '🧰' },
+  { match: p => /spatule.*pl[aâ]tr/i.test(p.designation) && p.famille === 'Canalisations PVC', famille: 'Fournitures Diverses', sousFamille: 'Divers', icone: '🧰' },
   // MSU échelon dans Canalisation → Équipement de Chantier
-  { match: p => /MSU.*[eé]chelon/i.test(p.designation) && p.famille === 'CANALISATION', famille: 'Équipement de Chantier', sousFamille: 'Équipement', icone: '🪣' },
+  { match: p => /MSU.*[eé]chelon/i.test(p.designation) && p.famille === 'Canalisations PVC', famille: 'Équipement de Chantier', sousFamille: 'Équipement', icone: '🪣' },
   // Serre-joints dans Canalisation → Outillage
-  { match: p => /serre.joint/i.test(p.designation) && p.famille === 'CANALISATION', famille: 'Outillage & Machines', sousFamille: 'Outillage à main', icone: '🔧' },
+  { match: p => /serre.joint/i.test(p.designation) && p.famille === 'Canalisations PVC', famille: 'Outillage & Machines', sousFamille: 'Outillage à main', icone: '🔧' },
   // Disques à couper dans Canalisation/Manchons → Outillage
-  { match: p => /disque.*couper/i.test(p.designation) && p.famille === 'CANALISATION', famille: 'Outillage & Machines', sousFamille: 'Consommables machines', icone: '🔧' },
+  { match: p => /disque.*couper/i.test(p.designation) && p.famille === 'Canalisations PVC', famille: 'Outillage & Machines', sousFamille: 'Consommables machines', icone: '🔧' },
   // Pavés granit dans Manutention/Bacs → Voirie
   { match: p => /pav[eé].*granit/i.test(p.designation) && p.famille === 'Manutention & Chantier', famille: 'Voirie & Aménagement', sousFamille: 'Pavés & dalles', icone: '🛣️' },
   // Carrelet bois dans EPI → Coffrage
@@ -1595,9 +1603,9 @@ const RECLASSIF_RULES = [
   // Rapido ligatures dans Ciments → Coffrage & Étaiement
   { match: p => /rapido ligatures/i.test(p.designation), famille: 'Coffrage & Étaiement', sousFamille: 'Divers', icone: '🏗️' },
   // Tuyau béton dans Ciments → Canalisation (ne correspond pas au catalogue Canplast)
-  { match: p => /tuyau.*b[eé]ton/i.test(p.designation) && p.famille === 'Ciments & Bétons', famille: 'CANALISATION', sousFamille: 'Autres articles', icone: '🔩' },
+  { match: p => /tuyau.*b[eé]ton/i.test(p.designation) && p.famille === 'Ciments & Bétons', famille: 'Canalisations PVC', sousFamille: 'Autres articles', icone: '🔩' },
   // Cadre béton TE ovale dans Ciments → Canalisation (ne correspond pas au catalogue Canplast)
-  { match: p => /cadre.*b[eé]ton/i.test(p.designation), famille: 'CANALISATION', sousFamille: 'Autres articles', icone: '🔩' },
+  { match: p => /cadre.*b[eé]ton/i.test(p.designation), famille: 'Canalisations PVC', sousFamille: 'Autres articles', icone: '🔩' },
   // Géotextile dans Fournitures → Isolation & Étanchéité
   { match: p => /g[eé]otextile/i.test(p.designation) && p.famille === 'Fournitures Diverses', famille: 'Isolation & Étanchéité', sousFamille: 'Membranes & films', icone: '🛡️' },
   // Géonontissés dans Fournitures → Isolation & Étanchéité
