@@ -13,6 +13,8 @@
   .btn-login { width: 100%; background: #f1642a; border: 0; border-radius: 10px; color: white; font-size: 16px; font-weight: 900; padding: 14px; cursor: pointer; margin-top: 8px; transition: background .15s; }
   .btn-login:hover { background: #d9521f; }
   .alert-box { background: #fff5f5; border: 1px solid #fecaca; color: #b91c1c; border-radius: 9px; padding: 12px 14px; margin-bottom: 20px; font-size: 14px; }
+  .login-footer { text-align: center; margin-top: 18px; font-size: 14px; }
+  .login-footer a { color: #0b4f9c; font-weight: 600; text-decoration: none; }
 </style>
 
 <div class="login-wrap">
@@ -40,6 +42,10 @@
 
         <button type="submit" class="btn-login">Se connecter →</button>
       <% end %>
+
+      <div class="login-footer">
+        Pas encore de compte ? <%= link_to "S'inscrire", signup_path %>
+      </div>
     </div>
   </div>
 </div>

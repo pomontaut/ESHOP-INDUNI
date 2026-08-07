@@ -1,0 +1,77 @@
+<style>
+  body { background: #f6f5f3 !important; }
+  .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .login-card { background: white; border-radius: 18px; box-shadow: 0 16px 48px #0b1e3522; width: 100%; max-width: 460px; overflow: hidden; }
+  .login-header { background: #0c1d34; padding: 32px; text-align: center; }
+  .login-logo { font-size: 26px; font-weight: 900; color: white; letter-spacing: .02em; }
+  .login-logo span { color: #f1642a; }
+  .login-subtitle { color: #93a2b8; font-size: 13px; margin-top: 6px; }
+  .login-body { padding: 32px; }
+  .field-label { display: block; font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 6px; }
+  .field-input { width: 100%; border: 1.5px solid #e5e7eb; border-radius: 9px; padding: 12px 14px; font-size: 15px; outline: none; transition: border-color .15s; box-sizing: border-box; }
+  .field-input:focus { border-color: #0b4f9c; }
+  .field-row { display: flex; gap: 12px; }
+  .field-row > div { flex: 1; }
+  .btn-login { width: 100%; background: #f1642a; border: 0; border-radius: 10px; color: white; font-size: 16px; font-weight: 900; padding: 14px; cursor: pointer; margin-top: 8px; transition: background .15s; }
+  .btn-login:hover { background: #d9521f; }
+  .alert-box { background: #fff5f5; border: 1px solid #fecaca; color: #b91c1c; border-radius: 9px; padding: 12px 14px; margin-bottom: 20px; font-size: 14px; }
+  .login-footer { text-align: center; margin-top: 18px; font-size: 14px; }
+  .login-footer a { color: #0b4f9c; font-weight: 600; text-decoration: none; }
+</style>
+
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="login-logo">INDUNI<span> E-Shop</span></div>
+      <div class="login-subtitle">Créer votre compte avec votre adresse @induni.ch</div>
+    </div>
+    <div class="login-body">
+      <% if @user.errors.any? %>
+        <div class="alert-box">
+          <% @user.errors.full_messages.each do |msg| %>
+            <div><%= msg %></div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%= form_with model: @user, url: signup_path, local: true do |f| %>
+        <div class="field-row" style="margin-bottom:18px;">
+          <div>
+            <label class="field-label">Prénom</label>
+            <%= f.text_field :first_name, class: "field-input", required: true, autofocus: true %>
+          </div>
+          <div>
+            <label class="field-label">Nom</label>
+            <%= f.text_field :last_name, class: "field-input", required: true %>
+          </div>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label class="field-label">Adresse e-mail</label>
+          <%= f.email_field :email, placeholder: "prenom.nom@induni.ch", class: "field-input", autocomplete: "email", required: true %>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label class="field-label">Mot de passe</label>
+          <%= f.password_field :password, class: "field-input", autocomplete: "new-password", required: true, minlength: 8 %>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label class="field-label">Confirmer le mot de passe</label>
+          <%= f.password_field :password_confirmation, class: "field-input", autocomplete: "new-password", required: true, minlength: 8 %>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label class="field-label">Code d'invitation</label>
+          <input type="text" name="registration_code" class="field-input" required>
+        </div>
+
+        <button type="submit" class="btn-login">Créer mon compte →</button>
+      <% end %>
+
+      <div class="login-footer">
+        Déjà un compte ? <%= link_to "Se connecter", login_path %>
+      </div>
+    </div>
+  </div>
+</div>
