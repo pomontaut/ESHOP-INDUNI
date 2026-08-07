@@ -599,6 +599,8 @@ function extractDiamDisplayFallbackInduni(d){
   return m?`${m[1]}/${m[2]}`:null;
 }
 function extractLongInduni(d){const m=String(d||'').match(/L\s*=\s*([\d.,]+)\s*M/i); return m?parseFloat(m[1].replace(',','.')):null;}
+// Longueur de tuyau supportée par le manchon à souder HDPE (ex. "...jusqu'à 12 M'")
+function extractSouderLongInduni(d){const m=String(d||'').match(/jusqu.[aà]\s*([\d.,]+)\s*M/i); return m?parseFloat(m[1].replace(',','.')):null;}
 function splitTuyauLongueurInduni(d){const m=String(d||'').match(/^(.*?)\s+(L\s*=\s*.+)$/i); return m?{main:m[1].trim(),suffix:m[2].trim()}:null;}
 function productTitleHtmlInduni(p){
   const isTuyau=isTuyauContextInduni(p.sousFamille,p.sousSousFamille);
@@ -614,8 +616,11 @@ function productIconOrDiamHtmlInduni(p){
   if(disp==null&&p.catalog==='Canplast'&&p.sousFamille==='Réductions') disp=extractDiamDisplayFallbackInduni(p.designation);
   if(disp!=null){
     const isTuyau=isTuyauContextInduni(p.sousFamille,p.sousSousFamille);
-    const len=isTuyau?extractLongInduni(p.designation):null;
-    return `<span class="diamBig">Ø ${disp}</span>${len?`<span class="diamLg">LG de ${len} m</span>`:''}`;
+    let len=isTuyau?extractLongInduni(p.designation):null;
+    if(len==null&&p.sousSousFamille==='Manchon à souder HDPE') len=extractSouderLongInduni(p.designation);
+    const dualParts=disp.split('/');
+    const innerDiam=(p.sousFamille==='Réductions'&&dualParts.length===2)?`<span class="diamLg">Ø int. ${dualParts[1]} mm</span>`:'';
+    return `<span class="diamBig">Ø ${disp}</span>${len?`<span class="diamLg">LG de ${len} m</span>`:''}${innerDiam}`;
   }
   return `<span class="iconGlyph">${esc(p.icone||'📦')}</span>`;
 }
@@ -636,6 +641,11 @@ const NO_DIAMETER_SPLIT_INDUNI=new Set([
   'Canalisations PVC|Réductions|Réductions SN2',
   'Canalisations PE/HDPE|Réductions|Réduction lisse',
   'Canalisations PE/HDPE|Réductions|Réduction manchonnée',
+  'Canalisations PE/HDPE|Manchons|Manchon annelé',
+  'Canalisations PE/HDPE|Manchons|Manchon coulissant',
+  'Canalisations PE/HDPE|Manchons|Manchon double HDPE',
+  'Canalisations PE/HDPE|Manchons|Manchon double PE',
+  'Canalisations PE/HDPE|Manchons|Manchon double HDPE LONG',
   'Canalisations PP|Réductions|null',
   'CANALISATION|Autres articles|null',
 ]);
