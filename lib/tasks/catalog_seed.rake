@@ -32,8 +32,12 @@ namespace :catalog do
       supplier.destroy
     end
 
+    # N'initialise les coordonnées que pour un fournisseur réellement nouveau :
+    # sinon on écraserait à chaque redémarrage les modifications faites depuis
+    # l'admin (email, adresse, etc.).
     REQUIRED_SUPPLIERS.each do |name, attrs|
-      Supplier.find_or_initialize_by(name: name).update!(attrs)
+      supplier = Supplier.find_or_initialize_by(name: name)
+      supplier.update!(attrs) if supplier.new_record?
     end
 
     catalog_path = Rails.root.join("db/seed_data/catalog_products.json")
