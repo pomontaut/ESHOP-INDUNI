@@ -47,7 +47,7 @@
           </div>
           <div class="mb-0">
             <%= f.label :password, "Mot de passe temporaire", class: "form-label fw-semibold" %>
-            <%= f.password_field :password, class: "form-control", required: true, minlength: 8, autocomplete: "new-password" %>
+            <%= f.password_field :password, class: "form-control", required: true, minlength: 8, autocomplete: "new-password", readonly: true, onfocus: "this.removeAttribute('readonly')" %>
             <div class="form-text">L'utilisateur devra le changer à sa première connexion.</div>
           </div>
           <%= f.hidden_field :must_change_password, value: "1" %>
