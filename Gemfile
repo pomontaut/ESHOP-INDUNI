@@ -70,3 +70,6 @@ end
 gem "wicked_pdf"
 gem "wkhtmltopdf-binary"
 gem "letter_opener_web", group: :development
+
+# Official Anthropic SDK, used to extract structured line items from supplier quotes (devis)
+gem "anthropic"

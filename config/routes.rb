@@ -13,6 +13,7 @@ Rails.application.routes.draw do
   namespace :api do
     resources :orders, only: [ :create, :index ]
     resources :products, only: [ :index ]
+    resources :devis_imports, only: [ :create ]
     get :me, to: "sessions#me"
   end
 
