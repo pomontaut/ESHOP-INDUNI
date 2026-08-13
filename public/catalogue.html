@@ -693,7 +693,14 @@ function productIconOrDiamHtmlInduni(p){
     const innerDiam=(p.sousFamille==='Réductions'&&dualParts.length===2)?`<span class="diamLg">Ø int. ${dualParts[1]} mm</span>`:'';
     return `<span class="diamBig">Ø ${disp}</span>${len?`<span class="diamLg">LG de ${len} m</span>`:''}${innerDiam}`;
   }
+  if(p.sousFamille==='Bordures granit') return bordureGranitDisplayInduni(p);
   return `<span class="iconGlyph">${esc(p.icone||'📦')}</span>`;
+}
+function bordureGranitDisplayInduni(p){
+  const text=String(p.designation||'');
+  const main=text.split(',')[0].replace(/^(Bordure|Dalle p\.rigole) gneiss Serizzo\s*/i,'').trim();
+  const longueurLibre=/longueur libre/i.test(text);
+  return `<span class="diamBig" style="font-size:21px;line-height:1.2;padding:0 8px;text-align:center">${esc(main)}</span>${longueurLibre?'<span class="diamLg">Longueur libre</span>':''}`;
 }
 function productMetaHtmlInduni(p){
   const isTuyau=isTuyauContextInduni(p.sousFamille,p.sousSousFamille);
