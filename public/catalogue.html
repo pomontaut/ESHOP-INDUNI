@@ -218,7 +218,7 @@ function sortBarInduni(){
 }
 
 const CANPLAST_SUB_ORDERS={"Chambres & Regards":["Chambres","Regards","Rehausses","Couvercles & tampons","Cadres & grilles","Fonds","Accessoires"],"Fournitures & Divers":["Colliers & fixations","Adaptateurs","Accessoires de montage","Joints & étanchéité","Outillage & divers"]};
-const HGC_SUB_ORDERS={"Armatures & Distanceurs":["Armatures","Distanceurs","Treillis & accessoires","Divers"],"Ciments & Bétons":["Ciments en sac","Bétons & Mortiers","Accessoires béton/mortiers","Crépi","Liants & additifs","Divers"],"Coffrage & Étaiement":["Coffrage","Étaiement","Panneaux & accessoires","Divers"],"EPI & Sécurité":["Protection tête & visage","Gants","Chaussures","Vêtements","Signalisation","Sécurité chantier","Divers"],"Fournitures Diverses":["Fixations","Visserie & quincaillerie","Accessoires","Produits d'entretien","Divers"],"Granulats & Agrégats":["Gravier","Sable","Gravillons","Concassés","Divers"],"Isolation & Étanchéité":["Isolation","Étanchéité","Membranes & films","Mousses & bandes","Divers"],"Manutention & Chantier":["Bacs & seaux","Levage & manutention","Nettoyage chantier","Stockage","Divers"],"Mastics & Colles":["Mastics","Colles","Silicones","Mortiers-colles","Accessoires","Divers"],"Maçonnerie & Briques":["Briques","Blocs","Linteaux","Mortiers","Accessoires","Divers"],"Mesure & Traçage":["Mesure","Traçage","Niveaux","Lasers","Accessoires","Divers"],"Mortiers & Produits Spéciaux":["Mortiers","Enduits","Réparations","Adjuvants","Produits spéciaux","Divers"],"Outillage & Machines":["Outillage à main","Machines","Consommables machines","Accessoires","Divers"],"Outils à Main & Plâtrerie":["Outils à main","Plâtrerie","Taloche & truelles","Spatules & couteaux","Divers"],"Bois":["Plaques","Panneaux","Accessoires","Divers"],"Voirie & Aménagement":["Voirie","Bordures","Pavés & dalles","Caniveaux","Aménagement extérieur","Divers"],"Équipement de Chantier":["Équipement","Protection chantier","Signalisation","Balisage","Divers"]};
+const HGC_SUB_ORDERS={"Armatures & Distanceurs":["Armatures","Distanceurs","Ligatures","Treillis & accessoires","Divers"],"Ciments & Bétons":["Ciments en sac","Bétons & Mortiers","Accessoires béton/mortiers","Crépi","Liants & additifs","Divers"],"Coffrage & Étaiement":["Coffrage","Étaiement","Panneaux & accessoires","Divers"],"EPI & Sécurité":["Protection tête & visage","Gants","Chaussures","Vêtements","Signalisation","Sécurité chantier","Divers"],"Fournitures Diverses":["Fixations","Visserie & quincaillerie","Accessoires","Produits d'entretien","Divers"],"Granulats & Agrégats":["Gravier","Sable","Gravillons","Concassés","Divers"],"Isolation & Étanchéité":["Isolation","Étanchéité","Membranes & films","Mousses & bandes","Divers"],"Manutention & Chantier":["Bacs & seaux","Levage & manutention","Nettoyage chantier","Stockage","Divers"],"Mastics & Colles":["Mastics","Colles","Silicones","Mortiers-colles","Accessoires","Divers"],"Maçonnerie & Briques":["Briques","Blocs","Linteaux","Mortiers","Accessoires","Divers"],"Mesure & Traçage":["Mesure","Traçage","Niveaux","Lasers","Accessoires","Divers"],"Mortiers & Produits Spéciaux":["Mortiers","Enduits","Réparations","Adjuvants","Produits spéciaux","Divers"],"Outillage & Machines":["Outillage à main","Machines","Outillage béton","Consommables machines","Accessoires","Divers"],"Outils à Main & Plâtrerie":["Outils à main","Plâtrerie","Taloche & truelles","Spatules & couteaux","Divers"],"Bois":["Plaques","Panneaux","Accessoires","Divers"],"Voirie & Aménagement":["Voirie","Bordures","Pavés & dalles","Caniveaux","Aménagement extérieur","Divers"],"Équipement de Chantier":["Équipement","Protection chantier","Signalisation","Balisage","Divers"]};
 function isAutresSousInduni(s){return s==='Autres articles'||s.startsWith('Autres produits')}
 function subFamilySortInduni(a,b){const aAutres=isAutresSousInduni(a),bAutres=isAutresSousInduni(b);if(aAutres||bAutres)return aAutres&&bAutres?0:(aAutres?1:-1);const orders=(state.catalog==='Canplast'?CANPLAST_SUB_ORDERS:HGC_SUB_ORDERS);if(orders&&orders[state.famille]){const order=orders[state.famille];const ia=order.indexOf(a),ib=order.indexOf(b);return (ia===-1?999:ia)-(ib===-1?999:ib)}return String(a).localeCompare(String(b),'fr')}
 let funnelSel={catalog:null,famille:null,sous:null,sous2:null,diam:null,long:null};
@@ -423,15 +423,15 @@ const HGC_CONFIG = {
   'Préfa-béton': {
     gradient:'linear-gradient(135deg,#57534e,#78716c)', icone:'🏢', badge:'Préfa-béton',
     photo:'/images/categories/hgc-famille-prefa-beton.png',
-    desc:'Tuyaux béton · Bordures · Linteaux · Dalles · Saut de loup · Accessoires',
-    subs:['Tuyaux & bordures béton','Linteaux & dalles','Saut de loup','Accessoires coffrage & béton','Outillage béton','Divers'],
+    desc:'Tuyaux béton · Bordures · Grille caillebotis · Accessoires',
+    subs:['Tuyaux & bordures béton','Grille caillebotis','Accessoires coffrage & béton','Autres produits préfa béton','Divers'],
     order:2
   },
   'Armatures & Distanceurs': {
     gradient:'linear-gradient(135deg,#475569,#94a3b8)', icone:'🏗️', badge:'Armatures',
     photo:'/images/categories/hgc-famille-armatures-distanceurs.png',
-    desc:'Distanceurs · Taquets PVC · Armatures',
-    subs:['Distanceurs','Armatures','Divers'],
+    desc:'Distanceurs · Ligatures · Armatures',
+    subs:['Distanceurs','Ligatures','Armatures','Divers'],
     order:2
   },
   'Coffrage & Étaiement': {
@@ -457,8 +457,8 @@ const HGC_CONFIG = {
   },
   'Outillage & Machines': {
     gradient:'linear-gradient(135deg,#c2410c,#ea580c)', icone:'🔧', badge:'Outillage',
-    desc:'Outillage main · Machines · Consommables · Forets',
-    subs:['Outillage à main','Machines','Consommables machines'],
+    desc:'Outillage main · Machines · Consommables · Outillage béton',
+    subs:['Outillage à main','Machines','Consommables machines','Outillage béton'],
     order:6
   },
   'Bois': {
@@ -676,6 +676,22 @@ function extractDiamDisplayFallbackInduni(d){
   const m=String(d||'').match(/\b(\d[\d.,]*)\s*\/\s*(\d[\d.,]*)\s*mm\b/i);
   return m?`${m[1]}/${m[2]}`:null;
 }
+// Tuyaux béton (désignations "D100 L100cm" / "D90/110/100", sans symbole Ø ni "L=…M").
+const BETON_TUYAU_SOUSSOUS_INDUNI=new Set(['Tuyaux béton rond','Tuyaux béton oval']);
+function extractDiamDisplayBetonInduni(d){
+  const text=String(d||'');
+  const oval=text.match(/\bD\s*(\d[\d.,]*)\s*\/\s*(\d[\d.,]*)\s*\/\s*\d/i);
+  if(oval) return `${oval[1]}/${oval[2]}`;
+  const rond=text.match(/\bD\s*(\d[\d.,]*)/i);
+  return rond?rond[1]:null;
+}
+function extractLongBetonInduni(d){
+  const text=String(d||'');
+  const oval=text.match(/\bD\s*\d[\d.,]*\s*\/\s*\d[\d.,]*\s*\/\s*(\d[\d.,]*)/i);
+  if(oval) return parseFloat(oval[1].replace(',','.'))/100;
+  const rond=text.match(/\bL\s*(\d[\d.,]*)\s*cm\b/i);
+  return rond?parseFloat(rond[1].replace(',','.'))/100:null;
+}
 function extractLongInduni(d){const m=String(d||'').match(/\bL\s*=?\s*([\d.,]+)\s*M\b/i); return m?parseFloat(m[1].replace(',','.')):null;}
 // Longueur de tuyau supportée par le manchon à souder HDPE (ex. "...jusqu'à 12 M'")
 function extractSouderLongInduni(d){const m=String(d||'').match(/jusqu.[aà]\s*([\d.,]+)\s*M/i); return m?parseFloat(m[1].replace(',','.')):null;}
@@ -697,10 +713,12 @@ function productTitleHtmlInduni(p){
 function productIconOrDiamHtmlInduni(p){
   let disp=extractDiamDisplayInduni(p.designation);
   if(disp==null&&p.catalog==='Canplast'&&p.sousFamille==='Réductions') disp=extractDiamDisplayFallbackInduni(p.designation);
+  if(disp==null&&BETON_TUYAU_SOUSSOUS_INDUNI.has(p.sousSousFamille)) disp=extractDiamDisplayBetonInduni(p.designation);
   if(disp!=null){
     const isTuyau=isTuyauContextInduni(p.sousFamille,p.sousSousFamille);
     let len=isTuyau?extractLongInduni(p.designation):null;
     if(len==null&&p.sousSousFamille==='Manchon à souder HDPE') len=extractSouderLongInduni(p.designation);
+    if(len==null&&BETON_TUYAU_SOUSSOUS_INDUNI.has(p.sousSousFamille)) len=extractLongBetonInduni(p.designation);
     const dualParts=disp.split('/');
     const innerDiam=(p.sousFamille==='Réductions'&&dualParts.length===2)?`<span class="diamLg">Ø int. ${dualParts[1]} mm</span>`:'';
     return `<span class="diamBig">Ø ${disp}</span>${len?`<span class="diamLg">LG de ${len} m</span>`:''}${innerDiam}`;
@@ -1138,7 +1156,16 @@ function toggleCanplastOptions(){
   el.style.display=isCanplast?'block':'none';
 }
 
-function updateCart(){document.getElementById('cartCount').textContent=cart.length?`(${cart.reduce((s,i)=>s+i.qty,0)})`:''; const box=document.getElementById('cartItems'); const supplier=cartSupplier(); box.innerHTML=cart.length?`<div style="padding:10px 12px;margin-bottom:8px;border-radius:10px;background:#eef5ff;color:#0b4f9c;font-weight:900">Panier fournisseur : ${esc(supplier)}</div>`+cart.map((i,k)=>`<div class="cartRow"><div class="thumb" style="${photoUrl(i)?`background-image:url('${photoUrl(i)}')`:`background-color:${tileColor(i.famille)}`}">${photoUrl(i)?'':`<span class="thumbGlyph">${esc(i.icone||'📦')}</span>`}</div><div><b>${esc(i.designation)}</b><div class="muted">${esc(i.article)} · ${esc(i.unite)}</div><div class="qty"><button onclick="qty(${k},-1)">−</button><input type="number" min="0" step="any" value="${i.qty}" onchange="setQty(${k},this.value)" style="width:56px;text-align:center;border:1px solid #ddd;border-radius:6px;height:28px"><span class="muted" style="font-size:12px">${esc(i.unite)}</span><button onclick="qty(${k},1)">+</button></div></div><div style="text-align:right"><b>${fmt(i.prix*i.qty)}</b><button onclick="removeItem(${k})" style="margin-top:8px;border:0;background:white;color:#999;font-size:20px">×</button></div></div>`).join('')+cartComparatifTriggerHtml():'<p class="muted">Panier vide.</p>'; const sub=cart.reduce((s,i)=>s+i.prix*i.qty,0); document.getElementById('subTotal').textContent=fmt(sub); const td=transportDetailsInduni(sub,supplier); const rplpLine=document.getElementById('rplpLine'); if(supplier==='Canplast'){rplpLine.style.display='';document.getElementById('rplpTotal').textContent=fmt(td.rplp);}else{rplpLine.style.display='none';} document.getElementById('transportLineLabel').textContent=supplier==='HGC'?'Transport HGC fixe':(supplier==='Canplast'?'Livraison Canplast':(supplier==='Leuba HIAG'?'Leuba HIAG franco':'Transport')); document.getElementById('transportTotal').textContent=fmt(supplier==='Canplast'?(td.transport+td.crane):td.totalTransport); document.getElementById('grandTotal').textContent=fmt(sub+td.totalTransport);; toggleCanplastOptions();toggleCanplastZoneBlock();toggleSupplierFields();toggleBillingMerchant();updateRequiredSupplierFields();}
+function updateCart(){document.getElementById('cartCount').textContent=cart.length?`(${cart.reduce((s,i)=>s+i.qty,0)})`:''; const box=document.getElementById('cartItems'); const supplier=cartSupplier(); box.innerHTML=cart.length?`<div style="padding:10px 12px;margin-bottom:8px;border-radius:10px;background:#eef5ff;color:#0b4f9c;font-weight:900">Panier fournisseur : ${esc(supplier)}</div>`+cart.map((i,k)=>`<div class="cartRow"><div class="thumb" style="${photoUrl(i)?`background-image:url('${photoUrl(i)}')`:`background-color:${tileColor(i.famille)}`}">${photoUrl(i)?'':`<span class="thumbGlyph">${esc(i.icone||'📦')}</span>`}</div><div><b>${esc(i.designation)}</b><div class="muted">${esc(i.article)} · ${esc(i.unite)}</div><div class="qty"><button onclick="qty(${k},-1)">−</button><input type="number" min="0" step="any" value="${i.qty}" onchange="setQty(${k},this.value)" style="width:56px;text-align:center;border:1px solid #ddd;border-radius:6px;height:28px"><span class="muted" style="font-size:12px">${esc(i.unite)}</span><button onclick="qty(${k},1)">+</button></div></div><div style="text-align:right"><b>${fmt(i.prix*i.qty)}</b><button onclick="removeItem(${k})" style="margin-top:8px;border:0;background:white;color:#999;font-size:20px">×</button></div></div>`).join('')+cartPrefaBetonPaletteNoteHtml()+cartComparatifTriggerHtml():'<p class="muted">Panier vide.</p>'; const sub=cart.reduce((s,i)=>s+i.prix*i.qty,0); document.getElementById('subTotal').textContent=fmt(sub); const td=transportDetailsInduni(sub,supplier); const rplpLine=document.getElementById('rplpLine'); if(supplier==='Canplast'){rplpLine.style.display='';document.getElementById('rplpTotal').textContent=fmt(td.rplp);}else{rplpLine.style.display='none';} document.getElementById('transportLineLabel').textContent=supplier==='HGC'?'Transport HGC fixe':(supplier==='Canplast'?'Livraison Canplast':(supplier==='Leuba HIAG'?'Leuba HIAG franco':'Transport')); document.getElementById('transportTotal').textContent=fmt(supplier==='Canplast'?(td.transport+td.crane):td.totalTransport); document.getElementById('grandTotal').textContent=fmt(sub+td.totalTransport);; toggleCanplastOptions();toggleCanplastZoneBlock();toggleSupplierFields();toggleBillingMerchant();updateRequiredSupplierFields();}
+const PREFA_BETON_PALETTE_SKIP_SOUS_INDUNI=new Set(['Accessoires coffrage & béton','Outillage béton']);
+function cartPrefaBetonPaletteNoteHtml(){
+  const hasPrefa=cart.some(i=>i.famille==='Préfa-béton'&&!PREFA_BETON_PALETTE_SKIP_SOUS_INDUNI.has(i.sousFamille));
+  if(!hasPrefa) return '';
+  if(cart.some(i=>i.article==='500000004'&&normalizeSupplierName(i.catalog)==='hgc')) return '';
+  const palette=PRODUCTS.find(p=>normalizeSupplierName(p.catalog)==='hgc'&&p.article==='500000004');
+  if(!palette) return '';
+  return `<div class="cartRow" style="opacity:.8"><div class="thumb" style="background-color:${tileColor(palette.famille)}"><span class="thumbGlyph">${esc(palette.icone||'🏗️')}</span></div><div><b>${esc(palette.designation)}</b><div class="muted">Prix palette (référence)</div></div><div style="text-align:right"><b>${fmt(palette.prix)}</b></div></div>`;
+}
 function clearCartInduni(){cart=[];resetCanplastZone();save();render();}
 function dateFR(v){if(!v)return '';const[y,m,d]=v.split('-');return `${d}.${m}.${y}`} function openDelaiPicker(){const p=document.getElementById('delaiPicker');p.showPicker?p.showPicker():p.click()} function photoUrl(p){return p&&p.image&&p.image.indexOf('/images/products/')===0?p.image:null} function cartComparableSuppliers(){
   if(!cart.length) return [];
