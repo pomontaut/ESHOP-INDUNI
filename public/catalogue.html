@@ -218,7 +218,7 @@ function sortBarInduni(){
 }
 
 const CANPLAST_SUB_ORDERS={"Chambres & Regards":["Chambres","Regards","Rehausses","Couvercles & tampons","Cadres & grilles","Fonds","Accessoires"],"Fournitures & Divers":["Colliers & fixations","Adaptateurs","Accessoires de montage","Joints & étanchéité","Outillage & divers"]};
-const HGC_SUB_ORDERS={"Armatures & Distanceurs":["Armatures","Distanceurs","Ligatures","Treillis & accessoires","Divers"],"Ciments & Bétons":["Ciments en sac","Bétons & Mortiers","Accessoires béton/mortiers","Crépi","Liants & additifs","Divers"],"Coffrage & Étaiement":["Coffrage","Étaiement","Panneaux & accessoires","Divers"],"Fournitures Diverses":["Fixations","Visserie & quincaillerie","Accessoires","Produits d'entretien","Divers"],"Granulats & Agrégats":["Gravier","Sable","Gravillons","Concassés","Divers"],"Isolation & Étanchéité":["Isolation","Étanchéité","Membranes & films","Mousses & bandes","Divers"],"Manutention & Chantier":["Bacs & seaux","Levage & manutention","Nettoyage chantier","Stockage","Divers"],"Mastics & Colles":["Mastics","Colles","Silicones","Mortiers-colles","Accessoires","Divers"],"Maçonnerie & Briques":["Briques","Blocs","Linteaux","Mortiers","Accessoires","Divers"],"Mesure & Traçage":["Mesure","Traçage","Niveaux","Lasers","Accessoires","Divers"],"Mortiers & Produits Spéciaux":["Mortiers","Enduits","Réparations","Adjuvants","Produits spéciaux","Divers"],"Outillage & Machines":["Outillage à main","Machines","Outillage béton","Consommables machines","Accessoires","Divers"],"Outils à Main & Plâtrerie":["Outils à main","Plâtrerie","Taloche & truelles","Spatules & couteaux","Divers"],"Bois":["Plaques","Panneaux","Accessoires","Divers"],"Voirie & Aménagement":["Voirie","Bordures","Pavés & dalles","Caniveaux","Aménagement extérieur","Divers"],"Équipement de Chantier":["Équipement","Protection chantier","Signalisation","Balisage","Divers"]};
+const HGC_SUB_ORDERS={"Armatures & Distanceurs":["Armatures","Distanceurs","Ligatures","Treillis & accessoires","Divers"],"Ciments & Bétons":["Ciments en sac","Bétons & Mortiers","Accessoires béton/mortiers","Crépi","Liants & additifs","Divers"],"Coffrage & Étaiement":["Coffrage","Étaiement","Panneaux & accessoires","Divers"],"Granulats & Agrégats":["Gravier","Sable","Gravillons","Concassés","Divers"],"Isolation & Étanchéité":["Isolation","Étanchéité","Membranes & films","Mousses & bandes","Divers"],"Mastics & Colles":["Mastics","Colles","Silicones","Mortiers-colles","Accessoires","Divers"],"Maçonnerie & Briques":["Briques","Blocs","Linteaux","Mortiers","Accessoires","Divers"],"Mortiers & Produits Spéciaux":["Mortiers","Enduits","Réparations","Adjuvants","Produits spéciaux","Divers"],"Outillage & Machines":["Outillage à main","Machines","Outillage béton","Consommables machines","Accessoires","Divers"],"Outils à Main & Plâtrerie":["Outils à main","Plâtrerie","Taloche & truelles","Spatules & couteaux","Divers"],"Bois":["Plaques","Panneaux","Accessoires","Divers"],"Voirie & Aménagement":["Voirie","Bordures","Pavés & dalles","Caniveaux","Aménagement extérieur","Divers"]};
 function isAutresSousInduni(s){return s==='Autres articles'||s.startsWith('Autres produits')}
 function subFamilySortInduni(a,b){const aAutres=isAutresSousInduni(a),bAutres=isAutresSousInduni(b);if(aAutres||bAutres)return aAutres&&bAutres?0:(aAutres?1:-1);const orders=(state.catalog==='Canplast'?CANPLAST_SUB_ORDERS:HGC_SUB_ORDERS);if(orders&&orders[state.famille]){const order=orders[state.famille];const ia=order.indexOf(a),ib=order.indexOf(b);return (ia===-1?999:ia)-(ib===-1?999:ib)}return String(a).localeCompare(String(b),'fr')}
 let funnelSel={catalog:null,famille:null,sous:null,sous2:null,diam:null,long:null};
@@ -482,36 +482,12 @@ const HGC_CONFIG = {
     subs:['Sable','Gravier','Divers'],
     order:10
   },
-  'Mesure & Traçage': {
-    gradient:'linear-gradient(135deg,#1e40af,#3b82f6)', icone:'📏', badge:'Mesure',
-    desc:'Mètres · Niveaux · Lasers · Spray marquage · Craies',
-    subs:['Mesure','Traçage'],
-    order:11
-  },
-  'Manutention & Chantier': {
-    gradient:'linear-gradient(135deg,#374151,#4b5563)', icone:'🏭', badge:'Manutention',
-    desc:'Seaux · Palettes · Sangles · Chariots · Levage',
-    subs:['Bacs & seaux','Levage & manutention','Divers'],
-    order:12
-  },
-  'Fournitures Diverses': {
-    gradient:'linear-gradient(135deg,#1f2937,#374151)', icone:'🧰', badge:'Fournitures',
-    desc:'Visserie · Fixations · Outils divers · Accessoires',
-    subs:['Fixations','Visserie & quincaillerie','Accessoires','Divers'],
-    order:13
-  },
   'Voirie & Aménagement': {
     gradient:'linear-gradient(135deg,#1e3a5f,#1d4ed8)', icone:'🛣️', badge:'Voirie',
     photo:'/images/categories/hgc-famille-voirie-amenagement.png',
     desc:'Bordures · Pavés · Dalles · Caniveaux',
     subs:['Bordures','Voirie','Pavés & dalles'],
     order:14
-  },
-  'Équipement de Chantier': {
-    gradient:'linear-gradient(135deg,#0f766e,#0d9488)', icone:'🪣', badge:'Équipement',
-    desc:'Règles · Échelles · Projeeteurs · Taloche · Équipements',
-    subs:['Équipement','Divers'],
-    order:15
   },
 };
 
@@ -1736,22 +1712,12 @@ try {
 // ── 2. RECLASSIFICATION INTELLIGENTE ─────────────────────────────────────────
 // Corrige les produits mal classés dans les données existantes
 const RECLASSIF_RULES = [
-  // Tube halogène → Équipement de Chantier
-  { match: p => /tube halog[eè]ne/i.test(p.designation), famille: 'Équipement de Chantier', sousFamille: 'Équipement', icone: '🪣' },
-  // Spatules de plâtrier dans Canalisation → Fournitures Diverses
-  { match: p => /spatule.*pl[aâ]tr/i.test(p.designation) && p.famille === 'Canalisations PVC', famille: 'Fournitures Diverses', sousFamille: 'Divers', icone: '🧰' },
-  // MSU échelon dans Canalisation → Équipement de Chantier
-  { match: p => /MSU.*[eé]chelon/i.test(p.designation) && p.famille === 'Canalisations PVC', famille: 'Équipement de Chantier', sousFamille: 'Équipement', icone: '🪣' },
   // Serre-joints dans Canalisation → Outillage
   { match: p => /serre.joint/i.test(p.designation) && p.famille === 'Canalisations PVC', famille: 'Outillage & Machines', sousFamille: 'Outillage à main', icone: '🔧' },
   // Disques à couper dans Canalisation/Manchons → Outillage
   { match: p => /disque.*couper/i.test(p.designation) && p.famille === 'Canalisations PVC', famille: 'Outillage & Machines', sousFamille: 'Consommables machines', icone: '🔧' },
-  // Pavés granit dans Manutention/Bacs → Voirie
-  { match: p => /pav[eé].*granit/i.test(p.designation) && p.famille === 'Manutention & Chantier', famille: 'Voirie & Aménagement', sousFamille: 'Pavés & dalles', icone: '🛣️' },
   // Sika Cosmetic dans Isolation → Mastics & Colles
   { match: p => /sika cosmetic/i.test(p.designation), famille: 'Mastics & Colles', sousFamille: 'Mastics', icone: '🔫' },
-  // Sista F 109 dans Fournitures Diverses → Mastics & Colles
-  { match: p => /sista f 109/i.test(p.designation) && p.famille === 'Fournitures Diverses', famille: 'Mastics & Colles', sousFamille: 'Mastics', icone: '🔫' },
   // Sista F 130 dans Isolation → Mastics & Colles
   { match: p => /sista f 130/i.test(p.designation), famille: 'Mastics & Colles', sousFamille: 'Mastics', icone: '🔫' },
   // SikaScreed dans Isolation → Ciments & Bétons
@@ -1760,12 +1726,8 @@ const RECLASSIF_RULES = [
   { match: p => /tuyau.*b[eé]ton/i.test(p.designation) && p.famille === 'Ciments & Bétons', famille: 'Canalisations PVC', sousFamille: 'Autres articles', icone: '🔩' },
   // Cadre béton TE ovale dans Ciments → Canalisation (ne correspond pas au catalogue Canplast)
   { match: p => /cadre.*b[eé]ton/i.test(p.designation), famille: 'Canalisations PVC', sousFamille: 'Autres articles', icone: '🔩' },
-  // Géotextile dans Fournitures → Isolation & Étanchéité
-  { match: p => /g[eé]otextile/i.test(p.designation) && p.famille === 'Fournitures Diverses', famille: 'Isolation & Étanchéité', sousFamille: 'Membranes & films', icone: '🛡️' },
   // Géonontissés dans Fournitures → Isolation & Étanchéité
   { match: p => /g[eé]onontiss/i.test(p.designation), famille: 'Isolation & Étanchéité', sousFamille: 'Membranes & films', icone: '🛡️' },
-  // Cisel à pierre dans Manutention/Bacs → Outillage
-  { match: p => /ciseau.*pierre/i.test(p.designation) && p.famille === 'Manutention & Chantier', famille: 'Outillage & Machines', sousFamille: 'Outillage à main', icone: '🔧' },
 ];
 
 // Appliquer la reclassification
