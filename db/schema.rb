@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_12_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_12_160000) do
   create_table "chantiers", force: :cascade do |t|
     t.string "adresse"
     t.string "carte_interactive"
