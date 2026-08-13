@@ -1146,14 +1146,19 @@ function cartPrefaBetonPaletteNoteHtml(){
   return `<div class="cartRow" style="opacity:.8"><div class="thumb" style="background-color:${tileColor(palette.famille)}"><span class="thumbGlyph">${esc(palette.icone||'🏗️')}</span></div><div><b>${esc(palette.designation)}</b><div class="muted">Prix palette (référence)</div></div><div style="text-align:right"><b>${fmt(palette.prix)}</b></div></div>`;
 }
 function clearCartInduni(){cart=[];resetCanplastZone();save();render();}
-function dateFR(v){if(!v)return '';const[y,m,d]=v.split('-');return `${d}.${m}.${y}`} function openDelaiPicker(){const p=document.getElementById('delaiPicker');p.showPicker?p.showPicker():p.click()} function photoUrl(p){return p&&p.image&&p.image.indexOf('/images/products/')===0?p.image:null} function cartComparableSuppliers(){
-  if(!cart.length) return [];
+function dateFR(v){if(!v)return '';const[y,m,d]=v.split('-');return `${d}.${m}.${y}`} function openDelaiPicker(){const p=document.getElementById('delaiPicker');p.showPicker?p.showPicker():p.click()} function photoUrl(p){return p&&p.image&&p.image.indexOf('/images/products/')===0?p.image:null} function cartEquivalenceGroups(){
+  if(!cart.length) return null;
   const groups=[];
   for(const i of cart){
-    if(!i.equivalenceKey) return [];
+    if(!i.equivalenceKey) return null;
     const members=PRODUCTS.filter(x=>x.equivalenceKey===i.equivalenceKey);
     groups.push({item:i, members});
   }
+  return groups;
+}
+function cartComparableSuppliers(){
+  const groups=cartEquivalenceGroups();
+  if(!groups) return [];
   let candidates=null;
   for(const g of groups){
     const suppliers=new Set(g.members.map(m=>m.catalog));
@@ -1170,6 +1175,17 @@ function dateFR(v){if(!v)return '';const[y,m,d]=v.split('-');return `${d}.${m}.$
     return {supplier, subtotal, transport:td.totalTransport, total:subtotal+td.totalTransport};
   }).sort((a,b)=>a.total-b.total);
 }
+function switchCartToSupplier(supplier){
+  const groups=cartEquivalenceGroups();
+  if(!groups) return;
+  const newCart=groups.map(g=>{
+    const m=g.members.find(x=>x.catalog===supplier);
+    return m?{...m,qty:g.item.qty}:null;
+  });
+  if(newCart.some(x=>!x)){alert("Impossible de basculer : un article n'a pas d'équivalent chez "+supplier+".");return;}
+  cart=newCart;
+  save(); render();
+}
 function cartComparatifTriggerHtml(){
   const rows=cartComparableSuppliers();
   if(rows.length<2) return '';
@@ -1181,7 +1197,10 @@ function renderCartComparatif(el){
   if(rows.length<2){el.innerHTML='<div class="equivTitle">Comparatif fournisseurs</div><div class="equivMeta">Comparaison indisponible.</div>';return;}
   const min=rows[0].total;
   const html=rows.map(r=>`<div class="equivRow"><b>${esc(r.supplier)}</b> &middot; Sous-total ${fmt(r.subtotal)} + Transport ${fmt(r.transport)} = <span class="equivPrice">${fmt(r.total)}</span>${Math.abs(r.total-min)<0.005?' <span class="equivMatch">le moins cher</span>':''}</div>`).join('');
-  el.innerHTML=`<div class="equivTitle">🔄 Comparatif fournisseurs (panier complet, transport inclus)</div>${html}`;
+  const cheapest=rows[0];
+  const alreadyCheapest=cartSupplier()===cheapest.supplier;
+  const switchBtn=alreadyCheapest?'':`<button class="add" style="margin-top:10px" onclick='switchCartToSupplier(${JSON.stringify(cheapest.supplier)})'>✅ Valider l'option la moins chère (${esc(cheapest.supplier)})</button>`;
+  el.innerHTML=`<div class="equivTitle">🔄 Comparatif fournisseurs (panier complet, transport inclus)</div>${html}${switchBtn}`;
 }
 function tubeLengthOfCartItem(it){return isTuyauContextInduni(it.sousFamille,it.sousSousFamille)?extractLongInduni(it.designation):null;}
 function qty(k,d){const it=cart[k];const len=tubeLengthOfCartItem(it);it.qty+=d*(len||1);if(it.qty<=0)cart.splice(k,1);save();render()}
