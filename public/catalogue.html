@@ -218,7 +218,7 @@ function sortBarInduni(){
 }
 
 const CANPLAST_SUB_ORDERS={"Chambres & Regards":["Chambres","Regards","Rehausses","Couvercles & tampons","Cadres & grilles","Fonds","Accessoires"],"Fournitures & Divers":["Colliers & fixations","Adaptateurs","Accessoires de montage","Joints & étanchéité","Outillage & divers"]};
-const HGC_SUB_ORDERS={"Armatures & Distanceurs":["Armatures","Distanceurs","Treillis & accessoires","Divers"],"Ciments & Bétons":["Ciments en sac","Bétons & Mortiers","Accessoires béton/mortiers","Crépi","Liants & additifs","Divers"],"Coffrage & Étaiement":["Coffrage","Étaiement","Panneaux & accessoires","Divers"],"EPI & Sécurité":["Protection tête & visage","Gants","Chaussures","Vêtements","Signalisation","Sécurité chantier","Divers"],"Fournitures Diverses":["Fixations","Visserie & quincaillerie","Accessoires","Produits d'entretien","Divers"],"Granulats & Agrégats":["Gravier","Sable","Gravillons","Concassés","Divers"],"Isolation & Étanchéité":["Isolation","Étanchéité","Membranes & films","Mousses & bandes","Divers"],"Manutention & Chantier":["Bacs & seaux","Levage & manutention","Nettoyage chantier","Stockage","Divers"],"Mastics & Colles":["Mastics","Colles","Silicones","Mortiers-colles","Accessoires","Divers"],"Maçonnerie & Briques":["Briques","Blocs","Linteaux","Mortiers","Accessoires","Divers"],"Mesure & Traçage":["Mesure","Traçage","Niveaux","Lasers","Accessoires","Divers"],"Mortiers & Produits Spéciaux":["Mortiers","Enduits","Réparations","Adjuvants","Produits spéciaux","Divers"],"Outillage & Machines":["Outillage à main","Machines","Consommables machines","Accessoires","Divers"],"Outils à Main & Plâtrerie":["Outils à main","Plâtrerie","Taloche & truelles","Spatules & couteaux","Divers"],"Plaques & Panneaux":["Plaques","Panneaux","Accessoires","Divers"],"Voirie & Aménagement":["Voirie","Bordures","Pavés & dalles","Caniveaux","Aménagement extérieur","Divers"],"Équipement de Chantier":["Équipement","Protection chantier","Signalisation","Balisage","Divers"]};
+const HGC_SUB_ORDERS={"Armatures & Distanceurs":["Armatures","Distanceurs","Treillis & accessoires","Divers"],"Ciments & Bétons":["Ciments en sac","Bétons & Mortiers","Accessoires béton/mortiers","Crépi","Liants & additifs","Divers"],"Coffrage & Étaiement":["Coffrage","Étaiement","Panneaux & accessoires","Divers"],"EPI & Sécurité":["Protection tête & visage","Gants","Chaussures","Vêtements","Signalisation","Sécurité chantier","Divers"],"Fournitures Diverses":["Fixations","Visserie & quincaillerie","Accessoires","Produits d'entretien","Divers"],"Granulats & Agrégats":["Gravier","Sable","Gravillons","Concassés","Divers"],"Isolation & Étanchéité":["Isolation","Étanchéité","Membranes & films","Mousses & bandes","Divers"],"Manutention & Chantier":["Bacs & seaux","Levage & manutention","Nettoyage chantier","Stockage","Divers"],"Mastics & Colles":["Mastics","Colles","Silicones","Mortiers-colles","Accessoires","Divers"],"Maçonnerie & Briques":["Briques","Blocs","Linteaux","Mortiers","Accessoires","Divers"],"Mesure & Traçage":["Mesure","Traçage","Niveaux","Lasers","Accessoires","Divers"],"Mortiers & Produits Spéciaux":["Mortiers","Enduits","Réparations","Adjuvants","Produits spéciaux","Divers"],"Outillage & Machines":["Outillage à main","Machines","Consommables machines","Accessoires","Divers"],"Outils à Main & Plâtrerie":["Outils à main","Plâtrerie","Taloche & truelles","Spatules & couteaux","Divers"],"Bois":["Plaques","Panneaux","Accessoires","Divers"],"Voirie & Aménagement":["Voirie","Bordures","Pavés & dalles","Caniveaux","Aménagement extérieur","Divers"],"Équipement de Chantier":["Équipement","Protection chantier","Signalisation","Balisage","Divers"]};
 function isAutresSousInduni(s){return s==='Autres articles'||s.startsWith('Autres produits')}
 function subFamilySortInduni(a,b){const aAutres=isAutresSousInduni(a),bAutres=isAutresSousInduni(b);if(aAutres||bAutres)return aAutres&&bAutres?0:(aAutres?1:-1);const orders=(state.catalog==='Canplast'?CANPLAST_SUB_ORDERS:HGC_SUB_ORDERS);if(orders&&orders[state.famille]){const order=orders[state.famille];const ia=order.indexOf(a),ib=order.indexOf(b);return (ia===-1?999:ia)-(ib===-1?999:ib)}return String(a).localeCompare(String(b),'fr')}
 let funnelSel={catalog:null,famille:null,sous:null,sous2:null,diam:null,long:null};
@@ -461,8 +461,9 @@ const HGC_CONFIG = {
     subs:['Outillage à main','Machines','Consommables machines'],
     order:6
   },
-  'Plaques & Panneaux': {
-    gradient:'linear-gradient(135deg,#0e7490,#0891b2)', icone:'📋', badge:'Plaques',
+  'Bois': {
+    gradient:'linear-gradient(135deg,#0e7490,#0891b2)', icone:'🪵', badge:'Bois',
+    photo:'/images/categories/hgc-famille-bois-coffrage.png',
     desc:'Contreplaqué · OSB · Plaques plâtre · Panneaux isolants',
     subs:['Plaques','Panneaux'],
     order:7
@@ -523,13 +524,6 @@ const HGC_CONFIG = {
 
 // ── LEUBA HIAG : par type bois/panneau ───────────────────────────────────────
 const HIAG_CONFIG = {
-  'Bois & Coffrage': {
-    gradient:'linear-gradient(135deg,#78350f,#a16207)', icone:'🪵', badge:'Bois & Coffrage',
-    photo:'/images/categories/hgc-famille-bois-coffrage.png',
-    desc:'Panneaux filmés · OSB · Poutrelles H20 · Carrelets · Lambourdes',
-    subs:['Panneaux filmés','Panneaux OSB 3','Panneaux jaunes','Poutrelles H20','Carrelets / planches de coffrage','Lambourdes','Bois C24','Accessoires'],
-    order:1
-  },
 };
 
 
