@@ -218,7 +218,7 @@ function sortBarInduni(){
 }
 
 const CANPLAST_SUB_ORDERS={"Chambres & Regards":["Chambres","Regards","Rehausses","Couvercles & tampons","Cadres & grilles","Fonds","Accessoires"],"Fournitures & Divers":["Colliers & fixations","Adaptateurs","Accessoires de montage","Joints & étanchéité","Outillage & divers"]};
-const HGC_SUB_ORDERS={"Armatures & Distanceurs":["Armatures","Distanceurs","Ligatures","Treillis & accessoires","Divers"],"Ciments & Bétons":["Ciments en sac","Bétons & Mortiers","Accessoires béton/mortiers","Crépi","Liants & additifs","Divers"],"Coffrage & Étaiement":["Coffrage","Étaiement","Panneaux & accessoires","Divers"],"EPI & Sécurité":["Protection tête & visage","Gants","Chaussures","Vêtements","Signalisation","Sécurité chantier","Divers"],"Fournitures Diverses":["Fixations","Visserie & quincaillerie","Accessoires","Produits d'entretien","Divers"],"Granulats & Agrégats":["Gravier","Sable","Gravillons","Concassés","Divers"],"Isolation & Étanchéité":["Isolation","Étanchéité","Membranes & films","Mousses & bandes","Divers"],"Manutention & Chantier":["Bacs & seaux","Levage & manutention","Nettoyage chantier","Stockage","Divers"],"Mastics & Colles":["Mastics","Colles","Silicones","Mortiers-colles","Accessoires","Divers"],"Maçonnerie & Briques":["Briques","Blocs","Linteaux","Mortiers","Accessoires","Divers"],"Mesure & Traçage":["Mesure","Traçage","Niveaux","Lasers","Accessoires","Divers"],"Mortiers & Produits Spéciaux":["Mortiers","Enduits","Réparations","Adjuvants","Produits spéciaux","Divers"],"Outillage & Machines":["Outillage à main","Machines","Outillage béton","Consommables machines","Accessoires","Divers"],"Outils à Main & Plâtrerie":["Outils à main","Plâtrerie","Taloche & truelles","Spatules & couteaux","Divers"],"Bois":["Plaques","Panneaux","Accessoires","Divers"],"Voirie & Aménagement":["Voirie","Bordures","Pavés & dalles","Caniveaux","Aménagement extérieur","Divers"],"Équipement de Chantier":["Équipement","Protection chantier","Signalisation","Balisage","Divers"]};
+const HGC_SUB_ORDERS={"Armatures & Distanceurs":["Armatures","Distanceurs","Ligatures","Treillis & accessoires","Divers"],"Ciments & Bétons":["Ciments en sac","Bétons & Mortiers","Accessoires béton/mortiers","Crépi","Liants & additifs","Divers"],"Coffrage & Étaiement":["Coffrage","Étaiement","Panneaux & accessoires","Divers"],"Fournitures Diverses":["Fixations","Visserie & quincaillerie","Accessoires","Produits d'entretien","Divers"],"Granulats & Agrégats":["Gravier","Sable","Gravillons","Concassés","Divers"],"Isolation & Étanchéité":["Isolation","Étanchéité","Membranes & films","Mousses & bandes","Divers"],"Manutention & Chantier":["Bacs & seaux","Levage & manutention","Nettoyage chantier","Stockage","Divers"],"Mastics & Colles":["Mastics","Colles","Silicones","Mortiers-colles","Accessoires","Divers"],"Maçonnerie & Briques":["Briques","Blocs","Linteaux","Mortiers","Accessoires","Divers"],"Mesure & Traçage":["Mesure","Traçage","Niveaux","Lasers","Accessoires","Divers"],"Mortiers & Produits Spéciaux":["Mortiers","Enduits","Réparations","Adjuvants","Produits spéciaux","Divers"],"Outillage & Machines":["Outillage à main","Machines","Outillage béton","Consommables machines","Accessoires","Divers"],"Outils à Main & Plâtrerie":["Outils à main","Plâtrerie","Taloche & truelles","Spatules & couteaux","Divers"],"Bois":["Plaques","Panneaux","Accessoires","Divers"],"Voirie & Aménagement":["Voirie","Bordures","Pavés & dalles","Caniveaux","Aménagement extérieur","Divers"],"Équipement de Chantier":["Équipement","Protection chantier","Signalisation","Balisage","Divers"]};
 function isAutresSousInduni(s){return s==='Autres articles'||s.startsWith('Autres produits')}
 function subFamilySortInduni(a,b){const aAutres=isAutresSousInduni(a),bAutres=isAutresSousInduni(b);if(aAutres||bAutres)return aAutres&&bAutres?0:(aAutres?1:-1);const orders=(state.catalog==='Canplast'?CANPLAST_SUB_ORDERS:HGC_SUB_ORDERS);if(orders&&orders[state.famille]){const order=orders[state.famille];const ia=order.indexOf(a),ib=order.indexOf(b);return (ia===-1?999:ia)-(ib===-1?999:ib)}return String(a).localeCompare(String(b),'fr')}
 let funnelSel={catalog:null,famille:null,sous:null,sous2:null,diam:null,long:null};
@@ -474,12 +474,6 @@ const HGC_CONFIG = {
     desc:'Briques · Linteaux · Blocs · Cordeaux',
     subs:['Briques','Linteaux','Divers'],
     order:8
-  },
-  'EPI & Sécurité': {
-    gradient:'linear-gradient(135deg,#d97706,#f59e0b)', icone:'⛑️', badge:'EPI',
-    desc:'Gants · Chaussures · Lunettes · Vêtements · Signalisation',
-    subs:['Gants','Chaussures','Protection tête & visage','Vêtements','Sécurité chantier'],
-    order:9
   },
   'Granulats & Agrégats': {
     gradient:'linear-gradient(135deg,#78350f,#a16207)', icone:'⬡', badge:'Granulats',
@@ -1754,28 +1748,14 @@ const RECLASSIF_RULES = [
   { match: p => /disque.*couper/i.test(p.designation) && p.famille === 'Canalisations PVC', famille: 'Outillage & Machines', sousFamille: 'Consommables machines', icone: '🔧' },
   // Pavés granit dans Manutention/Bacs → Voirie
   { match: p => /pav[eé].*granit/i.test(p.designation) && p.famille === 'Manutention & Chantier', famille: 'Voirie & Aménagement', sousFamille: 'Pavés & dalles', icone: '🛣️' },
-  // Carrelet bois dans EPI → Coffrage
-  { match: p => /carrelet.*(sapin|[eé]pic[eé]a)/i.test(p.designation) && p.famille === 'EPI & Sécurité', famille: 'Coffrage & Étaiement', sousFamille: 'Coffrage', icone: '🏗️' },
-  // Latte bois dans EPI → Coffrage
-  { match: p => /latte.*bois/i.test(p.designation) && p.famille === 'EPI & Sécurité', famille: 'Coffrage & Étaiement', sousFamille: 'Coffrage', icone: '🏗️' },
-  // Plateau d'échafaudage dans EPI → Équipement de Chantier
-  { match: p => /plateau.*[eé]chafaudage/i.test(p.designation) && p.famille === 'EPI & Sécurité', famille: 'Équipement de Chantier', sousFamille: 'Équipement', icone: '🪣' },
   // Sika Cosmetic dans Isolation → Mastics & Colles
   { match: p => /sika cosmetic/i.test(p.designation), famille: 'Mastics & Colles', sousFamille: 'Mastics', icone: '🔫' },
   // Sista F 109 dans Fournitures Diverses → Mastics & Colles
   { match: p => /sista f 109/i.test(p.designation) && p.famille === 'Fournitures Diverses', famille: 'Mastics & Colles', sousFamille: 'Mastics', icone: '🔫' },
-  // Sista F 101 dans Ciments → Mastics & Colles
-  { match: p => /sista f 101/i.test(p.designation) && p.famille === 'Ciments & Bétons', famille: 'Mastics & Colles', sousFamille: 'Mastics', icone: '🔫' },
   // Sista F 130 dans Isolation → Mastics & Colles
   { match: p => /sista f 130/i.test(p.designation), famille: 'Mastics & Colles', sousFamille: 'Mastics', icone: '🔫' },
-  // Bordure béton dans Ciments → Voirie
-  { match: p => /bordure.*b[eé]ton/i.test(p.designation), famille: 'Voirie & Aménagement', sousFamille: 'Bordures', icone: '🛣️' },
-  // Dalle de jardin dans Ciments → Voirie
-  { match: p => /dalle.*jardin/i.test(p.designation), famille: 'Voirie & Aménagement', sousFamille: 'Pavés & dalles', icone: '🛣️' },
   // SikaScreed dans Isolation → Ciments & Bétons
   { match: p => /sikascreed/i.test(p.designation), famille: 'Ciments & Bétons', sousFamille: 'Bétons & Mortiers', icone: '🏗️' },
-  // Rapido ligatures dans Ciments → Coffrage & Étaiement
-  { match: p => /rapido ligatures/i.test(p.designation), famille: 'Coffrage & Étaiement', sousFamille: 'Divers', icone: '🏗️' },
   // Tuyau béton dans Ciments → Canalisation (ne correspond pas au catalogue Canplast)
   { match: p => /tuyau.*b[eé]ton/i.test(p.designation) && p.famille === 'Ciments & Bétons', famille: 'Canalisations PVC', sousFamille: 'Autres articles', icone: '🔩' },
   // Cadre béton TE ovale dans Ciments → Canalisation (ne correspond pas au catalogue Canplast)
