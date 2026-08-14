@@ -223,7 +223,7 @@ function sortBarInduni(){
 }
 
 const CANPLAST_SUB_ORDERS={"Chambres & Regards":["Chambres","Regards","Rehausses","Couvercles & tampons","Cadres & grilles","Fonds","Accessoires"],"Fournitures & Divers":["Colliers & fixations","Adaptateurs","Accessoires de montage","Joints & étanchéité","Outillage & divers"]};
-const HGC_SUB_ORDERS={"Armatures & Distanceurs":["Armatures","Distanceurs","Ligatures","Treillis & accessoires","Divers"],"Ciments & Bétons":["Ciments en sac","Bétons & Mortiers","Accessoires béton/mortiers","Crépi","Liants & additifs","Divers"],"Coffrage & Étaiement":["Coffrage","Étaiement","Panneaux & accessoires","Divers"],"Granulats & Agrégats":["Gravier","Sable","Gravillons","Concassés","Divers"],"Isolation & Étanchéité":["Isolation","Étanchéité","Membranes & films","Mousses & bandes","Divers"],"Mastics & Colles":["Mastics","Colles","Silicones","Mortiers-colles","Accessoires","Divers"],"Maçonnerie & Briques":["Briques","Blocs","Linteaux","Mortiers","Accessoires","Divers"],"Mortiers & Produits Spéciaux":["Mortiers","Enduits","Réparations","Adjuvants","Produits spéciaux","Divers"],"Outils à Main & Plâtrerie":["Outils à main","Plâtrerie","Taloche & truelles","Spatules & couteaux","Divers"],"Bois":["Plaques","Panneaux","Accessoires","Divers"],"Voirie & Aménagement":["Voirie","Bordures","Bordures granit","Pavés & dalles","Caniveaux","Aménagement extérieur","Divers"]};
+const HGC_SUB_ORDERS={"Armatures & Distanceurs":["Armatures","Distanceurs","Ligatures","Armatures treillis","Treillis & accessoires","Divers"],"Ciments & Bétons":["Ciments en sac","Bétons & Mortiers","Accessoires béton/mortiers","Crépi","Liants & additifs","Divers"],"Coffrage & Étaiement":["Coffrage","Étaiement","Panneaux & accessoires","Divers"],"Granulats & Agrégats":["Gravier","Sable","Gravillons","Concassés","Divers"],"Isolation & Étanchéité":["Isolation","Corde et bande d'étanchéité","Divers"],"Mastics & Colles":["Mastics","Colles","Silicones","Mortiers-colles","Accessoires","Divers"],"Maçonnerie & Briques":["Briques","Linteaux","Accessoires pour maçon"],"Mortiers & Produits Spéciaux":["Mortiers","Enduits","Réparations","Adjuvants","Produits spéciaux","Divers"],"Outils à Main & Plâtrerie":["Outils à main","Plâtrerie","Taloche & truelles","Spatules & couteaux","Divers"],"Bois":["Plaques","Panneaux","Coffrage","Divers"],"Voirie & Aménagement":["Voirie","Bordures","Bordures granit","Pavés & dalles","Caniveaux","Aménagement extérieur","Divers"],"GEOTEXTILE":["Géotextile HGC Premium","Géotextile Sytec"]};
 function isAutresSousInduni(s){return s==='Autres articles'||s.startsWith('Autres produits')}
 function subFamilySortInduni(a,b){const aAutres=isAutresSousInduni(a),bAutres=isAutresSousInduni(b);if(aAutres||bAutres)return aAutres&&bAutres?0:(aAutres?1:-1);const orders=(state.catalog==='Canplast'?CANPLAST_SUB_ORDERS:HGC_SUB_ORDERS);if(orders&&orders[state.famille]){const order=orders[state.famille];const ia=order.indexOf(a),ib=order.indexOf(b);return (ia===-1?999:ia)-(ib===-1?999:ib)}return String(a).localeCompare(String(b),'fr')}
 let funnelSel={catalog:null,famille:null,sous:null,sous2:null,diam:null,long:null};
@@ -449,8 +449,8 @@ const HGC_CONFIG = {
   'Isolation & Étanchéité': {
     gradient:'linear-gradient(135deg,#065f46,#059669)', icone:'🛡️', badge:'Isolation',
     photo:'/images/categories/hgc-famille-isolation-etancheite.png',
-    desc:'XPS · EPS · Laine · Étanchéité · Mousses',
-    subs:['Isolation','Étanchéité','Mousses & bandes'],
+    desc:'XPS · EPS · Laine · Corde et bande d\'étanchéité',
+    subs:['Isolation',"Corde et bande d'étanchéité"],
     order:4
   },
   'Mastics & Colles': {
@@ -463,15 +463,15 @@ const HGC_CONFIG = {
   'Bois': {
     gradient:'linear-gradient(135deg,#0e7490,#0891b2)', icone:'🪵', badge:'Bois',
     photo:'/images/categories/hgc-famille-bois-coffrage.png',
-    desc:'Contreplaqué · OSB · Plaques plâtre · Panneaux isolants',
-    subs:['Plaques','Panneaux'],
+    desc:'Contreplaqué · OSB · Plaques · Panneaux isolants · Coffrage',
+    subs:['Plaques','Panneaux','Coffrage','Divers'],
     order:7
   },
   'Maçonnerie & Briques': {
     gradient:'linear-gradient(135deg,#9a3412,#c2410c)', icone:'🧱', badge:'Maçonnerie',
     photo:'/images/categories/hgc-famille-maconnerie-briques.png',
-    desc:'Briques · Linteaux · Blocs · Cordeaux',
-    subs:['Briques','Linteaux','Divers'],
+    desc:'Briques · Linteaux · Accessoires pour maçon',
+    subs:['Briques','Linteaux','Accessoires pour maçon'],
     order:8
   },
   'Granulats & Agrégats': {
@@ -487,6 +487,12 @@ const HGC_CONFIG = {
     desc:'Bordures · Bordures granit · Pavés · Dalles · Caniveaux',
     subs:['Bordures','Bordures granit','Voirie','Pavés & dalles'],
     order:14
+  },
+  'GEOTEXTILE': {
+    gradient:'linear-gradient(135deg,#4d7c0f,#65a30d)', icone:'🧵', badge:'Géotextile',
+    desc:'Géotextiles non-tissés HGC Premium et Sytec',
+    subs:['Géotextile HGC Premium','Géotextile Sytec'],
+    order:15
   },
 };
 
@@ -693,6 +699,14 @@ function productIconOrDiamHtmlInduni(p){
     return `<span class="diamBig">Ø ${disp}</span>${len?`<span class="diamLg">LG de ${len} m</span>`:''}${innerDiam}`;
   }
   if(p.sousFamille==='Bordures granit') return bordureGranitDisplayInduni(p);
+  if(PANNEAU_ISOLATION_SOUSSOUS_INDUNI.has(p.sousSousFamille)&&p.famille==='Isolation & Étanchéité'){
+    const panneauDisp=panneauIsolationDisplayInduni(p);
+    if(panneauDisp) return panneauDisp;
+  }
+  if(p.famille==='Maçonnerie & Briques'&&p.sousFamille==='Linteaux'){
+    const linteauDisp=linteauDisplayInduni(p);
+    if(linteauDisp) return linteauDisp;
+  }
   return `<span class="iconGlyph">${esc(p.icone||'📦')}</span>`;
 }
 function bordureGranitDisplayInduni(p){
@@ -700,6 +714,24 @@ function bordureGranitDisplayInduni(p){
   const main=text.split(',')[0].replace(/^(Bordure|Dalle p\.rigole) gneiss Serizzo\s*/i,'').trim();
   const longueurLibre=/longueur libre/i.test(text);
   return `<span class="diamBig" style="font-size:21px;line-height:1.2;padding:0 8px;text-align:center">${esc(main)}</span>${longueurLibre?'<span class="diamLg">Longueur libre</span>':''}`;
+}
+// Panneaux isolants (EPS/XPS) : mettre en avant l'épaisseur et le conditionnement
+// (ex. "25 mm – 20 pces") plutôt qu'un pictogramme générique.
+const PANNEAU_ISOLATION_SOUSSOUS_INDUNI=new Set(['Panneaux EPS 20kg/m3','Panneaux EPS 30kg/m3','Panneaux XPS']);
+function panneauIsolationDisplayInduni(p){
+  const text=String(p.designation||'');
+  const ep=text.match(/(\d[\d.,]*)\s*mm\b/i);
+  const pces=text.match(/(\d+)\s*pces\b/i);
+  if(!ep&&!pces) return null;
+  const label=[ep?`${ep[1].replace(',','.')} mm`:null,pces?`${pces[1]} pces`:null].filter(Boolean).join(' – ');
+  return `<span class="diamBig" style="font-size:20px;line-height:1.2;padding:0 8px;text-align:center">${esc(label)}</span>`;
+}
+// Linteaux : mettre en avant la dimension + la longueur plutôt qu'un découpage par plage.
+function linteauDisplayInduni(p){
+  const text=String(p.designation||'');
+  const m=text.match(/([\d.,]+\s*\/\s*[\d.,]+\s*cm)\s+(L[\d.,]+cm)/i);
+  if(!m) return null;
+  return `<span class="diamBig" style="font-size:20px;line-height:1.2;padding:0 8px;text-align:center">${esc(m[1])}</span><span class="diamLg">${esc(m[2])}</span>`;
 }
 function productMetaHtmlInduni(p){
   const isTuyau=isTuyauContextInduni(p.sousFamille,p.sousSousFamille);
@@ -727,8 +759,11 @@ const NO_DIAMETER_SPLIT_INDUNI=new Set([
   'Canalisations PVC|Autres articles|null',
   'Préfa-béton|Accessoires coffrage & béton|null',
   'Ciments & Bétons|Accessoires béton/mortiers|null',
-  'Isolation & Étanchéité|Isolation|Panneaux EPS',
+  'Isolation & Étanchéité|Isolation|Panneaux EPS 20kg/m3',
+  'Isolation & Étanchéité|Isolation|Panneaux EPS 30kg/m3',
   'Isolation & Étanchéité|Isolation|Panneaux XPS',
+  'Maçonnerie & Briques|Linteaux|null',
+  'Bois|Plaques|null',
 ]);
 function level4KindInduni(sous,sous2,items){
   if(isAngleContextInduni(sous,sous2)) return 'angle';
