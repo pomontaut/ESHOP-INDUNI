@@ -18,6 +18,8 @@ Rails.application.routes.draw do
     resources :devis_imports, only: [ :create ] do
       collection { post :confirm_products }
     end
+    get   "nomenclature",     to: "nomenclature#index"
+    patch "nomenclature/:id", to: "nomenclature#update"
     get :me, to: "sessions#me"
   end
 

@@ -45,15 +45,22 @@ class Api::DevisImportsController < ApplicationController
       # added) that happens to share this reference — just skip it.
       next if product.persisted? && !product.manually_added?
 
+      # When the achats/admin user doesn't know which family to file the
+      # article under, it's left without famille/sous_famille (hidden from
+      # normal catalog browsing, see Api::ProductsController) and flagged
+      # needs_classification so it surfaces in the Nomenclature tab instead.
+      needs_classification = ActiveModel::Type::Boolean.new.cast(p[:needsClassification]) || false
+
       product.assign_attributes(
         name:              p[:designation].to_s,
         unit_price:        p[:prix].to_f,
         unite:             p[:unite].to_s.presence || "PCE",
-        famille:           p[:famille].to_s.presence || "Article générique",
-        sous_famille:      p[:sousFamille].to_s.presence || "Devis import",
-        sous_sous_famille: "__DIRECT__",
+        famille:           needs_classification ? nil : (p[:famille].to_s.presence || "Article générique"),
+        sous_famille:      needs_classification ? nil : (p[:sousFamille].to_s.presence || "Devis import"),
+        sous_sous_famille: needs_classification ? nil : "__DIRECT__",
         icone:             product.icone.presence || "📦",
-        manually_added:    true
+        manually_added:    true,
+        needs_classification: needs_classification
       )
       product.save!
       product.reference

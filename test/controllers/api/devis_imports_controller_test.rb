@@ -103,6 +103,25 @@ class Api::DevisImportsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 9.9, product.unit_price.to_f
   end
 
+  test "confirm_products flags an article without a known category as needing classification" do
+    post confirm_products_api_devis_imports_url, params: {
+      supplier: "HGC",
+      products: [
+        { reference: "NEW-REF-2", designation: "Article inconnu du devis", prix: 4.2, unite: "PCE", needsClassification: true }
+      ]
+    }
+
+    assert_response :success
+    assert_equal [ "NEW-REF-2" ], JSON.parse(response.body)["added"]
+
+    product = Product.find_by(supplier: @supplier, reference: "NEW-REF-2")
+    assert product
+    assert product.manually_added?
+    assert product.needs_classification?
+    assert_nil product.famille
+    assert_nil product.sous_famille
+  end
+
   test "confirm_products never overwrites an existing non-manually-added product" do
     post confirm_products_api_devis_imports_url, params: {
       supplier: "HGC",

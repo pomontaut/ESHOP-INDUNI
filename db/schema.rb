@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_14_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_14_140000) do
   create_table "chantiers", force: :cascade do |t|
     t.string "adresse"
     t.string "carte_interactive"
@@ -73,6 +73,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_14_130000) do
     t.string "image"
     t.boolean "manually_added", default: false, null: false
     t.string "name"
+    t.boolean "needs_classification", default: false, null: false
     t.decimal "poids_kg"
     t.decimal "prix_m2"
     t.string "qte_palette"
