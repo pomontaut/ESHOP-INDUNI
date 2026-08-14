@@ -33,7 +33,7 @@ class DevisExtractorService
 
     response = client.messages.create(
       model: MODEL,
-      max_tokens: 8000,
+      max_tokens: 16000,
       output_config: { format_: { schema: schema } },
       messages: [ {
         role: "user",
@@ -113,12 +113,20 @@ class DevisExtractorService
       `surcharges`.
 
       Règles pour `items` :
+      - Parcours le document EN ENTIER, page par page, et extrait CHAQUE ligne d'article de CHAQUE tableau,
+        même s'il y en a beaucoup (10, 20 lignes ou plus). Ne t'arrête jamais en cours de tableau : si le calcul
+        du prix net d'une ligne te semble complexe ou incertain, inclus quand même la ligne avec ton meilleur
+        calcul plutôt que de l'omettre.
+      - Une même référence peut apparaître PLUSIEURS FOIS dans le devis avec des quantités différentes (ex. deux
+        tronçons du même tuyau commandés séparément) : ce sont des lignes distinctes à part entière, PAS des
+        variantes — inclus chaque occurrence comme un item séparé avec sa propre quantité.
       - N'inclus PAS les frais de transport, de déchargement, d'emballage ou tout autre frais de service
         de base (ceux-ci sont recalculés séparément par notre propre système selon le chantier).
-      - Marque `is_variant: true` pour toute ligne qui est une variante / option alternative non retenue par défaut
-        (souvent introduite par "* VARIANTE", "Variante", "option", ou mentionnée en aparté avec un prix alternatif
-        dans le texte d'une autre ligne). Ces lignes seront ignorées ensuite, inclus-les quand même avec ce marqueur
-        plutôt que de les omettre.
+      - Marque `is_variant: true` UNIQUEMENT pour une ligne qui propose explicitement un article alternatif /
+        optionnel à un autre (souvent introduite par "* VARIANTE", "Variante", "option", ou mentionnée en aparté
+        avec un prix alternatif dans le texte d'une autre ligne) — PAS pour une répétition légitime de la même
+        référence avec une quantité différente (voir règle ci-dessus). Ces lignes variantes seront ignorées
+        ensuite, inclus-les quand même avec ce marqueur plutôt que de les omettre.
       - `reference` = la référence / n° d'article du fournisseur tel qu'imprimé (colonne "No", "N° d'art.",
         "Référence", "Kundenartikel-Nr.", etc). Si le scan est de mauvaise qualité, fais de ton mieux pour
         reconstituer la référence à partir du contexte, sans l'inventer si elle est illisible (dans ce cas laisse
@@ -128,15 +136,18 @@ class DevisExtractorService
       - `quantity` = la quantité commandée pour cette ligne, dans l'unité `unit` (voir ci-dessous — pas dans une
         unité secondaire alternative si plusieurs sont données, ex. un poids en kg ET un nombre de sacs/palettes).
       - `unit` = l'unité de mesure de `quantity` telle qu'indiquée dans le devis (M, PCE, P, KG, etc.).
-      - `unit_price` = le prix unitaire NET par unité de `quantity`, après remise, en CHF, ou null si absent.
-        Certains devis (notamment HGC) détaillent le calcul sur plusieurs lignes sous l'article : un prix brut
-        et un montant brut sur la ligne de l'article, puis en dessous un "Rabais X %" et enfin une ligne
-        "Montant hors TVA" qui donne le prix net par unité ET le montant net total de la ligne. C'est CE prix net
-        (celui de la ligne "Montant hors TVA", pas le prix brut de la ligne principale) qu'il faut retourner
-        dans `unit_price` — jamais le prix brut avant remise. Si seul le montant net total de la ligne est donné
-        sans prix net unitaire explicite, calcule `unit_price` = montant net total ÷ `quantity`.
+      - `unit_price` = le prix unitaire NET par unité de `quantity`, après remise(s), en CHF, ou null si absent.
+        Vérifie toujours ton calcul en multipliant `unit_price` par `quantity` : le résultat doit correspondre
+        (aux arrondis près) au montant total imprimé pour cette ligne. Si le calcul détaillé ci-dessous ne
+        reconcilie pas avec ce montant total, utilise `unit_price` = montant total imprimé ÷ `quantity`.
 
-        Exemple concret (structure HGC) :
+        Cas 1 — remise simple sur plusieurs lignes (structure HGC) : un prix brut et un montant brut sur la ligne
+        de l'article, puis en dessous un "Rabais X %" et enfin une ligne "Montant hors TVA" qui donne le prix net
+        par unité ET le montant net total de la ligne. C'est CE prix net (celui de la ligne "Montant hors TVA",
+        pas le prix brut de la ligne principale) qu'il faut retourner dans `unit_price` — jamais le prix brut
+        avant remise. Si seul le montant net total de la ligne est donné sans prix net unitaire explicite,
+        calcule `unit_price` = montant net total ÷ `quantity`.
+
           Pos  Article                    Désignations                Quantité/UQ   Prix CHF   UP    Montant CHF
           7'200 100058451                 Kerakoll Geolite Magma 20   10'500 KG     2.29       1 KG  24'045.00
                                                                         420 SAC
@@ -144,6 +155,19 @@ class DevisExtractorService
                                            Montant hors TVA                          1.32              13'825.87
         → quantity = 10500, unit = "KG", unit_price = 1.32 (PAS 2.29, qui est le prix brut avant les 42.5% de
           remise ; 1.32 = 13'825.87 ÷ 10'500, cohérent avec le montant net affiché).
+
+        Cas 2 — remises en cascade sur une seule ligne, avec DEUX pourcentages dans la colonne "Remise %"
+        (structure Canplast). Certains devis appliquent DEUX remises successives au prix de liste ("Prix u.") :
+        applique-les dans l'ordre à la suite l'une de l'autre. ATTENTION : si un pourcentage est imprimé avec un
+        signe "-" devant (ex. "-35%"), et que le document précise quelque part une note du type "Rabais avec
+        symbole "-" = Hausse de prix", ce pourcentage est en réalité une HAUSSE (multiplie par (1 + le taux)) et
+        non une remise (ne le soustrais pas) ; un pourcentage sans signe "-" reste une remise normale
+        (multiplie par (1 - le taux)).
+
+          N°       Désignation                              Qté       Prix u.   Remise %      Montant
+          LDT3155  Tuyau PVC compact ... Ø 315 x 6.2 mm      245,28 M  34,35     -35%   48%    5 914,61
+        → prix net = 34.35 × (1 + 0.35) × (1 - 0.48) = 24.11 CHF/M (PAS 34.35, ni un simple 34.35×(1-0.35)) ;
+          vérification : 24.11 × 245.28 ≈ 5 914,61, qui correspond bien au montant imprimé.
       - `suggested_category` = la catégorie de notre catalogue qui correspond le mieux à cet article, à choisir
         EXACTEMENT parmi la liste ci-dessous (recopie une valeur telle quelle, n'en invente pas une autre) :
         #{@category_options.presence&.map { |c| "  - #{c}" }&.join("\n") || "  (aucune catégorie connue pour ce fournisseur)"}
