@@ -1315,22 +1315,44 @@ function analyzeDevis(){
     results.innerHTML=`<p style="color:#b91c1c">${esc(err.message||'Erreur réseau')}</p>`;
   });
 }
+// Options de famille/sous-famille existantes chez un fournisseur, pour permettre
+// à l'utilisateur de corriger la catégorie proposée par l'IA avant l'ajout au
+// catalogue (ex. rattacher un article à la bonne sous-famille "Voirie").
+function categoryOptionsForSupplier(catalog){
+  const seen=new Set(), out=[];
+  (PRODUCTS||[]).forEach(p=>{
+    if(normalizeSupplierName(p.catalog)!==normalizeSupplierName(catalog)||!p.famille) return;
+    const combo=p.famille+(p.sousFamille?' > '+p.sousFamille:'');
+    if(!seen.has(combo)){seen.add(combo);out.push(combo);}
+  });
+  return out.sort((a,b)=>a.localeCompare(b));
+}
 function renderDevisResults(){
   const results=document.getElementById('devisResults');
   if(!devisResultItems.length){results.innerHTML='<p class="muted">Aucun article détecté dans ce devis.</p>';return}
   const rows=devisResultItems.map((it,k)=>{
     const badges=[];
     if(it.generic) badges.push('<span class="tag" style="position:static;background:#f1642a">Article générique</span>');
-    if(it.cheaperAtSupplier) badges.push(`<span class="tag" style="position:static;background:#b91c1c">Fournisseur moins cher : CHF ${Number(it.devisPrix).toFixed(2)}</span>`);
-    const priceCell=it.generic
-      ?`<input type="number" step="0.01" min="0" placeholder="0.00" value="${it.devisPrix!=null?Number(it.devisPrix).toFixed(2):''}" data-devis-price="${k}" style="width:90px;border:1px solid #ddd;border-radius:6px;padding:6px">`
-      :fmt(it.prix);
-    const catalogRow=(it.generic&&!it.isSurcharge)
-      ?`<div style="margin-top:6px;font-size:12px"><label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" data-devis-addcatalog="${k}" checked> Ajouter au catalogue ${esc(it.catalog)}${it.suggestedFamille?` — <i>${esc(it.suggestedFamille)}${it.suggestedSousFamille?' > '+esc(it.suggestedSousFamille):''}</i>`:' — <i>aucune catégorie proche trouvée, sera classé en Article générique</i>'}</label></div>`
+    const eshopNote=(it.matched&&it.prix!=null)
+      ?`<div style="margin-top:4px;font-size:12px;color:#555">Article référencé e-shop — prix e-shop (référence) : <b>${fmt(it.prix)}</b> pour information</div>`
       :'';
-    return `<tr><td><input type="checkbox" data-devis-check="${k}" checked></td><td><b>${esc(it.article)}</b></td><td>${esc(it.designation)}<div>${badges.join(' ')}</div>${catalogRow}</td><td>${it.qty} ${esc(it.unite)}</td><td>${priceCell}</td></tr>`;
+    const priceCell=`<input type="number" step="0.01" min="0" placeholder="0.00" value="${it.devisPrix!=null?Number(it.devisPrix).toFixed(2):(it.prix!=null?Number(it.prix).toFixed(2):'')}" data-devis-price="${k}" style="width:90px;border:1px solid #ddd;border-radius:6px;padding:6px">`;
+    let catalogRow='';
+    if(it.generic&&!it.isSurcharge){
+      const options=categoryOptionsForSupplier(it.catalog);
+      const suggested=it.suggestedFamille?(it.suggestedFamille+(it.suggestedSousFamille?' > '+it.suggestedSousFamille:'')):'';
+      if(suggested&&!options.includes(suggested)) options.push(suggested);
+      const optionsHtml=['<option value="">Article générique (aucune catégorie)</option>'].concat(
+        options.map(o=>`<option value="${esc(o)}"${o===suggested?' selected':''}>${esc(o)}</option>`)
+      ).join('');
+      catalogRow=`<div style="margin-top:6px;font-size:12px">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" data-devis-addcatalog="${k}" checked> Ajouter au catalogue ${esc(it.catalog)} dans :</label>
+        <select data-devis-category="${k}" style="margin-top:4px;width:100%;border:1px solid #ddd;border-radius:6px;padding:5px">${optionsHtml}</select>
+      </div>`;
+    }
+    return `<tr><td><input type="checkbox" data-devis-check="${k}" checked></td><td><b>${esc(it.article)}</b></td><td>${esc(it.designation)}<div>${badges.join(' ')}</div>${eshopNote}${catalogRow}</td><td>${it.qty} ${esc(it.unite)}</td><td>${priceCell}</td></tr>`;
   }).join('');
-  results.innerHTML=`<div class="sub2Note">${devisResultItems.length} ligne(s) détectée(s). Décoche celles à exclure, renseigne un prix pour les articles génériques si besoin.</div><table class="dashTable"><thead><tr><th></th><th>Référence</th><th>Désignation</th><th>Qté</th><th>Prix e-shop</th></tr></thead><tbody>${rows}</tbody></table><div class="actions" style="margin-top:14px"><button type="button" class="primary" onclick="addDevisItemsToCart()">+ Ajouter la sélection au panier</button></div>`;
+  results.innerHTML=`<div class="sub2Note">${devisResultItems.length} ligne(s) détectée(s). Décoche celles à exclure. Le prix repris pour la commande est celui du devis — modifie-le si besoin.</div><table class="dashTable"><thead><tr><th></th><th>Référence</th><th>Désignation</th><th>Qté</th><th>Prix devis (repris pour la commande)</th></tr></thead><tbody>${rows}</tbody></table><div class="actions" style="margin-top:14px"><button type="button" class="primary" onclick="addDevisItemsToCart()">+ Ajouter la sélection au panier</button></div>`;
 }
 function addDevisItemsToCart(){
   const results=document.getElementById('devisResults');
@@ -1340,21 +1362,20 @@ function addDevisItemsToCart(){
   devisResultItems.forEach((it,k)=>{
     const checkbox=results.querySelector(`[data-devis-check="${k}"]`);
     if(!checkbox||!checkbox.checked) return;
-    let prix=it.prix;
-    if(it.generic){
-      const priceInput=results.querySelector(`[data-devis-price="${k}"]`);
-      prix=parseFloat(priceInput&&priceInput.value)||0;
-    }
+    const priceInput=results.querySelector(`[data-devis-price="${k}"]`);
+    const prix=parseFloat(priceInput&&priceInput.value)||0;
     setCartSupplierIfNeeded(it.catalog);
     const existing=cart.find(c=>normalizeSupplierName(c.catalog)===normalizeSupplierName(it.catalog)&&c.article===it.article);
-    if(existing) existing.qty=(Number(existing.qty)||0)+(Number(it.qty)||0);
-    else cart.push({catalog:it.catalog,article:it.article,designation:it.designation,descriptif:it.descriptif||'',prix,unite:it.unite,famille:it.famille,sousFamille:it.sousFamille,sousSousFamille:it.sousSousFamille||'',icone:it.icone,image:it.image,qty:Number(it.qty)||0});
+    if(existing){existing.qty=(Number(existing.qty)||0)+(Number(it.qty)||0);}
+    else cart.push({catalog:it.catalog,article:it.article,designation:it.designation,descriptif:it.descriptif||'',prix,catalogPrix:it.matched&&it.prix!=null?Number(it.prix):null,unite:it.unite,famille:it.famille,sousFamille:it.sousFamille,sousSousFamille:it.sousSousFamille||'',icone:it.icone,image:it.image,qty:Number(it.qty)||0});
     added++;
     if(it.generic&&!it.isSurcharge){
       const addCatalogCheckbox=results.querySelector(`[data-devis-addcatalog="${k}"]`);
       if(addCatalogCheckbox&&addCatalogCheckbox.checked){
+        const categorySelect=results.querySelector(`[data-devis-category="${k}"]`);
+        const [famille,sousFamille]=(categorySelect&&categorySelect.value?categorySelect.value.split(' > '):['','']);
         catalogSupplier=it.catalog;
-        toAddToCatalog.push({reference:it.article,designation:it.designation,prix,unite:it.unite,famille:it.suggestedFamille||'',sousFamille:it.suggestedSousFamille||''});
+        toAddToCatalog.push({reference:it.article,designation:it.designation,prix,unite:it.unite,famille:famille||'',sousFamille:sousFamille||''});
       }
     }
   });
@@ -1368,20 +1389,74 @@ function addDevisItemsToCart(){
   document.getElementById('devisFileInput').value='';
   save();openCart();
 }
-async function downloadOrder(e){e.preventDefault(); const chantier=document.getElementById('chantier').value, delai=document.getElementById('delai').value; if(!chantier||!delai){alert('Veuillez remplir le N° de chantier et le délai.');return;} if(!cart.length){alert('Le panier est vide.');return;} const no='BC-'+Math.floor(100000+Math.random()*900000), today=new Date().toLocaleDateString('fr-CH'); const billingMerchant=document.getElementById('billingMerchant')?document.getElementById('billingMerchant').value:''; const sub=cart.reduce((s,i)=>s+i.prix*i.qty,0), supplier=cartSupplier(), tdet=transportDetailsInduni(sub,supplier), total=sub+tdet.totalTransport; if((supplier==='Canplast')&&!billingMerchant){alert('Veuillez choisir le marchand pour facturation.');return;} const rows=cart.map((i,k)=>`<tr><td>${k+1}</td><td><b>${esc(i.designation)}</b><br><small>${esc(i.descriptif)}</small></td><td>${esc(i.article)}</td><td>${i.qty}<br><small>${esc(i.unite)}</small></td><td>${fmt(i.prix)}</td><td><b>${fmt(i.prix*i.qty)}</b></td></tr>`).join(''); const order=buildOrderHtml(no,today,chantier,delai,billingMerchant,supplier,rows,sub,tdet,total);
+async function blobToBase64(blob){
+  const buf=await blob.arrayBuffer();
+  const bytes=new Uint8Array(buf);
+  let binary='';
+  const chunk=0x8000;
+  for(let i=0;i<bytes.length;i+=chunk) binary+=String.fromCharCode.apply(null,bytes.subarray(i,i+chunk));
+  return btoa(binary);
+}
+function utf8ToBase64(str){return btoa(unescape(encodeURIComponent(str)))}
+function encodeMimeHeader(str){return '=?UTF-8?B?'+utf8ToBase64(str)+'?='}
+function base64WithLineBreaks(base64){return base64.match(/.{1,76}/g).join('\r\n')}
+// Un mailto: ne peut jamais transporter de pièce jointe (limitation navigateur/OS
+// incontournable). On génère à la place un fichier .eml (message e-mail complet,
+// au format standard) avec le PDF déjà encodé en pièce jointe : un double-clic
+// dessus l'ouvre directement dans Outlook, prêt à envoyer.
+function buildEmlWithAttachment({to,cc,subject,body,pdfBase64,pdfFilename}){
+  const boundary='----=_INDUNI_'+Date.now();
+  const lines=['To: '+to];
+  if(cc) lines.push('Cc: '+cc);
+  lines.push('Subject: '+encodeMimeHeader(subject));
+  lines.push('MIME-Version: 1.0');
+  lines.push('Content-Type: multipart/mixed; boundary="'+boundary+'"');
+  lines.push('');
+  lines.push('--'+boundary);
+  lines.push('Content-Type: text/plain; charset="UTF-8"');
+  lines.push('Content-Transfer-Encoding: 8bit');
+  lines.push('');
+  lines.push(body);
+  lines.push('');
+  lines.push('--'+boundary);
+  lines.push('Content-Type: application/pdf; name="'+pdfFilename+'"');
+  lines.push('Content-Disposition: attachment; filename="'+pdfFilename+'"');
+  lines.push('Content-Transfer-Encoding: base64');
+  lines.push('');
+  lines.push(base64WithLineBreaks(pdfBase64));
+  lines.push('');
+  lines.push('--'+boundary+'--');
+  lines.push('');
+  return lines.join('\r\n');
+}
+function downloadEml(emlContent,filename){
+  const blob=new Blob([emlContent],{type:'message/rfc822'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+async function downloadOrder(e){e.preventDefault(); const chantier=document.getElementById('chantier').value, delai=document.getElementById('delai').value; if(!chantier||!delai){alert('Veuillez remplir le N° de chantier et le délai.');return;} if(!cart.length){alert('Le panier est vide.');return;} const no='BC-'+Math.floor(100000+Math.random()*900000), today=new Date().toLocaleDateString('fr-CH'); const billingMerchant=document.getElementById('billingMerchant')?document.getElementById('billingMerchant').value:''; const sub=cart.reduce((s,i)=>s+i.prix*i.qty,0), supplier=cartSupplier(), tdet=transportDetailsInduni(sub,supplier), total=sub+tdet.totalTransport; if((supplier==='Canplast')&&!billingMerchant){alert('Veuillez choisir le marchand pour facturation.');return;} const rows=cart.map((i,k)=>`<tr><td>${k+1}</td><td><b>${esc(i.designation)}</b><br><small>${esc(i.descriptif)}</small></td><td>${esc(i.article)}</td><td>${i.qty}<br><small>${esc(i.unite)}</small></td><td>${fmt(i.prix)}</td><td><b>${fmt(i.prix*i.qty)}</b></td></tr>`).join(''); const order=buildOrderHtml(no,today,chantier,delai,billingMerchant,supplier,rows,sub,tdet,total); const orderForPdf=buildOrderHtml(no,today,chantier,delai,billingMerchant,supplier,rows,sub,tdet,total,true);
   let pdfBlob=null;
   try{
-    const res=await fetch('/api/orders/preview_pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({html:order,filename:no+'_bon_de_commande'})});
+    const res=await fetch('/api/orders/preview_pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({html:orderForPdf,filename:no+'_bon_de_commande'})});
     if(res.ok) pdfBlob=await res.blob();
-  }catch(err){ /* pas de réseau / serveur indisponible : on retombe sur le fichier HTML ci-dessous */ }
-  const blob=pdfBlob||new Blob([order],{type:'text/html;charset=utf-8'});
-  const ext=pdfBlob?'pdf':'html';
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=no+'_bon_de_commande.'+ext; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-  saveOrderRecord({no:no,date:today,supplier:supplier,chantier:chantier,total:total,html:order,items:cart.map(i=>({catalog:i.catalog,article:i.article,designation:i.designation,prix:i.prix,qty:i.qty,unite:i.unite}))});
-  alert(pdfBlob?'Commande enregistrée dans le dashboard. Le PDF a été téléchargé et Outlook va s’ouvrir avec un message prérempli — joignez-y le PDF téléchargé.':'Commande enregistrée dans le dashboard. Outlook va s’ouvrir avec un message prérempli. Pour joindre le PDF, ouvrez le bon téléchargé puis Imprimer / PDF, puis attachez-le dans Outlook.');
-  openOutlookDraft(no,chantier,supplier)}
+  }catch(err){ /* pas de réseau / serveur indisponible : on retombe sur mailto + HTML ci-dessous */ }
+  saveOrderRecord({no:no,date:today,supplier:supplier,chantier:chantier,total:total,html:order,items:cart.map(i=>({catalog:i.catalog,article:i.article,designation:i.designation,prix:i.prix,catalogPrix:i.catalogPrix??null,qty:i.qty,unite:i.unite}))});
+  if(pdfBlob){
+    const pdfBase64=await blobToBase64(pdfBlob);
+    const supplierEmail=(SUPPLIER_INFO[supplier]&&SUPPLIER_INFO[supplier].email)||'';
+    const body='Bonjour,\n\nVeuillez trouver ci-joint le bon de commande n° '+no+' pour le chantier '+chantier+'.\n\nMerci de bien vouloir nous faire parvenir votre confirmation de commande dans les plus brefs délais.\n\nRestant à votre disposition pour toute information complémentaire.\n\nCordialement\nINDUNI & Cie SA\nAvenue des Grandes-Communes 6\n1213 Petit-Lancy';
+    const eml=buildEmlWithAttachment({to:supplierEmail,subject:'Bon de commande '+no+' - chantier '+chantier,body,pdfBase64,pdfFilename:no+'_bon_de_commande.pdf'});
+    downloadEml(eml,no+'_email_outlook.eml');
+    alert('Commande enregistrée dans le dashboard. Un fichier .eml a été téléchargé avec le PDF déjà en pièce jointe — ouvrez-le (double-clic) pour l’ouvrir dans Outlook, prêt à envoyer.');
+  }else{
+    const blob=new Blob([order],{type:'text/html;charset=utf-8'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=no+'_bon_de_commande.html'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    alert('Commande enregistrée dans le dashboard. Outlook va s’ouvrir avec un message prérempli. Pour joindre le PDF, ouvrez le bon téléchargé puis Imprimer / PDF, puis attachez-le dans Outlook.');
+    openOutlookDraft(no,chantier,supplier);
+  }
+}
 function isChantierConsortium(nom){const c=(window._chantiers||[]).find(x=>x.nom===nom); return !!(c&&c.consortium);}
-function buildOrderHtml(no,today,chantier,delai,billingMerchant,supplier,rows,sub,tdet,total){
+function buildOrderHtml(no,today,chantier,delai,billingMerchant,supplier,rows,sub,tdet,total,forPdf){
 const isConsortium=isChantierConsortium(document.getElementById('chantier').value);
 return `<!doctype html><html><head><meta charset="utf-8"><title>${no}</title><style>
 @page{size:A4;margin:14mm 15mm 18mm 15mm}
@@ -1410,7 +1485,7 @@ td:not(:first-child){text-align:right}
 .sigbox{border-top:1px solid #111;padding-top:3px;font-size:9pt}
 @media print{button{display:none}}
 </style></head><body>
-<button onclick="window.print()" style="position:fixed;right:18px;top:18px;padding:12px 18px;background:#f1642a;color:white;border:0;border-radius:8px;font-weight:bold">Imprimer / PDF</button>
+${forPdf?'':'<button onclick="window.print()" style="position:fixed;right:18px;top:18px;padding:12px 18px;background:#f1642a;color:white;border:0;border-radius:8px;font-weight:bold">Imprimer / PDF</button>'}
 
 ${isConsortium?'':`<img src="${INDUNI_LOGO}" class="logo" alt="INDUNI">`}
 
@@ -1542,7 +1617,7 @@ ${isConsortium?'':`<!-- PAGE 2 : CONDITIONS GÉNÉRALES D'ACHAT (obligatoire, pr
   </div>
 </div>`}
 
-<script>window.onload=function(){window.print();}<\/script>
+${forPdf?'':'<script>window.onload=function(){window.print();}<\/script>'}
 </body></html>`}
 
 
@@ -1728,7 +1803,29 @@ function renderAnalysis(){
   const rows=getOrderHistory(); const total=rows.reduce((s,o)=>s+Number(o.total||0),0); const bySup={}, bySite={}, articles={}, families={};
   rows.forEach(o=>{bySup[o.supplier]=(bySup[o.supplier]||0)+Number(o.total||0); bySite[o.chantier]=(bySite[o.chantier]||0)+Number(o.total||0); (o.items||[]).forEach(i=>{const found=PRODUCTS.find(p=>p.catalog===i.catalog&&String(p.article)===String(i.article)); const amount=Number(i.prix||0)*Number(i.qty||0); const k=(i.article||'')+' '+(i.designation||''); articles[k]=(articles[k]||0)+amount; const fam=found?.famille||'Non classé'; families[fam]=(families[fam]||0)+amount;});});
   const supRows=Object.entries(bySup).sort((a,b)=>b[1]-a[1]); const artRows=Object.entries(articles).sort((a,b)=>b[1]-a[1]).slice(0,10); const famRows=Object.entries(families).sort((a,b)=>b[1]-a[1]); const siteRows=Object.entries(bySite).sort((a,b)=>b[1]-a[1]).slice(0,8); const maxSup=Math.max(1,...Object.values(bySup));
-  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › Analyse achat</div><div class="toolbar"><h2>Analyse achat</h2><p class="muted">Indicateurs calculés sur les commandes générées dans cet outil.</p></div><div class="dashboardCards"><div class="kpi"><small>Dépense totale suivie</small><b>${fmt(total)}</b></div><div class="kpi"><small>Nombre de commandes</small><b>${rows.length}</b></div><div class="kpi"><small>Panier moyen</small><b>${fmt(rows.length?total/rows.length:0)}</b></div><div class="kpi"><small>Fournisseur principal</small><b style="font-size:22px">${esc(supRows[0]?.[0]||'-')}</b></div></div><div class="chartGrid">${svgPieV49(supRows,'Répartition dépenses par fournisseur')}${svgBarsV49(famRows,'Top familles d’achat')}${svgBarsV49(siteRows,'Dépenses par chantier')}${svgBarsV49(artRows,'Top articles commandés')}</div><div class="analysisBlock"><h3>Dépenses par fournisseur</h3>${supRows.length?supRows.map(([k,v])=>`<div class="barRow"><b>${esc(k)}</b><div class="barOuter"><div class="barInner" style="width:${Math.round(v/maxSup*100)}%"></div></div><span>${fmt(v)}</span></div>`).join(''):'<p class="muted">Aucune donnée.</p>'}</div><div class="analysisBlock"><h3>Actions achats proposées</h3><p>1. Consolider les volumes par famille forte et négocier en priorité avec le fournisseur principal.</p><p>2. Suivre les chantiers récurrents pour anticiper les commandes répétitives via la fonction Dupliquer.</p><p>3. Contrôler les articles à fort montant et utiliser le comparatif fournisseur avant validation.</p></div>`;
+
+  // Écart entre le prix payé (devis fournisseur, importé via "Importer un devis")
+  // et le prix e-shop de référence, pour les articles déjà rattachés au catalogue
+  // (catalogPrix renseigné sur la ligne de commande).
+  const eshopOrders=rows.map(o=>{
+    let catalogTotal=0, paidTotal=0;
+    (o.items||[]).forEach(i=>{
+      if(i.catalogPrix==null) return;
+      catalogTotal+=Number(i.catalogPrix)*Number(i.qty||0);
+      paidTotal+=Number(i.prix||0)*Number(i.qty||0);
+    });
+    if(catalogTotal<=0) return null;
+    const gain=catalogTotal-paidTotal;
+    return {no:o.no,date:o.date,supplier:o.supplier,catalogTotal,paidTotal,gain,gainPct:gain/catalogTotal*100};
+  }).filter(Boolean);
+  const eshopTotalCatalog=eshopOrders.reduce((s,o)=>s+o.catalogTotal,0);
+  const eshopTotalGain=eshopOrders.reduce((s,o)=>s+o.gain,0);
+  const eshopTotalGainPct=eshopTotalCatalog>0?eshopTotalGain/eshopTotalCatalog*100:0;
+  const gainColor=eshopTotalGain>=0?'#176b28':'#b91c1c';
+  const eshopKpi=eshopOrders.length?`<div class="kpi"><small>Gain cumulé vs prix e-shop</small><b style="font-size:22px;color:${gainColor}">${fmt(eshopTotalGain)}</b><small>${eshopTotalGainPct.toFixed(1)}%</small></div>`:'';
+  const eshopBlock=eshopOrders.length?`<div class="analysisBlock"><h3>Écart prix devis / prix e-shop de référence</h3><p class="muted">Commandes contenant des articles déjà référencés au catalogue e-shop, comparés au prix obtenu sur le devis fournisseur.</p><table class="dashTable"><thead><tr><th>N° commande</th><th>Date</th><th>Fournisseur</th><th>Prix e-shop (référence)</th><th>Prix payé (devis)</th><th>Gain CHF</th><th>Gain %</th></tr></thead><tbody>${eshopOrders.map(o=>`<tr><td><b>${esc(o.no)}</b></td><td>${esc(o.date)}</td><td>${esc(o.supplier)}</td><td>${fmt(o.catalogTotal)}</td><td>${fmt(o.paidTotal)}</td><td style="color:${o.gain>=0?'#176b28':'#b91c1c'}"><b>${fmt(o.gain)}</b></td><td style="color:${o.gain>=0?'#176b28':'#b91c1c'}">${o.gainPct.toFixed(1)}%</td></tr>`).join('')}</tbody></table></div>`:'';
+
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › Analyse achat</div><div class="toolbar"><h2>Analyse achat</h2><p class="muted">Indicateurs calculés sur les commandes générées dans cet outil.</p></div><div class="dashboardCards"><div class="kpi"><small>Dépense totale suivie</small><b>${fmt(total)}</b></div><div class="kpi"><small>Nombre de commandes</small><b>${rows.length}</b></div><div class="kpi"><small>Panier moyen</small><b>${fmt(rows.length?total/rows.length:0)}</b></div><div class="kpi"><small>Fournisseur principal</small><b style="font-size:22px">${esc(supRows[0]?.[0]||'-')}</b></div>${eshopKpi}</div><div class="chartGrid">${svgPieV49(supRows,'Répartition dépenses par fournisseur')}${svgBarsV49(famRows,'Top familles d’achat')}${svgBarsV49(siteRows,'Dépenses par chantier')}${svgBarsV49(artRows,'Top articles commandés')}</div><div class="analysisBlock"><h3>Dépenses par fournisseur</h3>${supRows.length?supRows.map(([k,v])=>`<div class="barRow"><b>${esc(k)}</b><div class="barOuter"><div class="barInner" style="width:${Math.round(v/maxSup*100)}%"></div></div><span>${fmt(v)}</span></div>`).join(''):'<p class="muted">Aucune donnée.</p>'}</div>${eshopBlock}<div class="analysisBlock"><h3>Actions achats proposées</h3><p>1. Consolider les volumes par famille forte et négocier en priorité avec le fournisseur principal.</p><p>2. Suivre les chantiers récurrents pour anticiper les commandes répétitives via la fonction Dupliquer.</p><p>3. Contrôler les articles à fort montant et utiliser le comparatif fournisseur avant validation.</p></div>`;
 }
 /* === fin patch v49 === */
 
@@ -1976,7 +2073,7 @@ async function sendOrderByEmail(e) {
       body: JSON.stringify({
         chantier, delai, adresse, contact, phone, remarks,
         supplier: supplierName,
-        items: cart.map(i => ({ article: i.article, designation: i.designation, descriptif: i.descriptif || '', qty: i.qty, prix: i.prix, unite: i.unite || 'PCE', catalog: i.catalog || '' }))
+        items: cart.map(i => ({ article: i.article, designation: i.designation, descriptif: i.descriptif || '', qty: i.qty, prix: i.prix, catalogPrix: i.catalogPrix ?? null, unite: i.unite || 'PCE', catalog: i.catalog || '' }))
       })
     });
     const text = await res.text();

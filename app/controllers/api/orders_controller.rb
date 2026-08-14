@@ -17,7 +17,7 @@ class Api::OrdersController < ApplicationController
         user_name:       o.user&.full_name,
         user_sector:     o.user&.sector,
         items:           o.order_lines.map { |l|
-          { article: l.product&.reference, designation: l.product&.name, qty: l.quantity, prix: l.unit_price.to_f }
+          { article: l.product&.reference, designation: l.product&.name, qty: l.quantity, prix: l.unit_price.to_f, catalogPrix: l.catalog_price&.to_f }
         }
       }
     }
@@ -78,9 +78,10 @@ class Api::OrdersController < ApplicationController
         p.supplier   = supplier
       end
       order.order_lines.create!(
-        product:    product,
-        quantity:   item[:qty].to_i,
-        unit_price: item[:prix].to_f
+        product:      product,
+        quantity:     item[:qty].to_i,
+        unit_price:   item[:prix].to_f,
+        catalog_price: item[:catalogPrix].presence && item[:catalogPrix].to_f
       )
     end
 

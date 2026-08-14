@@ -663,35 +663,12 @@ function collectData(){
   };
 }
 
-function buildMailtoForOrder(data){
-  const subject = `Bon de commande N°${data.poNumber} - ${data.chantier} (${CLIENT.nom})`;
-  const bodyLines = [
-    `Bonjour,`, '',
-    `Veuillez trouver ci-joint notre bon de commande N°${data.poNumber} du ${data.poDate}.`,
-    '',
-    `Chantier : ${data.chantier} (code ${data.codeChantier})`,
-    `Adresse de livraison : ${data.adresseLivraison.replace(/\n/g,', ')}`,
-    `Montant total H.T. : ${data.devise} ${fmt(data.total)}`,
-    '',
-    `Merci de bien vouloir joindre le fichier PDF téléchargé à cet e-mail avant l'envoi.`,
-    '',
-    `Cordialement,`,
-    data.auteur || data.contact,
-    CLIENT.nom
-  ];
-  const body = bodyLines.join('\n');
-  let mailto = `mailto:${encodeURIComponent(data.emailFournisseur)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  if(data.emailCc) mailto += `&cc=${encodeURIComponent(data.emailCc)}`;
-  return mailto;
-}
-
 function envoyerCommande(id){
   const c = getStored().find(x=>x.id===id);
   if(!c) return;
   if(!c.emailFournisseur){ alert("Aucune adresse e-mail fournisseur enregistrée pour cette commande."); return; }
-  generatePDF(c);
-  alert("PDF régénéré. Ouverture de votre messagerie... pensez à joindre le PDF téléchargé.");
-  setTimeout(()=>{ window.location.href = buildMailtoForOrder(c); }, 400);
+  sendOrderEmailWithAttachment(c);
+  alert("Un fichier .eml a été téléchargé avec le PDF déjà en pièce jointe — ouvrez-le (double-clic) pour l'envoyer depuis Outlook.");
 }
 
 function validerCommande(){
@@ -722,14 +699,10 @@ function validerCommande(){
   stored.push(data);
   setStored(stored);
 
-  generatePDF(data);
-
-  const mailto = buildMailtoForOrder(data);
+  sendOrderEmailWithAttachment(data);
 
   statusEl.className = 'status ok';
-  statusEl.textContent = "PDF généré et commande enregistrée dans le tableau de bord. Ouverture d'Outlook... pensez à joindre le PDF téléchargé.";
-
-  setTimeout(()=>{ window.location.href = mailto; }, 400);
+  statusEl.textContent = "Commande enregistrée dans le tableau de bord. Un fichier .eml a été téléchargé avec le PDF déjà en pièce jointe — ouvrez-le pour l'envoyer depuis Outlook.";
 
   // prépare une nouvelle commande pour la suite
   setTimeout(()=>{
@@ -885,7 +858,7 @@ const CGA_TEXT = [
 "INDUNI & Cie SA – Avenue des Grandes-Communes 6 – 1213 Petit-Lancy – facturation@induni.ch"
 ].join('\n');
 
-function generatePDF(data){
+function buildOrderDoc(data){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({unit:'mm', format:'a4'});
   const pageW = 210, marginX = 15;
@@ -1079,7 +1052,74 @@ function generatePDF(data){
   });
 
   const filename = `Bon_de_commande_${data.poNumber}_${(data.chantier||'').replace(/[^a-zA-Z0-9]+/g,'_')}.pdf`;
+  return { doc, filename };
+}
+function generatePDF(data){
+  const { doc, filename } = buildOrderDoc(data);
   doc.save(filename);
+}
+function base64WithLineBreaks(base64){return base64.match(/.{1,76}/g).join('\r\n')}
+function utf8ToBase64(str){return btoa(unescape(encodeURIComponent(str)))}
+function encodeMimeHeader(str){return '=?UTF-8?B?'+utf8ToBase64(str)+'?='}
+// Un mailto: ne peut jamais transporter de pièce jointe (limitation navigateur/OS
+// incontournable). On génère à la place un fichier .eml (message e-mail complet,
+// au format standard) avec le PDF déjà encodé en pièce jointe : un double-clic
+// dessus l'ouvre directement dans Outlook, prêt à envoyer.
+function buildEmlWithAttachment({to,cc,subject,body,pdfBase64,pdfFilename}){
+  const boundary='----=_INDUNI_'+Date.now();
+  const lines=['To: '+to];
+  if(cc) lines.push('Cc: '+cc);
+  lines.push('Subject: '+encodeMimeHeader(subject));
+  lines.push('MIME-Version: 1.0');
+  lines.push('Content-Type: multipart/mixed; boundary="'+boundary+'"');
+  lines.push('');
+  lines.push('--'+boundary);
+  lines.push('Content-Type: text/plain; charset="UTF-8"');
+  lines.push('Content-Transfer-Encoding: 8bit');
+  lines.push('');
+  lines.push(body);
+  lines.push('');
+  lines.push('--'+boundary);
+  lines.push('Content-Type: application/pdf; name="'+pdfFilename+'"');
+  lines.push('Content-Disposition: attachment; filename="'+pdfFilename+'"');
+  lines.push('Content-Transfer-Encoding: base64');
+  lines.push('');
+  lines.push(base64WithLineBreaks(pdfBase64));
+  lines.push('');
+  lines.push('--'+boundary+'--');
+  lines.push('');
+  return lines.join('\r\n');
+}
+function downloadEml(emlContent,filename){
+  const blob=new Blob([emlContent],{type:'message/rfc822'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function sendOrderEmailWithAttachment(data){
+  const { doc, filename } = buildOrderDoc(data);
+  const pdfBase64 = doc.output('datauristring').split(',')[1];
+  const subject = `Bon de commande N°${data.poNumber} - ${data.chantier} (${CLIENT.nom})`;
+  const bodyLines = [
+    `Bonjour,`, '',
+    `Veuillez trouver ci-joint notre bon de commande N°${data.poNumber} du ${data.poDate}.`,
+    '',
+    `Chantier : ${data.chantier} (code ${data.codeChantier})`,
+    `Adresse de livraison : ${data.adresseLivraison.replace(/\n/g,', ')}`,
+    `Montant total H.T. : ${data.devise} ${fmt(data.total)}`,
+    '',
+    `Cordialement,`,
+    data.auteur || data.contact,
+    CLIENT.nom
+  ];
+  const eml = buildEmlWithAttachment({
+    to: data.emailFournisseur,
+    cc: data.emailCc,
+    subject,
+    body: bodyLines.join('\n'),
+    pdfBase64,
+    pdfFilename: filename
+  });
+  downloadEml(eml, filename.replace(/\.pdf$/i,'') + '.eml');
 }
 </script>
 
