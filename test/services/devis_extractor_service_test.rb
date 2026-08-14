@@ -6,6 +6,9 @@ class DevisExtractorServiceTest < ActiveSupport::TestCase
       items: [
         { reference: "REF-1", designation: "Article retenu", quantity: 2, unit: "PCE", unit_price: 10.0, is_variant: false },
         { reference: "REF-2", designation: "Article variante", quantity: 1, unit: "PCE", unit_price: nil, is_variant: true }
+      ],
+      surcharges: [
+        { label: "Supplément carburant", amount: 5.04 }
       ]
     }.to_json
 
@@ -13,9 +16,12 @@ class DevisExtractorServiceTest < ActiveSupport::TestCase
     service.instance_variable_set(:@client, fake_client(payload))
 
     with_api_key do
-      lines = service.extract
-      assert_equal 1, lines.length
-      assert_equal "REF-1", lines.first[:reference]
+      result = service.extract
+      assert_equal 1, result[:items].length
+      assert_equal "REF-1", result[:items].first[:reference]
+      assert_equal 1, result[:surcharges].length
+      assert_equal "Supplément carburant", result[:surcharges].first[:label]
+      assert_equal 5.04, result[:surcharges].first[:amount]
     end
   end
 

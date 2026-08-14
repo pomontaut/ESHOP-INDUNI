@@ -23,6 +23,24 @@ class Api::OrdersController < ApplicationController
     }
   end
 
+  # Converts a client-built bon de commande HTML preview into a real PDF, so
+  # the "Ouvrir dans Outlook" fallback (a plain mailto: link can never carry
+  # an attachment itself — that's a hard browser/OS restriction) can hand the
+  # user an actual PDF to attach instead of an HTML file requiring a manual
+  # print-to-PDF step. Deliberately independent from the Order/OrderLine
+  # models — it only ever converts an already-rendered HTML string, the same
+  # way render_order_pdf does for the real send flow, so it can't be broken
+  # by unrelated Order changes.
+  def preview_pdf
+    html = params[:html].to_s
+    return render json: { error: "Contenu HTML manquant." }, status: :unprocessable_entity if html.blank?
+
+    pdf = WickedPdf.new.pdf_from_string(html, disable_local_file_access: true, no_stop_slow_scripts: true)
+    send_data pdf, filename: "#{params[:filename].presence || 'bon_de_commande'}.pdf", type: "application/pdf", disposition: "attachment"
+  rescue => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
   def create
     chantier      = params[:chantier].to_s.strip
     delai         = params[:delai].to_s.strip

@@ -1323,15 +1323,20 @@ function renderDevisResults(){
     if(it.generic) badges.push('<span class="tag" style="position:static;background:#f1642a">Article générique</span>');
     if(it.cheaperAtSupplier) badges.push(`<span class="tag" style="position:static;background:#b91c1c">Fournisseur moins cher : CHF ${Number(it.devisPrix).toFixed(2)}</span>`);
     const priceCell=it.generic
-      ?`<input type="number" step="0.01" min="0" placeholder="0.00" data-devis-price="${k}" style="width:90px;border:1px solid #ddd;border-radius:6px;padding:6px">`
+      ?`<input type="number" step="0.01" min="0" placeholder="0.00" value="${it.devisPrix!=null?Number(it.devisPrix).toFixed(2):''}" data-devis-price="${k}" style="width:90px;border:1px solid #ddd;border-radius:6px;padding:6px">`
       :fmt(it.prix);
-    return `<tr><td><input type="checkbox" data-devis-check="${k}" checked></td><td><b>${esc(it.article)}</b></td><td>${esc(it.designation)}<div>${badges.join(' ')}</div></td><td>${it.qty} ${esc(it.unite)}</td><td>${priceCell}</td></tr>`;
+    const catalogRow=(it.generic&&!it.isSurcharge)
+      ?`<div style="margin-top:6px;font-size:12px"><label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" data-devis-addcatalog="${k}" checked> Ajouter au catalogue ${esc(it.catalog)}${it.suggestedFamille?` — <i>${esc(it.suggestedFamille)}${it.suggestedSousFamille?' > '+esc(it.suggestedSousFamille):''}</i>`:' — <i>aucune catégorie proche trouvée, sera classé en Article générique</i>'}</label></div>`
+      :'';
+    return `<tr><td><input type="checkbox" data-devis-check="${k}" checked></td><td><b>${esc(it.article)}</b></td><td>${esc(it.designation)}<div>${badges.join(' ')}</div>${catalogRow}</td><td>${it.qty} ${esc(it.unite)}</td><td>${priceCell}</td></tr>`;
   }).join('');
   results.innerHTML=`<div class="sub2Note">${devisResultItems.length} ligne(s) détectée(s). Décoche celles à exclure, renseigne un prix pour les articles génériques si besoin.</div><table class="dashTable"><thead><tr><th></th><th>Référence</th><th>Désignation</th><th>Qté</th><th>Prix e-shop</th></tr></thead><tbody>${rows}</tbody></table><div class="actions" style="margin-top:14px"><button type="button" class="primary" onclick="addDevisItemsToCart()">+ Ajouter la sélection au panier</button></div>`;
 }
 function addDevisItemsToCart(){
   const results=document.getElementById('devisResults');
   let added=0;
+  const toAddToCatalog=[];
+  let catalogSupplier=null;
   devisResultItems.forEach((it,k)=>{
     const checkbox=results.querySelector(`[data-devis-check="${k}"]`);
     if(!checkbox||!checkbox.checked) return;
@@ -1345,15 +1350,36 @@ function addDevisItemsToCart(){
     if(existing) existing.qty=(Number(existing.qty)||0)+(Number(it.qty)||0);
     else cart.push({catalog:it.catalog,article:it.article,designation:it.designation,descriptif:it.descriptif||'',prix,unite:it.unite,famille:it.famille,sousFamille:it.sousFamille,sousSousFamille:it.sousSousFamille||'',icone:it.icone,image:it.image,qty:Number(it.qty)||0});
     added++;
+    if(it.generic&&!it.isSurcharge){
+      const addCatalogCheckbox=results.querySelector(`[data-devis-addcatalog="${k}"]`);
+      if(addCatalogCheckbox&&addCatalogCheckbox.checked){
+        catalogSupplier=it.catalog;
+        toAddToCatalog.push({reference:it.article,designation:it.designation,prix,unite:it.unite,famille:it.suggestedFamille||'',sousFamille:it.suggestedSousFamille||''});
+      }
+    }
   });
   if(!added){alert('Aucune ligne sélectionnée.');return}
+  if(toAddToCatalog.length){
+    fetch('/api/devis_imports/confirm_products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({supplier:catalogSupplier,products:toAddToCatalog})}).catch(()=>{});
+  }
   devisResultItems=[];
   closeModal('devisModal');
   document.getElementById('devisResults').innerHTML='';
   document.getElementById('devisFileInput').value='';
   save();openCart();
 }
-function downloadOrder(e){e.preventDefault(); const chantier=document.getElementById('chantier').value, delai=document.getElementById('delai').value; if(!chantier||!delai){alert('Veuillez remplir le N° de chantier et le délai.');return;} if(!cart.length){alert('Le panier est vide.');return;} const no='BC-'+Math.floor(100000+Math.random()*900000), today=new Date().toLocaleDateString('fr-CH'); const billingMerchant=document.getElementById('billingMerchant')?document.getElementById('billingMerchant').value:''; const sub=cart.reduce((s,i)=>s+i.prix*i.qty,0), supplier=cartSupplier(), tdet=transportDetailsInduni(sub,supplier), total=sub+tdet.totalTransport; if((supplier==='Canplast')&&!billingMerchant){alert('Veuillez choisir le marchand pour facturation.');return;} const rows=cart.map((i,k)=>`<tr><td>${k+1}</td><td><b>${esc(i.designation)}</b><br><small>${esc(i.descriptif)}</small></td><td>${esc(i.article)}</td><td>${i.qty}<br><small>${esc(i.unite)}</small></td><td>${fmt(i.prix)}</td><td><b>${fmt(i.prix*i.qty)}</b></td></tr>`).join(''); const order=buildOrderHtml(no,today,chantier,delai,billingMerchant,supplier,rows,sub,tdet,total); const blob=new Blob([order],{type:'text/html;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=no+'_bon_de_commande.html'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); saveOrderRecord({no:no,date:today,supplier:supplier,chantier:chantier,total:total,html:order,items:cart.map(i=>({catalog:i.catalog,article:i.article,designation:i.designation,prix:i.prix,qty:i.qty,unite:i.unite}))}); alert('Commande enregistrée dans le dashboard. Outlook va s’ouvrir avec un message prérempli. Pour joindre le PDF, ouvrez le bon téléchargé puis Imprimer / PDF, puis attachez-le dans Outlook.'); openOutlookDraft(no,chantier,supplier)}
+async function downloadOrder(e){e.preventDefault(); const chantier=document.getElementById('chantier').value, delai=document.getElementById('delai').value; if(!chantier||!delai){alert('Veuillez remplir le N° de chantier et le délai.');return;} if(!cart.length){alert('Le panier est vide.');return;} const no='BC-'+Math.floor(100000+Math.random()*900000), today=new Date().toLocaleDateString('fr-CH'); const billingMerchant=document.getElementById('billingMerchant')?document.getElementById('billingMerchant').value:''; const sub=cart.reduce((s,i)=>s+i.prix*i.qty,0), supplier=cartSupplier(), tdet=transportDetailsInduni(sub,supplier), total=sub+tdet.totalTransport; if((supplier==='Canplast')&&!billingMerchant){alert('Veuillez choisir le marchand pour facturation.');return;} const rows=cart.map((i,k)=>`<tr><td>${k+1}</td><td><b>${esc(i.designation)}</b><br><small>${esc(i.descriptif)}</small></td><td>${esc(i.article)}</td><td>${i.qty}<br><small>${esc(i.unite)}</small></td><td>${fmt(i.prix)}</td><td><b>${fmt(i.prix*i.qty)}</b></td></tr>`).join(''); const order=buildOrderHtml(no,today,chantier,delai,billingMerchant,supplier,rows,sub,tdet,total);
+  let pdfBlob=null;
+  try{
+    const res=await fetch('/api/orders/preview_pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({html:order,filename:no+'_bon_de_commande'})});
+    if(res.ok) pdfBlob=await res.blob();
+  }catch(err){ /* pas de réseau / serveur indisponible : on retombe sur le fichier HTML ci-dessous */ }
+  const blob=pdfBlob||new Blob([order],{type:'text/html;charset=utf-8'});
+  const ext=pdfBlob?'pdf':'html';
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=no+'_bon_de_commande.'+ext; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  saveOrderRecord({no:no,date:today,supplier:supplier,chantier:chantier,total:total,html:order,items:cart.map(i=>({catalog:i.catalog,article:i.article,designation:i.designation,prix:i.prix,qty:i.qty,unite:i.unite}))});
+  alert(pdfBlob?'Commande enregistrée dans le dashboard. Le PDF a été téléchargé et Outlook va s’ouvrir avec un message prérempli — joignez-y le PDF téléchargé.':'Commande enregistrée dans le dashboard. Outlook va s’ouvrir avec un message prérempli. Pour joindre le PDF, ouvrez le bon téléchargé puis Imprimer / PDF, puis attachez-le dans Outlook.');
+  openOutlookDraft(no,chantier,supplier)}
 function isChantierConsortium(nom){const c=(window._chantiers||[]).find(x=>x.nom===nom); return !!(c&&c.consortium);}
 function buildOrderHtml(no,today,chantier,delai,billingMerchant,supplier,rows,sub,tdet,total){
 const isConsortium=isChantierConsortium(document.getElementById('chantier').value);

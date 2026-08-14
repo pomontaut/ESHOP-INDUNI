@@ -9,7 +9,7 @@ namespace :catalog do
   # boot as a safety net, regardless of how the schema got there.
   desc "Idempotently (re)seed suppliers, catalog products and chantiers from db/seed_data"
   task seed: :environment do
-    REQUIRED_SUPPLIERS = {
+    required_suppliers = {
       "HGC" => {
         email: "yannick.mace@hgc.ch", phone: "0041 22 343 85 50", fax: "0041 22 343 40 92",
         address: "Stauffacherquai 46", postal_code: "8022", city: "Zürich", country_code: "CH",
@@ -35,14 +35,14 @@ namespace :catalog do
     # N'initialise les coordonnées que pour un fournisseur réellement nouveau :
     # sinon on écraserait à chaque redémarrage les modifications faites depuis
     # l'admin (email, adresse, etc.).
-    REQUIRED_SUPPLIERS.each do |name, attrs|
+    required_suppliers.each do |name, attrs|
       supplier = Supplier.find_or_initialize_by(name: name)
       supplier.update!(attrs) if supplier.new_record?
     end
 
     catalog_path = Rails.root.join("db/seed_data/catalog_products.json")
     if File.exist?(catalog_path)
-      supplier_ids = Supplier.where(name: REQUIRED_SUPPLIERS.keys).pluck(:name, :id).to_h
+      supplier_ids = Supplier.where(name: required_suppliers.keys).pluck(:name, :id).to_h
       items = JSON.parse(File.read(catalog_path)).select { |it| supplier_ids.key?(it["catalog"]) }
       now = Time.current
 
@@ -63,6 +63,7 @@ namespace :catalog do
           qte_palette:       it["qtePalette"],
           poids_kg:          it["poids"],
           prix_m2:           it["prixM2"],
+          manually_added:    false,
           created_at:        now,
           updated_at:        now
         }
@@ -74,12 +75,15 @@ namespace :catalog do
 
       # HGC and Leuba HIAG sheets cover ~99% of the known catalog: treat them
       # as a full refresh (items missing from the current JSON are discontinued).
+      # Products confirmed live from a devis import (manually_added: true)
+      # aren't part of the JSON and are excluded from this cleanup, or every
+      # deploy would silently wipe them out.
       [ "HGC", "Leuba HIAG" ].each do |catalog|
         supplier_id = supplier_ids[catalog]
         next unless supplier_id
 
         current_refs = items.select { |it| it["catalog"] == catalog }.map { |it| it["article"] }.to_set
-        Product.where(supplier_id: supplier_id).where.not(reference: current_refs.to_a).delete_all
+        Product.where(supplier_id: supplier_id, manually_added: false).where.not(reference: current_refs.to_a).delete_all
       end
     end
 

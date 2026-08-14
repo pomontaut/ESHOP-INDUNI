@@ -11,9 +11,13 @@ Rails.application.routes.draw do
     resources :order_lines, only: [ :create, :destroy ]
   end
   namespace :api do
-    resources :orders, only: [ :create, :index ]
+    resources :orders, only: [ :create, :index ] do
+      collection { post :preview_pdf }
+    end
     resources :products, only: [ :index ]
-    resources :devis_imports, only: [ :create ]
+    resources :devis_imports, only: [ :create ] do
+      collection { post :confirm_products }
+    end
     get :me, to: "sessions#me"
   end
 

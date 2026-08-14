@@ -15,13 +15,75 @@ class Api::DevisImportsController < ApplicationController
     supplier = Supplier.find_by(name: supplier_name)
     return render json: { error: "Fournisseur inconnu : #{supplier_name}" }, status: :unprocessable_entity unless supplier
 
-    lines = DevisExtractorService.new(file.read, supplier_name).extract
-    render json: { items: lines.map { |line| build_cart_line(supplier, line) } }
+    taxonomy = Product.where(supplier: supplier).where.not(famille: nil).distinct.pluck(:famille, :sous_famille)
+    extracted = DevisExtractorService.new(file.read, supplier_name, taxonomy).extract
+    item_lines = extracted[:items].map { |line| build_cart_line(supplier, line) }
+    surcharge_lines = extracted[:surcharges].map { |surcharge| build_surcharge_line(supplier, surcharge) }
+    render json: { items: item_lines + surcharge_lines }
   rescue DevisExtractorService::ExtractionError => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
 
+  # Called when the user confirms adding unmatched (generic) devis lines to
+  # our permanent catalog under the confirmed supplier, instead of only using
+  # them as one-off cart lines. Marked manually_added so catalog:seed's
+  # full-refresh cleanup for HGC/Leuba HIAG never deletes them (see
+  # lib/tasks/catalog_seed.rake) — if the same reference later shows up in a
+  # real JSON catalog update, that upsert naturally "graduates" the row into
+  # a normal, JSON-sourced entry (manually_added reset to false).
+  def confirm_products
+    supplier_name = params[:supplier].to_s.strip
+    supplier = Supplier.find_by(name: supplier_name)
+    return render json: { error: "Fournisseur inconnu : #{supplier_name}" }, status: :unprocessable_entity unless supplier
+
+    products = Array(params[:products]).map do |p|
+      reference = p[:reference].to_s.strip
+      next if reference.blank?
+
+      product = Product.find_or_initialize_by(supplier: supplier, reference: reference)
+      # Never overwrite a real catalog entry (JSON-sourced, not manually
+      # added) that happens to share this reference — just skip it.
+      next if product.persisted? && !product.manually_added?
+
+      product.assign_attributes(
+        name:              p[:designation].to_s,
+        unit_price:        p[:prix].to_f,
+        unite:             p[:unite].to_s.presence || "PCE",
+        famille:           p[:famille].to_s.presence || "Article générique",
+        sous_famille:      p[:sousFamille].to_s.presence || "Devis import",
+        sous_sous_famille: "__DIRECT__",
+        icone:             product.icone.presence || "📦",
+        manually_added:    true
+      )
+      product.save!
+      product.reference
+    end.compact
+
+    render json: { added: products }
+  end
+
   private
+
+  def build_surcharge_line(supplier, surcharge)
+    {
+      matched: false,
+      generic: true,
+      isSurcharge: true,
+      catalog: supplier.name,
+      article: "SURCHARGE-#{SecureRandom.hex(3)}",
+      designation: surcharge[:label].to_s,
+      descriptif: "Supplément du devis #{supplier.name} (proportionnel au poids/volume de la commande)",
+      prix: nil,
+      unite: "FRS",
+      famille: "Article générique",
+      sousFamille: "Devis import",
+      icone: "⛽",
+      image: nil,
+      qty: 1,
+      devisPrix: surcharge[:amount].to_f,
+      cheaperAtSupplier: false
+    }
+  end
 
   def require_import_quote_permission
     unless current_user&.effective_can_import_quote?
@@ -70,7 +132,9 @@ class Api::DevisImportsController < ApplicationController
         image: "construction material",
         qty: quantity,
         devisPrix: devis_price,
-        cheaperAtSupplier: false
+        cheaperAtSupplier: false,
+        suggestedFamille: line[:suggested_famille],
+        suggestedSousFamille: line[:suggested_sous_famille]
       }
     end
   end

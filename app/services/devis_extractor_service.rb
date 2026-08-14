@@ -3,36 +3,29 @@ class DevisExtractorService
   class ExtractionError < StandardError; end
 
   MODEL = :"claude-opus-4-8"
+  NO_CATEGORY = "".freeze
 
-  ITEM_SCHEMA = {
+  SURCHARGE_SCHEMA = {
     type: "object",
     properties: {
-      reference: { type: "string" },
-      designation: { type: "string" },
-      quantity: { type: "number" },
-      unit: { type: "string" },
-      unit_price: { type: [ "number", "null" ] },
-      is_variant: { type: "boolean" }
+      label: { type: "string" },
+      amount: { type: "number" }
     },
-    required: %w[reference designation quantity unit unit_price is_variant],
+    required: %w[label amount],
     additionalProperties: false
   }.freeze
 
-  SCHEMA = {
-    type: "object",
-    properties: {
-      items: { type: "array", items: ITEM_SCHEMA }
-    },
-    required: [ "items" ],
-    additionalProperties: false
-  }.freeze
-
-  def initialize(pdf_bytes, supplier_name)
+  # `taxonomy` is an array of [famille, sous_famille] pairs (sous_famille may
+  # be nil) already used in our catalog for this supplier — used to suggest,
+  # for articles we don't carry yet, the closest existing category rather
+  # than inventing a new one.
+  def initialize(pdf_bytes, supplier_name, taxonomy = [])
     @pdf_bytes = pdf_bytes
     @supplier_name = supplier_name
+    @category_options = taxonomy.map { |famille, sous_famille| combine_category(famille, sous_famille) }.uniq.sort
   end
 
-  # Returns an array of line items (Hash with symbol keys), variants excluded.
+  # Returns { items: [...], surcharges: [...] } (Hashes with symbol keys, item variants excluded).
   def extract
     if ENV["ANTHROPIC_API_KEY"].blank?
       raise ExtractionError, "Clé ANTHROPIC_API_KEY absente de la configuration du serveur."
@@ -41,7 +34,7 @@ class DevisExtractorService
     response = client.messages.create(
       model: MODEL,
       max_tokens: 8000,
-      output_config: { format_: { schema: SCHEMA } },
+      output_config: { format_: { schema: schema } },
       messages: [ {
         role: "user",
         content: [
@@ -57,8 +50,10 @@ class DevisExtractorService
     text_block = response.content.find { |b| b.type == :text }
     raise ExtractionError, "Réponse vide de l'IA" unless text_block
 
-    items = JSON.parse(text_block.text, symbolize_names: true)[:items] || []
-    items.reject { |item| item[:is_variant] }
+    parsed = JSON.parse(text_block.text, symbolize_names: true)
+    items = (parsed[:items] || []).reject { |item| item[:is_variant] }
+    items.each { |item| item[:suggested_famille], item[:suggested_sous_famille] = split_category(item[:suggested_category]) }
+    { items: items, surcharges: parsed[:surcharges] || [] }
   rescue Anthropic::Errors::APIError => e
     raise ExtractionError, "Erreur du service d'extraction IA : #{e.message}"
   rescue JSON::ParserError
@@ -67,6 +62,45 @@ class DevisExtractorService
 
   private
 
+  def combine_category(famille, sous_famille)
+    sous_famille.present? ? "#{famille} > #{sous_famille}" : famille.to_s
+  end
+
+  def split_category(combined)
+    return [ nil, nil ] if combined.blank?
+    famille, sous_famille = combined.split(" > ", 2)
+    [ famille, sous_famille ]
+  end
+
+  def item_schema
+    {
+      type: "object",
+      properties: {
+        reference: { type: "string" },
+        designation: { type: "string" },
+        quantity: { type: "number" },
+        unit: { type: "string" },
+        unit_price: { type: [ "number", "null" ] },
+        is_variant: { type: "boolean" },
+        suggested_category: { type: "string", enum: @category_options + [ NO_CATEGORY ] }
+      },
+      required: %w[reference designation quantity unit unit_price is_variant suggested_category],
+      additionalProperties: false
+    }
+  end
+
+  def schema
+    {
+      type: "object",
+      properties: {
+        items: { type: "array", items: item_schema },
+        surcharges: { type: "array", items: SURCHARGE_SCHEMA }
+      },
+      required: %w[items surcharges],
+      additionalProperties: false
+    }
+  end
+
   def client
     @client ||= Anthropic::Client.new
   end
@@ -74,10 +108,13 @@ class DevisExtractorService
   def prompt
     <<~PROMPT
       Ce document est un devis / offre de prix du fournisseur "#{@supplier_name}".
-      Extrait TOUTES les lignes d'articles physiques commandables avec leur quantité.
+      Extrait TOUTES les lignes d'articles physiques commandables avec leur quantité, dans `items`,
+      et les suppléments proportionnels au poids/volume de la commande (carburant, énergie, etc.) dans
+      `surcharges`.
 
-      Règles strictes :
-      - N'inclus PAS les frais de transport, de déchargement, d'emballage ou tout autre frais de service.
+      Règles pour `items` :
+      - N'inclus PAS les frais de transport, de déchargement, d'emballage ou tout autre frais de service
+        de base (ceux-ci sont recalculés séparément par notre propre système selon le chantier).
       - Marque `is_variant: true` pour toute ligne qui est une variante / option alternative non retenue par défaut
         (souvent introduite par "* VARIANTE", "Variante", "option", ou mentionnée en aparté avec un prix alternatif
         dans le texte d'une autre ligne). Ces lignes seront ignorées ensuite, inclus-les quand même avec ce marqueur
@@ -88,9 +125,38 @@ class DevisExtractorService
         une chaîne vide).
       - `designation` = la désignation / description de l'article (peut être multi-lignes dans le devis), résumée
         en une phrase claire.
-      - `quantity` = la quantité commandée pour cette ligne.
-      - `unit` = l'unité de mesure telle qu'indiquée dans le devis (M, PCE, P, KG, etc.).
-      - `unit_price` = le prix unitaire net (après remise) tel qu'indiqué dans le devis, en CHF, ou null si absent.
+      - `quantity` = la quantité commandée pour cette ligne, dans l'unité `unit` (voir ci-dessous — pas dans une
+        unité secondaire alternative si plusieurs sont données, ex. un poids en kg ET un nombre de sacs/palettes).
+      - `unit` = l'unité de mesure de `quantity` telle qu'indiquée dans le devis (M, PCE, P, KG, etc.).
+      - `unit_price` = le prix unitaire NET par unité de `quantity`, après remise, en CHF, ou null si absent.
+        Certains devis (notamment HGC) détaillent le calcul sur plusieurs lignes sous l'article : un prix brut
+        et un montant brut sur la ligne de l'article, puis en dessous un "Rabais X %" et enfin une ligne
+        "Montant hors TVA" qui donne le prix net par unité ET le montant net total de la ligne. C'est CE prix net
+        (celui de la ligne "Montant hors TVA", pas le prix brut de la ligne principale) qu'il faut retourner
+        dans `unit_price` — jamais le prix brut avant remise. Si seul le montant net total de la ligne est donné
+        sans prix net unitaire explicite, calcule `unit_price` = montant net total ÷ `quantity`.
+
+        Exemple concret (structure HGC) :
+          Pos  Article                    Désignations                Quantité/UQ   Prix CHF   UP    Montant CHF
+          7'200 100058451                 Kerakoll Geolite Magma 20   10'500 KG     2.29       1 KG  24'045.00
+                                                                        420 SAC
+                                           Rabais                                    42.50- %          10'219.13-
+                                           Montant hors TVA                          1.32              13'825.87
+        → quantity = 10500, unit = "KG", unit_price = 1.32 (PAS 2.29, qui est le prix brut avant les 42.5% de
+          remise ; 1.32 = 13'825.87 ÷ 10'500, cohérent avec le montant net affiché).
+      - `suggested_category` = la catégorie de notre catalogue qui correspond le mieux à cet article, à choisir
+        EXACTEMENT parmi la liste ci-dessous (recopie une valeur telle quelle, n'en invente pas une autre) :
+        #{@category_options.presence&.map { |c| "  - #{c}" }&.join("\n") || "  (aucune catégorie connue pour ce fournisseur)"}
+        Si aucune catégorie de la liste ne convient raisonnablement, retourne une chaîne vide "".
+
+      Règles pour `surcharges` :
+      - Capture les suppléments proportionnels appliqués à l'ensemble de la commande selon son poids/volume,
+        typiquement nommés "Supplément carburant", "Supplément énergie" ou similaire (souvent exprimés en % avec
+        un montant CHF en face). N'y mets PAS les frais de transport/livraison de base ni la TVA.
+      - `label` = le nom du supplément tel qu'imprimé (ex. "Supplément carburant").
+      - `amount` = le montant CHF de ce supplément tel qu'imprimé (pas le pourcentage), ex. 5.04 pour
+        "Supplément carburant 6.00 %  84.00  5.04" (5.04 est le montant CHF, 84.00 la base de calcul, 6.00% le taux).
+      - S'il n'y a aucun supplément de ce type, retourne un tableau vide.
 
       Réponds uniquement avec le JSON structuré demandé, sans texte additionnel.
     PROMPT
