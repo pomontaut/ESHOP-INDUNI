@@ -61,6 +61,7 @@ namespace :catalog do
           image:             it["image"],
           equivalence_key:   it["equivalenceKey"].presence,
           qte_palette:       it["qtePalette"],
+          poids_kg:          it["poids"],
           created_at:        now,
           updated_at:        now
         }

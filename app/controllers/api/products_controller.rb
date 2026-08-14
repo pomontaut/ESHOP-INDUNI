@@ -17,7 +17,8 @@ class Api::ProductsController < ApplicationController
         icone:            p.icone,
         image:            p.image,
         equivalenceKey:   p.equivalence_key,
-        qtePalette:       p.qte_palette
+        qtePalette:       p.qte_palette,
+        poids:            p.poids_kg&.to_f
       }
     }
   end
