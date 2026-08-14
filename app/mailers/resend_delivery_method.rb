@@ -43,12 +43,27 @@ class ResendDeliveryMethod
     }.compact
   end
 
+  # A mail with an attachment is wrapped as multipart/mixed containing the
+  # actual body (itself multipart/alternative when both an HTML and a text
+  # template exist) alongside the attachment part, so the html/text parts can
+  # be nested one or more levels deep — not just direct children of `mail`.
   def part_body(mail, content_type)
     if mail.multipart?
-      part = mail.body.parts.find { |p| p.content_type&.start_with?(content_type) }
-      part&.body&.decoded
+      find_part_body(mail, content_type)
     elsif mail.content_type&.start_with?(content_type)
       mail.body.decoded
     end
+  end
+
+  def find_part_body(container, content_type)
+    container.parts.each do |part|
+      if part.multipart?
+        found = find_part_body(part, content_type)
+        return found if found
+      elsif part.content_type&.start_with?(content_type) && !part.attachment?
+        return part.body.decoded
+      end
+    end
+    nil
   end
 end
