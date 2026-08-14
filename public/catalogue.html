@@ -162,7 +162,7 @@ const TRANSPORT_HGC=85, CANPLAST_TRANSPORT=150, CANPLAST_FRANCO=2000, CANPLAST_R
 // (hors panier Canplast, donc sans commune renseignée), le vrai tarif de zone
 // n'est pas connu. On utilise un prix factice prudent au lieu du tarif générique
 // CANPLAST_TRANSPORT, la RPLP restant calculée normalement en plus.
-const CANPLAST_COMPARATIF_TRANSPORT=200;
+const CANPLAST_COMPARATIF_TRANSPORT=210;
 let state={view:'home',catalog:null,famille:null,sous:null};
 let cart=JSON.parse(localStorage.getItem('induni_panier_v3')||'[]');
 const app=document.getElementById('app');
