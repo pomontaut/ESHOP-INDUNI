@@ -663,6 +663,37 @@ function collectData(){
   };
 }
 
+function buildMailtoForOrder(data){
+  const subject = `Bon de commande N°${data.poNumber} - ${data.chantier} (${CLIENT.nom})`;
+  const bodyLines = [
+    `Bonjour,`, '',
+    `Veuillez trouver ci-joint notre bon de commande N°${data.poNumber} du ${data.poDate}.`,
+    '',
+    `Chantier : ${data.chantier} (code ${data.codeChantier})`,
+    `Adresse de livraison : ${data.adresseLivraison.replace(/\n/g,', ')}`,
+    `Montant total H.T. : ${data.devise} ${fmt(data.total)}`,
+    '',
+    `Merci de bien vouloir joindre le fichier PDF téléchargé à cet e-mail avant l'envoi.`,
+    '',
+    `Cordialement,`,
+    data.auteur || data.contact,
+    CLIENT.nom
+  ];
+  const body = bodyLines.join('\n');
+  let mailto = `mailto:${encodeURIComponent(data.emailFournisseur)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  if(data.emailCc) mailto += `&cc=${encodeURIComponent(data.emailCc)}`;
+  return mailto;
+}
+
+function envoyerCommande(id){
+  const c = getStored().find(x=>x.id===id);
+  if(!c) return;
+  if(!c.emailFournisseur){ alert("Aucune adresse e-mail fournisseur enregistrée pour cette commande."); return; }
+  generatePDF(c);
+  alert("PDF régénéré. Ouverture de votre messagerie... pensez à joindre le PDF téléchargé.");
+  setTimeout(()=>{ window.location.href = buildMailtoForOrder(c); }, 400);
+}
+
 function validerCommande(){
   const data = collectData();
   const statusEl = document.getElementById('statusMsg');
@@ -693,24 +724,7 @@ function validerCommande(){
 
   generatePDF(data);
 
-  const subject = `Bon de commande N°${data.poNumber} - ${data.chantier} (${CLIENT.nom})`;
-  const bodyLines = [
-    `Bonjour,`, '',
-    `Veuillez trouver ci-joint notre bon de commande N°${data.poNumber} du ${data.poDate}.`,
-    '',
-    `Chantier : ${data.chantier} (code ${data.codeChantier})`,
-    `Adresse de livraison : ${data.adresseLivraison.replace(/\n/g,', ')}`,
-    `Montant total H.T. : ${data.devise} ${fmt(data.total)}`,
-    '',
-    `Merci de bien vouloir joindre le fichier PDF téléchargé à cet e-mail avant l'envoi.`,
-    '',
-    `Cordialement,`,
-    data.auteur || data.contact,
-    CLIENT.nom
-  ];
-  const body = bodyLines.join('\n');
-  let mailto = `mailto:${encodeURIComponent(data.emailFournisseur)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  if(data.emailCc) mailto += `&cc=${encodeURIComponent(data.emailCc)}`;
+  const mailto = buildMailtoForOrder(data);
 
   statusEl.className = 'status ok';
   statusEl.textContent = "PDF généré et commande enregistrée dans le tableau de bord. Ouverture d'Outlook... pensez à joindre le PDF téléchargé.";
@@ -768,6 +782,7 @@ function renderDashboard(){
       <td>
         <div class="row-actions">
           <button class="icon-btn" onclick="regenererPdf('${c.id}')">PDF</button>
+          <button class="icon-btn" onclick="envoyerCommande('${c.id}')" title="Ouvrir un brouillon dans votre messagerie">✉️</button>
           <button class="icon-btn danger" onclick="supprimerCommande('${c.id}')">✕</button>
         </div>
       </td>
