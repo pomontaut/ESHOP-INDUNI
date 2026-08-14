@@ -37,6 +37,8 @@ class User < ApplicationRecord
   def effective_can_create_orders? = admin? || can_create_orders?
   def effective_can_modify_orders? = admin? || can_modify_orders?
   def effective_can_read?          = admin? || can_read?
+  def effective_can_import_quote?  = admin? || can_import_quote?
+  def effective_can_generic_order? = admin? || can_generic_order?
 
   def allowed_suppliers
     return User::SUPPLIERS.map { |s| s[:key] } if admin?

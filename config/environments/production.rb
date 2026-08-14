@@ -18,9 +18,9 @@ Rails.application.configure do
   # Turn on fragment caching in view templates.
   config.action_controller.perform_caching = true
 
-  # public/ holds live app pages (catalogue.html, bon_de_commande.html), not
-  # digest-stamped assets — disable caching entirely so deploys aren't masked
-  # by a stale copy (browser or an intermediary proxy) requiring a hard refresh.
+  # public/ holds live app pages (catalogue.html), not digest-stamped assets —
+  # disable caching entirely so deploys aren't masked by a stale copy (browser
+  # or an intermediary proxy) requiring a hard refresh.
   config.public_file_server.headers = { "cache-control" => "no-store, no-cache, must-revalidate" }
 
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.

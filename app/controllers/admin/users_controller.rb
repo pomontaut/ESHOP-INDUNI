@@ -73,6 +73,7 @@ class Admin::UsersController < ApplicationController
       :email, :password, :first_name, :last_name, :job_function, :sector,
       :admin, :must_change_password,
       :can_read, :can_create_orders, :can_modify_orders, :can_create_users,
+      :can_import_quote, :can_generic_order,
       :order_limit, :approver_email,
       allowed_suppliers: []
     )

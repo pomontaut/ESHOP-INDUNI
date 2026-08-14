@@ -84,6 +84,18 @@
             </div>
             <div class="col-6">
               <div class="form-check">
+                <%= f.check_box :can_import_quote, class: "form-check-input" %>
+                <%= f.label :can_import_quote, "Importer un devis", class: "form-check-label" %>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="form-check">
+                <%= f.check_box :can_generic_order, class: "form-check-input" %>
+                <%= f.label :can_generic_order, "Bon de commande générique", class: "form-check-label" %>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="form-check">
                 <%= f.check_box :admin, class: "form-check-input" %>
                 <%= f.label :admin, "Administrateur (tous les droits)", class: "form-check-label text-danger fw-semibold" %>
               </div>

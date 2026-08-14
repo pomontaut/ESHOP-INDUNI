@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_14_070000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_14_090000) do
   create_table "chantiers", force: :cascade do |t|
     t.string "adresse"
     t.string "carte_interactive"
@@ -108,6 +108,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_14_070000) do
     t.string "approver_email"
     t.boolean "can_create_orders", default: false, null: false
     t.boolean "can_create_users", default: false, null: false
+    t.boolean "can_generic_order", default: false, null: false
+    t.boolean "can_import_quote", default: false, null: false
     t.boolean "can_modify_orders", default: false, null: false
     t.boolean "can_read", default: true, null: false
     t.datetime "created_at", null: false

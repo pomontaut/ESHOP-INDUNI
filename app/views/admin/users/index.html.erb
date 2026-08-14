@@ -51,6 +51,12 @@
                   <% if user.can_create_users? %>
                     <span class="badge bg-warning text-dark" title="Création utilisateurs">👤</span>
                   <% end %>
+                  <% if user.can_import_quote? %>
+                    <span class="badge bg-info text-dark" title="Importer un devis">📥</span>
+                  <% end %>
+                  <% if user.can_generic_order? %>
+                    <span class="badge bg-dark" title="Bon de commande générique">📋</span>
+                  <% end %>
                 </div>
               <% end %>
             </td>

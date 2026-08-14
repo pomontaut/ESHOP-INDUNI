@@ -1,5 +1,6 @@
 class Api::DevisImportsController < ApplicationController
   skip_before_action :verify_authenticity_token
+  before_action :require_import_quote_permission
 
   MAX_FILE_SIZE = 20.megabytes
 
@@ -21,6 +22,12 @@ class Api::DevisImportsController < ApplicationController
   end
 
   private
+
+  def require_import_quote_permission
+    unless current_user&.effective_can_import_quote?
+      render json: { error: "Vous n'avez pas accès au module d'import de devis." }, status: :forbidden
+    end
+  end
 
   def build_cart_line(supplier, line)
     reference = line[:reference].to_s.strip

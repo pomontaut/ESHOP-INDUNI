@@ -26,9 +26,11 @@
             <li class="nav-item">
               <%= link_to "Commandes", orders_path, class: "nav-link" %>
             </li>
-            <li class="nav-item">
-              <%= link_to "Bon de commande", "/bon_de_commande.html", class: "nav-link", target: "_blank" %>
-            </li>
+            <% if current_user&.effective_can_generic_order? %>
+              <li class="nav-item">
+                <%= link_to "Bon de commande", "/bon_de_commande", class: "nav-link", target: "_blank" %>
+              </li>
+            <% end %>
             <li class="nav-item">
               <%= link_to "Chantiers", chantiers_path, class: "nav-link" %>
             </li>

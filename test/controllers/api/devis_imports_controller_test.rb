@@ -72,6 +72,28 @@ class Api::DevisImportsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  test "rejects a user without the import-quote permission" do
+    post logout_url
+    post login_url, params: { email: users(:two).email, password: "password123" }
+
+    post api_devis_imports_url, params: { supplier: "HGC", file: fixture_file_upload(".keep", "application/pdf") }
+    assert_response :forbidden
+  end
+
+  test "allows a user granted the import-quote permission" do
+    users(:two).update!(can_import_quote: true)
+    post logout_url
+    post login_url, params: { email: users(:two).email, password: "password123" }
+
+    fake_lines = [
+      { reference: "REF-123", designation: "Tuyau PVC (devis)", quantity: 1, unit: "M", unit_price: 12.5, is_variant: false }
+    ]
+    with_stubbed_extraction(fake_lines) do
+      post api_devis_imports_url, params: { supplier: "HGC", file: fixture_file_upload(".keep", "application/pdf") }
+    end
+    assert_response :success
+  end
+
   private
 
   # DevisExtractorService#extract normally calls the Anthropic API. Swap the

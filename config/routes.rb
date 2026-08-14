@@ -38,6 +38,8 @@ Rails.application.routes.draw do
 
   get "setup/admin", to: "setup#admin"
 
+  get "bon_de_commande", to: "generic_orders#show"
+
   root to: redirect("/catalogue.html")
 
   if Rails.env.development?

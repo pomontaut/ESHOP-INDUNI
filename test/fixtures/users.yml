@@ -6,3 +6,11 @@ one:
   first_name: Admin
   last_name: Test
   admin: true
+
+two:
+  email: basic@induni.ch
+  password_digest: <%= BCrypt::Password.create("password123") %>
+  first_name: Basic
+  last_name: Test
+  admin: false
+  can_read: true
