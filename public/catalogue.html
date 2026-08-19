@@ -1106,9 +1106,14 @@ function setCartSupplierIfNeeded(newSupplier){
 }
 function addCart(p){
   setCartSupplierIfNeeded(p.catalog);
+  // Un tuyau vendu en longueur fixe (ex. "L=5 M") ne peut jamais être commandé
+  // pour une quantité partielle : la quantité de départ, et chaque ajout
+  // supplémentaire, doivent être un multiple de cette longueur (cf. qty()/
+  // setQty() qui appliquent déjà cette règle sur le stepper +/- du panier).
+  const len=tubeLengthOfCartItem(p);
   let it=cart.find(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation);
-  if(it) it.qty++;
-  else cart.push({...p,qty:1});
+  if(it) it.qty+=(len||1);
+  else cart.push({...p,qty:len||1});
   save(); render();
 }
 function addCartByIndex(idx){const p=PRODUCTS[Number(idx)]; if(p) addCart(p);}
