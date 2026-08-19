@@ -30,7 +30,7 @@
 .add{margin-top:10px;padding:9px;font-size:14px}
 .tag{font-size:11px;padding:4px 8px;right:8px;top:8px}.bestTag{font-size:11px;padding:5px 10px 5px 7px;left:8px;top:8px}
 .generic{min-height:225px}
-#canplastOptionsBlock{display:none}#canplastZoneBlock{display:none}
+#canplastOptionsBlock{display:none}#canplastZoneBlock{display:none}#creabetonOptionsBlock{display:none}
 .coverTop{height:210px!important}
 .coverTop img{max-width:86%!important;max-height:150px!important;background:white;border-radius:18px;padding:16px;box-shadow:0 12px 28px #0003}
 .banner img{background:white;border-radius:14px;padding:10px;max-height:100px;object-fit:contain}
@@ -129,7 +129,7 @@
 <option>CHALLANDE</option>
 </select>
 </div>
-<label>Adresse de livraison *</label><textarea id="adresse" required placeholder="Rue, numéro&#10;NPA Localité"></textarea><div class="cols"><div><label>Nom du contact *</label><input id="contact" required placeholder="Prénom Nom"></div><div><label>Téléphone *</label><input id="phone" required placeholder="+41 79 000 00 00"></div></div><div id="canplastOptionsBlock" style="margin:4px 0 16px;padding:12px;border:1px solid #d8dde6;border-radius:10px;background:#fff7ed"><b>Option Canplast</b><br><label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700"><input id="canplastCrane" type="checkbox" style="width:auto;margin:0" onchange="updateCart()"> Déchargement avec grue Canplast (+ CHF 80 / place)</label><small>Tarif de livraison selon la commune renseignée ci-dessus, franco dès CHF 2’000, RPLP 2.2% en sus.</small></div><label>Remarques</label><textarea id="remarks" placeholder="Horaires, accès, etc."></textarea><div class="actions"><button type="button" class="secondary" onclick="closeModal('orderModal')">Annuler</button><button type="button" class="primary" style="background:#0b4f9c;border:0" onclick="previewOrder(event)">👁 Prévisualisation</button><button type="button" class="primary" style="background:#176b28;border:0" onclick="sendOrderByEmail(event)">📧 Envoyer la commande</button><button type="button" class="secondary" title="Télécharge le bon de commande et ouvre un brouillon dans votre messagerie (Outlook), à défaut d'un envoi automatique." onclick="downloadOrder(event)">✉️ Ouvrir dans Outlook</button></div></form></div></div><div class="modal" id="sendConfirmModal"><div class="modalBox"><div class="modalHead">Confirmer l'envoi <button onclick="closeModal('sendConfirmModal')">×</button></div><div class="form"><p style="margin:0 0 12px">La commande <strong id="confirmOrderNumber"></strong> va être envoyée par email au fournisseur.</p><label style="display:block;font-weight:700;margin-bottom:6px">Adresse email du fournisseur</label><input id="confirmSupplierEmail" type="email" class="form-control" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:16px" placeholder="contact@fournisseur.ch"><p style="font-size:12px;color:#6b7280;margin:0 0 16px">Vérifiez l'adresse avant de confirmer. Vous pouvez la modifier si nécessaire.</p><div class="actions"><button type="button" class="secondary" onclick="closeModal('sendConfirmModal')">Annuler</button><button id="confirmSendBtn" type="button" class="primary" style="background:#176b28;border:0" onclick="confirmSendOrder()">📧 Confirmer et envoyer</button></div></div></div></div><div class="modal" id="genericModal"><div class="modalBox"><div class="modalHead orange">Créer un article générique <button onclick="closeModal('genericModal')">×</button></div><form class="form" onsubmit="addGeneric(event)"><label>Descriptif *</label><textarea id="genDesc" required placeholder="Ex. Tuyau spécial sur mesure..."></textarea><label>N° article / Référence</label><input id="genArticle" placeholder="Laisser vide si inconnu"><label>Prix unitaire CHF *</label><input id="genPrice" type="number" step="0.01" min="0" required placeholder="0.00"><div class="actions"><button type="button" class="secondary" onclick="closeModal('genericModal')">Annuler</button><button class="primary">+ Ajouter au panier</button></div></form></div></div><div class="modal" id="devisModal"><div class="modalBox" style="width:min(920px,95vw)"><div class="modalHead" style="background:#7c3aed">Importer un devis fournisseur <button onclick="closeModal('devisModal')">×</button></div><div class="form"><label>Fournisseur</label><select id="devisSupplierSelect"><option value="HGC">HGC</option><option value="Canplast">Canplast</option><option value="Leuba HIAG">Leuba HIAG</option></select><label>Fichier PDF du devis</label><input type="file" id="devisFileInput" accept="application/pdf"><div class="actions" style="margin-top:14px"><button type="button" class="secondary" onclick="closeModal('devisModal')">Fermer</button><button type="button" class="primary" id="devisAnalyzeBtn" onclick="analyzeDevis()">Analyser le devis</button></div><div id="devisResults" style="margin-top:18px"></div></div></div></div><script>
+<label>Adresse de livraison *</label><textarea id="adresse" required placeholder="Rue, numéro&#10;NPA Localité"></textarea><div class="cols"><div><label>Nom du contact *</label><input id="contact" required placeholder="Prénom Nom"></div><div><label>Téléphone *</label><input id="phone" required placeholder="+41 79 000 00 00"></div></div><div id="canplastOptionsBlock" style="margin:4px 0 16px;padding:12px;border:1px solid #d8dde6;border-radius:10px;background:#fff7ed"><b>Option Canplast</b><br><label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700"><input id="canplastCrane" type="checkbox" style="width:auto;margin:0" onchange="updateCart()"> Déchargement avec grue Canplast (+ CHF 80 / place)</label><small>Tarif de livraison selon la commune renseignée ci-dessus, franco dès CHF 2’000, RPLP 2.2% en sus.</small></div><div id="creabetonOptionsBlock" style="margin:4px 0 16px;padding:12px;border:1px solid #d8dde6;border-radius:10px;background:#fff7ed"><b>Option CreaBeton</b><br><label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700"><input id="creabetonCrane" type="checkbox" style="width:auto;margin:0" onchange="updateCart()"> Déchargement grue CreaBeton, 2T max, 4m rayon (+ CHF 19.00)</label><small>Participation frais de transport selon le poids total du panier (indicatif ci-dessus) : CHF 260.00 jusqu'à 3t, CHF 210.00 de 3 à 8t, CHF 160.00 de 8 à 14t.</small></div><label>Remarques</label><textarea id="remarks" placeholder="Horaires, accès, etc."></textarea><div class="actions"><button type="button" class="secondary" onclick="closeModal('orderModal')">Annuler</button><button type="button" class="primary" style="background:#0b4f9c;border:0" onclick="previewOrder(event)">👁 Prévisualisation</button><button type="button" class="primary" style="background:#176b28;border:0" onclick="sendOrderByEmail(event)">📧 Envoyer la commande</button><button type="button" class="secondary" title="Télécharge le bon de commande et ouvre un brouillon dans votre messagerie (Outlook), à défaut d'un envoi automatique." onclick="downloadOrder(event)">✉️ Ouvrir dans Outlook</button></div></form></div></div><div class="modal" id="sendConfirmModal"><div class="modalBox"><div class="modalHead">Confirmer l'envoi <button onclick="closeModal('sendConfirmModal')">×</button></div><div class="form"><p style="margin:0 0 12px">La commande <strong id="confirmOrderNumber"></strong> va être envoyée par email au fournisseur.</p><label style="display:block;font-weight:700;margin-bottom:6px">Adresse email du fournisseur</label><input id="confirmSupplierEmail" type="email" class="form-control" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:16px" placeholder="contact@fournisseur.ch"><p style="font-size:12px;color:#6b7280;margin:0 0 16px">Vérifiez l'adresse avant de confirmer. Vous pouvez la modifier si nécessaire.</p><div class="actions"><button type="button" class="secondary" onclick="closeModal('sendConfirmModal')">Annuler</button><button id="confirmSendBtn" type="button" class="primary" style="background:#176b28;border:0" onclick="confirmSendOrder()">📧 Confirmer et envoyer</button></div></div></div></div><div class="modal" id="genericModal"><div class="modalBox"><div class="modalHead orange">Créer un article générique <button onclick="closeModal('genericModal')">×</button></div><form class="form" onsubmit="addGeneric(event)"><label>Descriptif *</label><textarea id="genDesc" required placeholder="Ex. Tuyau spécial sur mesure..."></textarea><label>N° article / Référence</label><input id="genArticle" placeholder="Laisser vide si inconnu"><label>Prix unitaire CHF *</label><input id="genPrice" type="number" step="0.01" min="0" required placeholder="0.00"><div class="actions"><button type="button" class="secondary" onclick="closeModal('genericModal')">Annuler</button><button class="primary">+ Ajouter au panier</button></div></form></div></div><div class="modal" id="devisModal"><div class="modalBox" style="width:min(920px,95vw)"><div class="modalHead" style="background:#7c3aed">Importer un devis fournisseur <button onclick="closeModal('devisModal')">×</button></div><div class="form"><label>Fournisseur</label><select id="devisSupplierSelect"><option value="HGC">HGC</option><option value="Canplast">Canplast</option><option value="Leuba HIAG">Leuba HIAG</option></select><label>Fichier PDF du devis</label><input type="file" id="devisFileInput" accept="application/pdf"><div class="actions" style="margin-top:14px"><button type="button" class="secondary" onclick="closeModal('devisModal')">Fermer</button><button type="button" class="primary" id="devisAnalyzeBtn" onclick="analyzeDevis()">Analyser le devis</button></div><div id="devisResults" style="margin-top:18px"></div></div></div></div><script>
 const CANPLAST_FAMILY_ORDER=['Canalisations PE/HDPE','Canalisations PP','Canalisations PVC','Chambres & Regards','Fournitures & Divers','Protection Câbles'];function familySortInduni(a,b){if(state.catalog==='Canplast'){const ia=CANPLAST_FAMILY_ORDER.indexOf(a),ib=CANPLAST_FAMILY_ORDER.indexOf(b);return (ia===-1?999:ia)-(ib===-1?999:ib)}return String(a).localeCompare(String(b),'fr')}
 let PRODUCTS=[];
 function initProducts(list){
@@ -164,11 +164,28 @@ const MBT_FRANCO=3000, MBT_TIER2_MIN=1500, MBT_TIER2=130, MBT_TIER1=70;
 // n'est pas connu. On utilise un prix factice prudent au lieu du tarif générique
 // CANPLAST_TRANSPORT, la RPLP restant calculée normalement en plus.
 const CANPLAST_COMPARATIF_TRANSPORT=210;
+// Conditions annuelles CreaBeton 2026 (page 2, "Déchagement grue / plus-value
+// transport") : participation transport par palier de poids total du panier,
+// + déchargement grue en option. Au-delà de 14t, non documenté par CreaBeton
+// (probablement sur devis) : on applique par défaut le palier le plus élevé
+// plutôt que de ne rien facturer, avec un avertissement dans l'UI.
+const CREABETON_CRANE=19.00;
+const CREABETON_TIER1_MAX=3000, CREABETON_TIER1=260.00;
+const CREABETON_TIER2_MAX=8000, CREABETON_TIER2=210.00;
+const CREABETON_TIER3_MAX=14000, CREABETON_TIER3=160.00;
+function creabetonTransportForWeight(weightKg){
+  if(weightKg<=CREABETON_TIER1_MAX) return CREABETON_TIER1;
+  if(weightKg<=CREABETON_TIER2_MAX) return CREABETON_TIER2;
+  return CREABETON_TIER3;
+}
+function cartWeightInduni(items){
+  return (items||cart).reduce((s,i)=>s+(Number(i.poids)||0)*(Number(i.qty)||0),0);
+}
 let state={view:'home',catalog:null,famille:null,sous:null};
 let cart=JSON.parse(localStorage.getItem('induni_panier_v3')||'[]');
 const app=document.getElementById('app');
 
-function transportDetailsInduni(sub,supplier){
+function transportDetailsInduni(sub,supplier,weightOverride){
   if(!supplier) return {transport:0,rplp:0,crane:0,prep:0,totalTransport:0,total:sub,label:'Transport'};
   if(supplier==='HGC') return {transport:TRANSPORT_HGC,rplp:0,crane:0,prep:0,totalTransport:TRANSPORT_HGC,total:sub+TRANSPORT_HGC,label:'Transport HGC fixe'};
   if(supplier==='Canplast'){
@@ -184,6 +201,13 @@ function transportDetailsInduni(sub,supplier){
     const base=sub>MBT_FRANCO?0:(sub>=MBT_TIER2_MIN?MBT_TIER2:MBT_TIER1);
     return {transport:base,rplp:0,crane:0,prep:0,totalTransport:base,total:sub+base,label:'Transport MBT'};
   }
+  if(supplier==='CreaBeton'){
+    const craneEl=document.getElementById('creabetonCrane');
+    const crane=(craneEl&&craneEl.checked)?CREABETON_CRANE:0;
+    const weight=weightOverride!=null?weightOverride:cartWeightInduni();
+    const base=creabetonTransportForWeight(weight);
+    return {transport:base,rplp:0,crane:crane,prep:0,totalTransport:base+crane,total:sub+base+crane,label:'Transport CreaBeton',weight};
+  }
   return {transport:0,rplp:0,crane:0,prep:0,totalTransport:0,total:sub,label:'Transport'};
 }
 function transportHtmlInduni(sub,supplier){
@@ -193,6 +217,11 @@ function transportHtmlInduni(sub,supplier){
   if(supplier==='Canplast') return `<div class="sum"><span>Conditions cadre — RPLP 2.2%</span><b>${fmt(t.rplp)}</b></div><div class="sum"><span>Livraison Canplast${sub>=CANPLAST_FRANCO?' franco dès CHF 2’000':(canplastResolvedZone?` — ${esc(canplastResolvedZone.z)}`:' chantier semi-remorque')}</span><b>${fmt(t.transport)}</b></div>${t.crane?`<div class="sum"><span>Déchargement grue Canplast</span><b>${fmt(t.crane)}</b></div>`:''}`;
   if(supplier==='Leuba HIAG') return `<div class="sum"><span>Leuba HIAG franco dépôt/chantiers GE</span><b>${fmt(0)}</b></div>`;
   if(supplier==='MBT') return `<div class="sum"><span>Livraison MBT${sub>MBT_FRANCO?' franco dès CHF 3’000':(sub>=MBT_TIER2_MIN?' — CHF 1’500 à 3’000':' — moins de CHF 1’500')}</span><b>${fmt(t.transport)}</b></div>`;
+  if(supplier==='CreaBeton'){
+    const zoneLabel=t.weight<=CREABETON_TIER1_MAX?'jusqu’à 3t':(t.weight<=CREABETON_TIER2_MAX?'3 à 8t':'8 à 14t');
+    const overLimit=t.weight>CREABETON_TIER3_MAX?`<div class="sum" style="color:#b45309"><span>⚠ Poids > 14t : tarif au-delà non communiqué, palier maximal appliqué par défaut</span><b></b></div>`:'';
+    return `<div class="sum"><span>Participation transport CreaBeton — ${zoneLabel} (${Math.round(t.weight).toLocaleString('fr-CH')} kg)</span><b>${fmt(t.transport)}</b></div>${t.crane?`<div class="sum"><span>Déchargement grue CreaBeton</span><b>${fmt(t.crane)}</b></div>`:''}${overLimit}`;
+  }
   return `<div class="sum"><span>Transport</span><b>${fmt(t.totalTransport)}</b></div>`;
 }
 const fmt=n=>'CHF '+Number(n||0).toLocaleString('fr-CH',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -1230,11 +1259,17 @@ function resetCanplastZone(){
   canplastZoneStatusHtml();
 }
 function toggleCanplastOptions(){
-  const el=document.getElementById('canplastOptionsBlock');
-  if(!el) return;
   const supplier=cartSupplier();
-  const isCanplast=String(supplier||'').toLowerCase().includes('canplast');
-  el.style.display=isCanplast?'block':'none';
+  const el=document.getElementById('canplastOptionsBlock');
+  if(el){
+    const isCanplast=String(supplier||'').toLowerCase().includes('canplast');
+    el.style.display=isCanplast?'block':'none';
+  }
+  const cbEl=document.getElementById('creabetonOptionsBlock');
+  if(cbEl){
+    const isCreabeton=String(supplier||'').toLowerCase().includes('creabeton');
+    cbEl.style.display=isCreabeton?'block':'none';
+  }
 }
 
 // Charge utile indicative d'un camion semi-remorque standard, pour donner un
@@ -1251,7 +1286,7 @@ function updateCartWeightInduni(){
   document.getElementById('weightLabel').innerHTML=`Poids total (indicatif)${missing?` · <span style="color:#b45309">${missing} article(s) sans poids connu</span>`:''}`;
   document.getElementById('weightTotal').innerHTML=`${totalWeight.toLocaleString('fr-CH')} kg <span style="font-size:11px;color:${pct>=100?'#b91c1c':'#546273'}">(${pct}% d'un camion ${TRUCK_CAPACITY_KG_INDUNI/1000}t)</span>`;
 }
-function updateCart(){document.getElementById('cartCount').textContent=cart.length?`(${cart.reduce((s,i)=>s+i.qty,0)})`:''; const box=document.getElementById('cartItems'); const supplier=cartSupplier(); box.innerHTML=cart.length?`<div style="padding:10px 12px;margin-bottom:8px;border-radius:10px;background:#eef5ff;color:#0b4f9c;font-weight:900">Panier fournisseur : ${esc(supplier)}</div>`+cart.map((i,k)=>`<div class="cartRow"><div class="thumb" style="${photoUrl(i)?`background-image:url('${photoUrl(i)}')`:`background-color:${tileColor(i.famille)}`}">${photoUrl(i)?'':`<span class="thumbGlyph">${esc(i.icone||'📦')}</span>`}</div><div><b>${esc(i.designation)}</b><div class="muted">${esc(i.article)} · ${esc(i.unite)}</div><div class="qty"><button onclick="qty(${k},-1)">−</button><input type="number" min="0" step="any" value="${i.qty}" onchange="setQty(${k},this.value)" style="width:56px;text-align:center;border:1px solid #ddd;border-radius:6px;height:28px"><span class="muted" style="font-size:12px">${esc(i.unite)}</span><button onclick="qty(${k},1)">+</button></div></div><div style="text-align:right"><b>${fmt(i.prix*i.qty)}</b><button onclick="removeItem(${k})" style="margin-top:8px;border:0;background:white;color:#999;font-size:20px">×</button></div></div>`).join('')+cartPrefaBetonPaletteNoteHtml()+cartComparatifTriggerHtml():'<p class="muted">Panier vide.</p>'; const sub=cart.reduce((s,i)=>s+i.prix*i.qty,0); document.getElementById('subTotal').textContent=fmt(sub); updateCartWeightInduni(); const td=transportDetailsInduni(sub,supplier); const rplpLine=document.getElementById('rplpLine'); if(supplier==='Canplast'){rplpLine.style.display='';document.getElementById('rplpTotal').textContent=fmt(td.rplp);}else{rplpLine.style.display='none';} document.getElementById('transportLineLabel').textContent=supplier==='HGC'?'Transport HGC fixe':(supplier==='Canplast'?'Livraison Canplast':(supplier==='Leuba HIAG'?'Leuba HIAG franco':(supplier==='MBT'?'Livraison MBT':'Transport'))); document.getElementById('transportTotal').textContent=fmt(supplier==='Canplast'?(td.transport+td.crane):td.totalTransport); document.getElementById('grandTotal').textContent=fmt(sub+td.totalTransport);; toggleCanplastOptions();toggleCanplastZoneBlock();toggleSupplierFields();toggleBillingMerchant();updateRequiredSupplierFields();}
+function updateCart(){document.getElementById('cartCount').textContent=cart.length?`(${cart.reduce((s,i)=>s+i.qty,0)})`:''; const box=document.getElementById('cartItems'); const supplier=cartSupplier(); box.innerHTML=cart.length?`<div style="padding:10px 12px;margin-bottom:8px;border-radius:10px;background:#eef5ff;color:#0b4f9c;font-weight:900">Panier fournisseur : ${esc(supplier)}</div>`+cart.map((i,k)=>`<div class="cartRow"><div class="thumb" style="${photoUrl(i)?`background-image:url('${photoUrl(i)}')`:`background-color:${tileColor(i.famille)}`}">${photoUrl(i)?'':`<span class="thumbGlyph">${esc(i.icone||'📦')}</span>`}</div><div><b>${esc(i.designation)}</b><div class="muted">${esc(i.article)} · ${esc(i.unite)}</div><div class="qty"><button onclick="qty(${k},-1)">−</button><input type="number" min="0" step="any" value="${i.qty}" onchange="setQty(${k},this.value)" style="width:56px;text-align:center;border:1px solid #ddd;border-radius:6px;height:28px"><span class="muted" style="font-size:12px">${esc(i.unite)}</span><button onclick="qty(${k},1)">+</button></div></div><div style="text-align:right"><b>${fmt(i.prix*i.qty)}</b><button onclick="removeItem(${k})" style="margin-top:8px;border:0;background:white;color:#999;font-size:20px">×</button></div></div>`).join('')+cartPrefaBetonPaletteNoteHtml()+cartComparatifTriggerHtml():'<p class="muted">Panier vide.</p>'; const sub=cart.reduce((s,i)=>s+i.prix*i.qty,0); document.getElementById('subTotal').textContent=fmt(sub); updateCartWeightInduni(); const td=transportDetailsInduni(sub,supplier); const rplpLine=document.getElementById('rplpLine'); if(supplier==='Canplast'){rplpLine.style.display='';document.getElementById('rplpTotal').textContent=fmt(td.rplp);}else{rplpLine.style.display='none';} document.getElementById('transportLineLabel').textContent=supplier==='HGC'?'Transport HGC fixe':(supplier==='Canplast'?'Livraison Canplast':(supplier==='Leuba HIAG'?'Leuba HIAG franco':(supplier==='MBT'?'Livraison MBT':(supplier==='CreaBeton'?'Transport CreaBeton':'Transport')))); document.getElementById('transportTotal').textContent=fmt((supplier==='Canplast'||supplier==='CreaBeton')?(td.transport+td.crane):td.totalTransport); document.getElementById('grandTotal').textContent=fmt(sub+td.totalTransport);; toggleCanplastOptions();toggleCanplastZoneBlock();toggleSupplierFields();toggleBillingMerchant();updateRequiredSupplierFields();}
 const PREFA_BETON_PALETTE_SKIP_SOUS_INDUNI=new Set(['Outillage béton']);
 function cartPrefaBetonPaletteNoteHtml(){
   const hasPrefa=cart.some(i=>i.famille==='Préfa-béton'&&!PREFA_BETON_PALETTE_SKIP_SOUS_INDUNI.has(i.sousFamille));
@@ -1292,6 +1327,16 @@ function cartComparableSuppliers(){
       const base=subtotal>=CANPLAST_FRANCO?0:CANPLAST_COMPARATIF_TRANSPORT;
       const rplp=subtotal*CANPLAST_RPLP;
       transport=base+rplp;
+    } else if(supplier==='CreaBeton'){
+      // Poids de l'équivalent CreaBeton pour ce panier hypothétique (et non le
+      // poids du panier réellement actif, qui peut être chez un autre
+      // fournisseur) : nécessaire pour appliquer le bon palier de transport.
+      let weight=0;
+      for(const g of groups){
+        const m=g.members.find(x=>x.catalog===supplier);
+        weight+=(Number(m.poids)||0)*g.item.qty;
+      }
+      transport=transportDetailsInduni(subtotal, supplier, weight).totalTransport;
     } else {
       transport=transportDetailsInduni(subtotal, supplier).totalTransport;
     }
