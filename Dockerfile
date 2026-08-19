@@ -1,6 +1,5 @@
 # syntax=docker/dockerfile:1
 # check=error=true
-# redeploy-trigger: 2026-08-19
 
 # This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
 # docker build -t eshop_induni .
@@ -10,11 +9,7 @@
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
 ARG RUBY_VERSION=3.3.6
-# Pinned explicitly: a builder host whose native architecture doesn't match
-# this platform would otherwise silently fall back to QEMU emulation, which
-# can slow Rails boot enough to blow past the healthcheck window without
-# ever producing output.
-FROM --platform=linux/amd64 docker.io/library/ruby:$RUBY_VERSION-slim AS base
+FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 
 # Rails app lives here
 WORKDIR /rails
