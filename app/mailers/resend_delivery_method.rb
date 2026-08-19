@@ -15,8 +15,12 @@ class ResendDeliveryMethod
     uri = URI("https://api.resend.com/emails")
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
-    http.open_timeout = 5
-    http.read_timeout = 5
+    # A mail with a PDF attachment pushes the request body from a few KB to
+    # potentially several hundred KB (base64-encoded) — 5s was tight enough
+    # on its own to cause spurious Net::ReadTimeout failures on real orders
+    # even before attachments were forwarded at all (see payload below).
+    http.open_timeout = 15
+    http.read_timeout = 15
 
     request = Net::HTTP::Post.new(uri)
     request["Authorization"] = "Bearer #{@api_key}"
@@ -39,8 +43,18 @@ class ResendDeliveryMethod
       to: Array(mail.to),
       subject: mail.subject,
       html: part_body(mail, "text/html"),
-      text: part_body(mail, "text/plain")
+      text: part_body(mail, "text/plain"),
+      attachments: attachments_payload(mail)
     }.compact
+  end
+
+  # `mail.attachments` (Mail::AttachmentsList) never included the PDF
+  # attached by OrderMailer#send_order in the actual Resend request — only
+  # the html/text body ever reached the API, so suppliers never received the
+  # bon de commande PDF via the real order-sending flow.
+  def attachments_payload(mail)
+    return nil if mail.attachments.empty?
+    mail.attachments.map { |attachment| { filename: attachment.filename, content: Base64.strict_encode64(attachment.body.decoded) } }
   end
 
   # A mail with an attachment is wrapped as multipart/mixed containing the

@@ -50,4 +50,33 @@ class ResendDeliveryMethodTest < ActiveSupport::TestCase
 
     assert_equal "<p>only html</p>", payload[:html]
   end
+
+  test "forwards the PDF attachment to Resend as base64 content" do
+    # payload(mail) used to only ever build {from, to, subject, html, text} —
+    # the attachment itself was silently dropped, so suppliers never actually
+    # received the bon de commande PDF via the real "Envoyer la commande" flow
+    # (only the client-side "Ouvrir dans Outlook" .eml fallback attached one).
+    mail = OrderMailer.send_order(orders(:one), "%PDF-1.4 fake pdf content").message
+
+    payload = build_delivery.send(:payload, mail)
+
+    assert payload[:attachments].present?
+    attachment = payload[:attachments].first
+    assert_equal "commande_#{orders(:one).number}.pdf", attachment[:filename]
+    assert_equal "%PDF-1.4 fake pdf content", Base64.strict_decode64(attachment[:content])
+  end
+
+  test "omits the attachments key when the mail has no attachment" do
+    mail = Mail.new do
+      from    "induni@example.com"
+      to      "supplier@example.com"
+      subject "Test"
+      text_part { body "plain body" }
+      html_part { content_type "text/html; charset=UTF-8"; body "<p>html body</p>" }
+    end
+
+    payload = build_delivery.send(:payload, mail)
+
+    assert_not payload.key?(:attachments)
+  end
 end
