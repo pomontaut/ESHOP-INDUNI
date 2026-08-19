@@ -2216,7 +2216,7 @@ function previewOrder(e) {
 // (qui ouvre la vérification À/Cc/aperçu) et la confirmation d'envoi effective.
 let _pendingOrder = null;
 
-function sendOrderByEmail(e) {
+async function sendOrderByEmail(e) {
   e.preventDefault();
   const chantier = document.getElementById('chantier').value;
   const delai    = document.getElementById('delai').value;
@@ -2231,7 +2231,17 @@ function sendOrderByEmail(e) {
   const billingMerchant = document.getElementById('billingMerchant') ? document.getElementById('billingMerchant').value : '';
   if ((supplier === 'Canplast') && !billingMerchant) { alert('Veuillez choisir le marchand pour facturation.'); return; }
 
-  const no = 'BC-' + Math.floor(100000 + Math.random() * 900000);
+  // Le numéro affiché à l'aperçu et dans le titre de l'e-mail doit être celui
+  // réellement attribué à l'envoi (ESHOP_xx) — utiliser un numéro provisoire
+  // sans rapport (ex. BC-XXXXXX) faisait apparaître un numéro différent selon
+  // qu'on regardait l'aperçu ou l'e-mail effectivement reçu.
+  let no = 'ESHOP_?';
+  try {
+    const r = await fetch('/api/orders/next_number');
+    const data = await r.json();
+    if (data.number) no = data.number;
+  } catch (err) { /* on garde le repli ci-dessus si la requête échoue */ }
+
   const today = new Date().toLocaleDateString('fr-CH');
   const sub = cart.reduce((s, i) => s + i.prix * i.qty, 0);
   const tdet = transportDetailsInduni(sub, supplier);
@@ -2247,23 +2257,11 @@ function sendOrderByEmail(e) {
   document.getElementById('confirmOrderNumber').textContent = no;
   document.getElementById('confirmSupplierEmail').value = (SUPPLIER_INFO[supplier] && SUPPLIER_INFO[supplier].email) || '';
   document.getElementById('confirmCcEmail').value = chantierTechnicienEmail(chantier);
-  const subjectEl = document.getElementById('confirmSubject');
-  const placeholderSubject = 'Commande — chantier ' + chantier;
-  subjectEl.value = placeholderSubject;
+  document.getElementById('confirmSubject').value = 'Commande ' + no;
   document.getElementById('confirmBody').value = 'Bonjour,\n\nVeuillez trouver ci-joint le bon de commande.\n\nMerci de bien vouloir nous faire parvenir votre confirmation de commande dans les plus brefs délais.\n\nRestant à votre disposition pour toute information complémentaire.\n\nCordialement\nINDUNI & Cie SA\nAvenue des Grandes-Communes 6\n1213 Petit-Lancy';
   const modifyNote = document.getElementById('confirmModifyNote');
   if (modifyNote) modifyNote.style.display = _modifyingOrderId ? 'block' : 'none';
   openModal('sendConfirmModal');
-
-  // Le vrai numéro (ESHOP_xx) n'est attribué qu'à la création de la commande
-  // côté serveur : on va chercher une prévision pour préremplir le titre
-  // sans bloquer l'ouverture de la fenêtre. Ne touche pas au champ si
-  // l'utilisateur l'a déjà modifié entre-temps.
-  fetch('/api/orders/next_number').then(r => r.json()).then(data => {
-    if (data.number && subjectEl.value === placeholderSubject) {
-      subjectEl.value = 'Commande ' + data.number;
-    }
-  }).catch(() => {});
 }
 
 function previewPendingOrder(){

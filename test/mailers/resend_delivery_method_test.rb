@@ -66,6 +66,39 @@ class ResendDeliveryMethodTest < ActiveSupport::TestCase
     assert_equal "%PDF-1.4 fake pdf content", Base64.strict_decode64(attachment[:content])
   end
 
+  test "forwards Cc addresses to Resend" do
+    # payload(mail) never read mail.cc at all — every Cc address (e.g. the
+    # order author, always added so they get proof of what was sent) was
+    # silently dropped on every real send through Resend, even though it
+    # showed up correctly in the local letter_opener preview.
+    mail = OrderMailer.send_order(orders(:one), nil, cc: "author@induni.ch, other@induni.ch").message
+
+    payload = build_delivery.send(:payload, mail)
+
+    assert_equal [ "author@induni.ch", "other@induni.ch" ], payload[:cc]
+  end
+
+  test "omits the cc key when the mail has no Cc" do
+    mail = OrderMailer.send_order(orders(:one), nil).message
+    payload = build_delivery.send(:payload, mail)
+    assert_not payload.key?(:cc)
+  end
+
+  test "forwards the read-receipt headers to Resend" do
+    mail = OrderMailer.send_order(orders(:one), nil, read_receipt_to: "author@induni.ch").message
+
+    payload = build_delivery.send(:payload, mail)
+
+    assert_equal "author@induni.ch", payload[:headers]["Disposition-Notification-To"]
+    assert_equal "author@induni.ch", payload[:headers]["Return-Receipt-To"]
+  end
+
+  test "omits the headers key when no custom header is set" do
+    mail = OrderMailer.send_order(orders(:one), nil).message
+    payload = build_delivery.send(:payload, mail)
+    assert_not payload.key?(:headers)
+  end
+
   test "omits the attachments key when the mail has no attachment" do
     mail = Mail.new do
       from    "induni@example.com"

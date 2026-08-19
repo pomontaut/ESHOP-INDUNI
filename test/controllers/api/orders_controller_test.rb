@@ -66,7 +66,36 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
 
     mail = ActionMailer::Base.deliveries.last
     assert_equal [ "verifie@induni.ch" ], mail.to
-    assert_equal [ "technicien@induni.ch" ], mail.cc, "the malformed cc entry must be dropped, not raise"
+    assert_includes mail.cc, "technicien@induni.ch", "the malformed cc entry must be dropped, not raise"
+  end
+
+  test "create always cc's the order's author, even with no cc provided, and requests a read receipt" do
+    author = users(:one)
+
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+    }
+    assert_response :success
+
+    mail = ActionMailer::Base.deliveries.last
+    assert_equal [ author.email ], mail.cc, "the author must always be cc'd, even with an empty cc field"
+    assert_equal author.email, mail["Disposition-Notification-To"].to_s
+    assert_equal author.email, mail["Return-Receipt-To"].to_s
+  end
+
+  test "create doesn't duplicate the author's address if they also typed it in cc" do
+    author = users(:one)
+
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      cc: author.email,
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+    }
+    assert_response :success
+
+    mail = ActionMailer::Base.deliveries.last
+    assert_equal [ author.email ], mail.cc
   end
 
   test "create notifies admins with the diff when modifying a previous order" do

@@ -1,11 +1,18 @@
 class OrderMailer < ApplicationMailer
   DEFAULT_BODY = "Bonjour,\n\nVeuillez trouver ci-joint le bon de commande.\n\nMerci de bien vouloir nous faire parvenir votre confirmation de commande dans les plus brefs délais.\n\nRestant à votre disposition pour toute information complémentaire.\n\nCordialement\nINDUNI & Cie SA\nAvenue des Grandes-Communes 6\n1213 Petit-Lancy"
 
-  def send_order(order, pdf_content = nil, to: nil, cc: nil, subject: nil, body: nil)
+  def send_order(order, pdf_content = nil, to: nil, cc: nil, subject: nil, body: nil, read_receipt_to: nil)
     @order = order
     @body  = body.presence || DEFAULT_BODY
     if pdf_content
       attachments["commande_#{@order.number}.pdf"] = { mime_type: "application/pdf", content: pdf_content }
+    end
+    # Requests a read receipt from whichever mail client honors it (Outlook
+    # prompts the reader; Gmail and others silently ignore it) — the reply
+    # goes back to the order's author, so they know it was actually opened.
+    if read_receipt_to.present?
+      headers["Disposition-Notification-To"] = read_receipt_to
+      headers["Return-Receipt-To"] = read_receipt_to
     end
     mail(to: to.presence || @order.supplier.email, cc: cc.presence, subject: subject.presence || "Commande #{@order.number}")
   end

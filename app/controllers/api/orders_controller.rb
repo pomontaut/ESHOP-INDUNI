@@ -117,10 +117,17 @@ class Api::OrdersController < ApplicationController
       # step instead of always using the generic defaults.
       to = sanitize_email_list(params[:to])
       cc = sanitize_email_list(params[:cc])
+      # The order's author is always copied — even if they clear the field —
+      # so a copy always lands in their own mailbox as proof the order was
+      # actually sent (combined with the read receipt below, proof it was
+      # read too).
+      cc_addresses = (cc || "").split(",").map(&:strip)
+      cc_addresses << current_user.email if current_user&.email.present?
+      cc = cc_addresses.uniq.join(", ").presence
       subject = params[:subject].to_s.strip.presence
       body    = params[:body].to_s.strip.presence
       pdf_content = render_order_pdf(order)
-      OrderMailer.send_order(order, pdf_content, to: to, cc: cc, subject: subject, body: body).deliver_now
+      OrderMailer.send_order(order, pdf_content, to: to, cc: cc, subject: subject, body: body, read_receipt_to: current_user&.email).deliver_now
       render json: {
         success:        true,
         needs_approval: false,

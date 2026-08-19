@@ -41,11 +41,26 @@ class ResendDeliveryMethod
     {
       from: mail[:from].to_s,
       to: Array(mail.to),
+      # `mail.cc` was never read here — every Cc address set on the mail
+      # (e.g. the order's author, added so they always get proof of what was
+      # sent) was silently dropped on every real send through Resend, even
+      # though it appears correctly in the local letter_opener preview.
+      cc: mail.cc.present? ? Array(mail.cc) : nil,
       subject: mail.subject,
       html: part_body(mail, "text/html"),
       text: part_body(mail, "text/plain"),
-      attachments: attachments_payload(mail)
+      attachments: attachments_payload(mail),
+      headers: custom_headers(mail)
     }.compact
+  end
+
+  # Only the handful of headers we explicitly set ourselves (e.g. read-receipt
+  # requests) — never forwards the standard MIME/addressing headers that
+  # `mail`, `from`, `to`, `subject` etc. above already cover.
+  CUSTOM_HEADER_NAMES = [ "Disposition-Notification-To", "Return-Receipt-To" ].freeze
+  def custom_headers(mail)
+    headers = CUSTOM_HEADER_NAMES.filter_map { |name| [ name, mail[name].to_s ] if mail[name].present? }.to_h
+    headers.presence
   end
 
   # `mail.attachments` (Mail::AttachmentsList) never included the PDF
