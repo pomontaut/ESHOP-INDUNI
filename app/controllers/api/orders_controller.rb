@@ -96,15 +96,20 @@ class Api::OrdersController < ApplicationController
         message:          "Commande #{order.number} enregistrée. Votre commande dépasse votre plafond de #{number_with_commas(limit)} CHF — une demande d'approbation a été envoyée à #{current_user.approver_email}."
       }, status: :ok
     else
-      # Send the order directly to the supplier, with the bon de commande PDF attached
+      # Send the order directly to the supplier, with the bon de commande PDF
+      # attached. `to`/`cc` let the user override/complete the recipients from
+      # the "Vérifier et envoyer" confirmation step (verified address, extra
+      # people in copy) instead of always defaulting to the supplier's email.
+      to = sanitize_email_list(params[:to])
+      cc = sanitize_email_list(params[:cc])
       pdf_content = render_order_pdf(order)
-      OrderMailer.send_order(order, pdf_content).deliver_now
+      OrderMailer.send_order(order, pdf_content, to: to, cc: cc).deliver_now
       render json: {
         success:        true,
         needs_approval: false,
         order_id:       order.id,
         order_number:   order.number,
-        supplier_email: supplier.email,
+        supplier_email: to.presence || supplier.email,
         supplier_name:  supplier.name
       }, status: :ok
     end
@@ -113,6 +118,17 @@ class Api::OrdersController < ApplicationController
   end
 
   private
+
+  EMAIL_RE = /\A[^@\s,]+@[^@\s,]+\.[^@\s,]+\z/
+
+  # Comma-separated list of addresses, typed freely by the user before
+  # sending: keep only the entries that look like real e-mail addresses
+  # (also guards against header-injection via newlines) and drop the rest
+  # silently rather than failing the whole send.
+  def sanitize_email_list(raw)
+    return nil if raw.blank?
+    raw.to_s.split(",").map(&:strip).select { |a| a.match?(EMAIL_RE) }.presence&.join(", ")
+  end
 
   def number_with_commas(n)
     n.to_i.to_s.reverse.gsub(/(\d{3})(?=\d)/, "\\1'").reverse

@@ -129,7 +129,7 @@
 <option>CHALLANDE</option>
 </select>
 </div>
-<label>Adresse de livraison *</label><textarea id="adresse" required placeholder="Rue, numéro&#10;NPA Localité"></textarea><div class="cols"><div><label>Nom du contact *</label><input id="contact" required placeholder="Prénom Nom"></div><div><label>Téléphone *</label><input id="phone" required placeholder="+41 79 000 00 00"></div></div><div id="canplastOptionsBlock" style="margin:4px 0 16px;padding:12px;border:1px solid #d8dde6;border-radius:10px;background:#fff7ed"><b>Option Canplast</b><br><label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700"><input id="canplastCrane" type="checkbox" style="width:auto;margin:0" onchange="updateCart()"> Déchargement avec grue Canplast (+ CHF 80 / place)</label><small>Tarif de livraison selon la commune renseignée ci-dessus, franco dès CHF 2’000, RPLP 2.2% en sus.</small></div><div id="creabetonOptionsBlock" style="margin:4px 0 16px;padding:12px;border:1px solid #d8dde6;border-radius:10px;background:#fff7ed"><b>Option CreaBeton</b><br><label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700"><input id="creabetonCrane" type="checkbox" style="width:auto;margin:0" onchange="updateCart()"> Déchargement grue CreaBeton, 2T max, 4m rayon (+ CHF 19.00)</label><small>Participation frais de transport selon le poids total du panier (indicatif ci-dessus) : CHF 260.00 jusqu'à 3t, CHF 210.00 de 3 à 8t, CHF 160.00 de 8 à 14t.</small></div><label>Remarques</label><textarea id="remarks" placeholder="Horaires, accès, etc."></textarea><div class="actions"><button type="button" class="secondary" onclick="closeModal('orderModal')">Annuler</button><button type="button" class="primary" style="background:#0b4f9c;border:0" onclick="previewOrder(event)">👁 Prévisualisation</button><button type="button" class="primary" style="background:#176b28;border:0" onclick="sendOrderByEmail(event)">📧 Envoyer la commande</button><button type="button" class="secondary" title="Télécharge le bon de commande et ouvre un brouillon dans votre messagerie (Outlook), à défaut d'un envoi automatique." onclick="downloadOrder(event)">✉️ Ouvrir dans Outlook</button></div></form></div></div><div class="modal" id="sendConfirmModal"><div class="modalBox"><div class="modalHead">Confirmer l'envoi <button onclick="closeModal('sendConfirmModal')">×</button></div><div class="form"><p style="margin:0 0 12px">La commande <strong id="confirmOrderNumber"></strong> va être envoyée par email au fournisseur.</p><label style="display:block;font-weight:700;margin-bottom:6px">Adresse email du fournisseur</label><input id="confirmSupplierEmail" type="email" class="form-control" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:16px" placeholder="contact@fournisseur.ch"><p style="font-size:12px;color:#6b7280;margin:0 0 16px">Vérifiez l'adresse avant de confirmer. Vous pouvez la modifier si nécessaire.</p><div class="actions"><button type="button" class="secondary" onclick="closeModal('sendConfirmModal')">Annuler</button><button id="confirmSendBtn" type="button" class="primary" style="background:#176b28;border:0" onclick="confirmSendOrder()">📧 Confirmer et envoyer</button></div></div></div></div><div class="modal" id="genericModal"><div class="modalBox"><div class="modalHead orange">Créer un article générique <button onclick="closeModal('genericModal')">×</button></div><form class="form" onsubmit="addGeneric(event)"><label>Descriptif *</label><textarea id="genDesc" required placeholder="Ex. Tuyau spécial sur mesure..."></textarea><label>N° article / Référence</label><input id="genArticle" placeholder="Laisser vide si inconnu"><label>Prix unitaire CHF *</label><input id="genPrice" type="number" step="0.01" min="0" required placeholder="0.00"><div class="actions"><button type="button" class="secondary" onclick="closeModal('genericModal')">Annuler</button><button class="primary">+ Ajouter au panier</button></div></form></div></div><div class="modal" id="devisModal"><div class="modalBox" style="width:min(920px,95vw)"><div class="modalHead" style="background:#7c3aed">Importer un devis fournisseur <button onclick="closeModal('devisModal')">×</button></div><div class="form"><label>Fournisseur</label><select id="devisSupplierSelect"><option value="HGC">HGC</option><option value="Canplast">Canplast</option><option value="Leuba HIAG">Leuba HIAG</option></select><label>Fichier PDF du devis</label><input type="file" id="devisFileInput" accept="application/pdf"><div class="actions" style="margin-top:14px"><button type="button" class="secondary" onclick="closeModal('devisModal')">Fermer</button><button type="button" class="primary" id="devisAnalyzeBtn" onclick="analyzeDevis()">Analyser le devis</button></div><div id="devisResults" style="margin-top:18px"></div></div></div></div><script>
+<label>Adresse de livraison *</label><textarea id="adresse" required placeholder="Rue, numéro&#10;NPA Localité"></textarea><div class="cols"><div><label>Nom du contact *</label><input id="contact" required placeholder="Prénom Nom"></div><div><label>Téléphone *</label><input id="phone" required placeholder="+41 79 000 00 00"></div></div><div id="canplastOptionsBlock" style="margin:4px 0 16px;padding:12px;border:1px solid #d8dde6;border-radius:10px;background:#fff7ed"><b>Option Canplast</b><br><label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700"><input id="canplastCrane" type="checkbox" style="width:auto;margin:0" onchange="updateCart()"> Déchargement avec grue Canplast (+ CHF 80 / place)</label><small>Tarif de livraison selon la commune renseignée ci-dessus, franco dès CHF 2’000, RPLP 2.2% en sus.</small></div><div id="creabetonOptionsBlock" style="margin:4px 0 16px;padding:12px;border:1px solid #d8dde6;border-radius:10px;background:#fff7ed"><b>Option CreaBeton</b><br><label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700"><input id="creabetonCrane" type="checkbox" style="width:auto;margin:0" onchange="updateCart()"> Déchargement grue CreaBeton, 2T max, 4m rayon (+ CHF 19.00)</label><small>Participation frais de transport selon le poids total du panier (indicatif ci-dessus) : CHF 260.00 jusqu'à 3t, CHF 210.00 de 3 à 8t, CHF 160.00 de 8 à 14t.</small></div><label>Remarques</label><textarea id="remarks" placeholder="Horaires, accès, etc."></textarea><div class="actions"><button type="button" class="secondary" onclick="closeModal('orderModal')">Annuler</button><button type="button" class="primary" style="background:#0b4f9c;border:0" onclick="previewOrder(event)">👁 Prévisualisation</button><button type="button" class="primary" style="background:#176b28;border:0" onclick="sendOrderByEmail(event)">📧 Envoyer la commande</button><button type="button" class="secondary" title="Télécharge le bon de commande et ouvre un brouillon dans votre messagerie (Outlook), à défaut d'un envoi automatique." onclick="downloadOrder(event)">✉️ Ouvrir dans Outlook</button></div></form></div></div><div class="modal" id="sendConfirmModal"><div class="modalBox"><div class="modalHead">Vérifier et envoyer <button onclick="closeModal('sendConfirmModal')">×</button></div><div class="form"><p style="margin:0 0 12px">La commande <strong id="confirmOrderNumber"></strong> va être envoyée par email au fournisseur, avec le bon de commande en pièce jointe (PDF).</p><label style="display:block;font-weight:700;margin-bottom:6px">Destinataire (À)</label><input id="confirmSupplierEmail" type="email" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px" placeholder="contact@fournisseur.ch"><label style="display:block;font-weight:700;margin-bottom:6px">Copie (Cc) — facultatif, séparez plusieurs adresses par une virgule</label><input id="confirmCcEmail" type="text" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px" placeholder="technicien@induni.ch, autre@induni.ch"><button type="button" class="miniBtn gray" onclick="previewPendingOrder()" style="margin-bottom:12px">👁 Aperçu du bon de commande</button><p style="font-size:12px;color:#6b7280;margin:0 0 16px">Vérifiez le destinataire, la copie et l'aperçu avant de confirmer — vous pouvez tout modifier ci-dessus.</p><div class="actions"><button type="button" class="secondary" onclick="closeModal('sendConfirmModal')">Annuler</button><button id="confirmSendBtn" type="button" class="primary" style="background:#176b28;border:0" onclick="confirmSendOrder()">📧 Confirmer et envoyer</button></div></div></div></div><div class="modal" id="genericModal"><div class="modalBox"><div class="modalHead orange">Créer un article générique <button onclick="closeModal('genericModal')">×</button></div><form class="form" onsubmit="addGeneric(event)"><label>Descriptif *</label><textarea id="genDesc" required placeholder="Ex. Tuyau spécial sur mesure..."></textarea><label>N° article / Référence</label><input id="genArticle" placeholder="Laisser vide si inconnu"><label>Prix unitaire CHF *</label><input id="genPrice" type="number" step="0.01" min="0" required placeholder="0.00"><div class="actions"><button type="button" class="secondary" onclick="closeModal('genericModal')">Annuler</button><button class="primary">+ Ajouter au panier</button></div></form></div></div><div class="modal" id="devisModal"><div class="modalBox" style="width:min(920px,95vw)"><div class="modalHead" style="background:#7c3aed">Importer un devis fournisseur <button onclick="closeModal('devisModal')">×</button></div><div class="form"><label>Fournisseur</label><select id="devisSupplierSelect"><option value="HGC">HGC</option><option value="Canplast">Canplast</option><option value="Leuba HIAG">Leuba HIAG</option></select><label>Fichier PDF du devis</label><input type="file" id="devisFileInput" accept="application/pdf"><div class="actions" style="margin-top:14px"><button type="button" class="secondary" onclick="closeModal('devisModal')">Fermer</button><button type="button" class="primary" id="devisAnalyzeBtn" onclick="analyzeDevis()">Analyser le devis</button></div><div id="devisResults" style="margin-top:18px"></div></div></div></div><script>
 const CANPLAST_FAMILY_ORDER=['Canalisations PE/HDPE','Canalisations PP','Canalisations PVC','Chambres & Regards','Fournitures & Divers','Protection Câbles'];function familySortInduni(a,b){if(state.catalog==='Canplast'){const ia=CANPLAST_FAMILY_ORDER.indexOf(a),ib=CANPLAST_FAMILY_ORDER.indexOf(b);return (ia===-1?999:ia)-(ib===-1?999:ib)}return String(a).localeCompare(String(b),'fr')}
 let PRODUCTS=[];
 function initProducts(list){
@@ -2266,10 +2266,11 @@ function previewOrder(e) {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
-// Stocke les données de la commande en attente de confirmation d'envoi
+// Données de la commande en attente, entre le clic sur "Envoyer la commande"
+// (qui ouvre la vérification À/Cc/aperçu) et la confirmation d'envoi effective.
 let _pendingOrder = null;
 
-async function sendOrderByEmail(e) {
+function sendOrderByEmail(e) {
   e.preventDefault();
   const chantier = document.getElementById('chantier').value;
   const delai    = document.getElementById('delai').value;
@@ -2279,22 +2280,55 @@ async function sendOrderByEmail(e) {
   const remarks  = document.getElementById('remarks')  ? document.getElementById('remarks').value  : '';
   if (!chantier || !delai) { alert('Veuillez remplir le N° de chantier et le délai.'); return; }
   if (!cart.length) { alert('Le panier est vide.'); return; }
-  const supplierCheck = (typeof cartSupplier === 'function' ? cartSupplier() : null) || (cart[0] && cart[0].catalog) || 'Inconnu';
-  if ((supplierCheck === 'Canplast') && !canplastResolvedZone) { alert('Veuillez renseigner une commune ou un NPA valide pour déterminer le tarif de livraison Canplast.'); return; }
+  const supplier = (typeof cartSupplier === 'function' ? cartSupplier() : null) || (cart[0] && cart[0].catalog) || 'Inconnu';
+  if ((supplier === 'Canplast') && !canplastResolvedZone) { alert('Veuillez renseigner une commune ou un NPA valide pour déterminer le tarif de livraison Canplast.'); return; }
+  const billingMerchant = document.getElementById('billingMerchant') ? document.getElementById('billingMerchant').value : '';
+  if ((supplier === 'Canplast') && !billingMerchant) { alert('Veuillez choisir le marchand pour facturation.'); return; }
 
-  const btn = e.target;
+  const no = 'BC-' + Math.floor(100000 + Math.random() * 900000);
+  const today = new Date().toLocaleDateString('fr-CH');
+  const sub = cart.reduce((s, i) => s + i.prix * i.qty, 0);
+  const tdet = transportDetailsInduni(sub, supplier);
+  const total = sub + tdet.totalTransport;
+  const rows = cart.map((i, k) => `<tr><td>${k+1}</td><td><b>${esc(i.designation)}</b><br><small>${esc(i.descriptif)}</small></td><td>${esc(i.article)}</td><td>${i.qty}<br><small>${esc(i.unite)}</small></td><td>${fmt(i.prix)}</td><td><b>${fmt(i.prix*i.qty)}</b></td></tr>`).join('');
+  const html = buildOrderHtml(no, today, chantier, delai, billingMerchant, supplier, rows, sub, tdet, total);
+
+  _pendingOrder = { chantier, delai, adresse, contact, phone, remarks, supplier, no, html,
+    items: cart.map(i => ({ article: i.article, designation: i.designation, descriptif: i.descriptif || '', qty: i.qty, prix: i.prix, catalogPrix: i.catalogPrix ?? null, unite: i.unite || 'PCE', catalog: i.catalog || '' }))
+  };
+
+  document.getElementById('confirmOrderNumber').textContent = no;
+  document.getElementById('confirmSupplierEmail').value = (SUPPLIER_INFO[supplier] && SUPPLIER_INFO[supplier].email) || '';
+  document.getElementById('confirmCcEmail').value = chantierTechnicienEmail(chantier);
+  openModal('sendConfirmModal');
+}
+
+function previewPendingOrder(){
+  if(!_pendingOrder) return;
+  const blob=new Blob([_pendingOrder.html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  window.open(url,'_blank');
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+
+async function confirmSendOrder() {
+  if (!_pendingOrder) { closeModal('sendConfirmModal'); return; }
+  const to = document.getElementById('confirmSupplierEmail').value.trim();
+  const cc = document.getElementById('confirmCcEmail').value.trim();
+  if (!to) { alert('Veuillez indiquer une adresse e-mail de destinataire.'); return; }
+
+  const btn = document.getElementById('confirmSendBtn');
   btn.disabled = true;
-  btn.textContent = '⏳ Enregistrement...';
+  btn.textContent = '⏳ Envoi...';
 
   try {
-    const supplierName = (typeof cartSupplier === 'function' ? cartSupplier() : null) || (cart[0] && cart[0].catalog) || 'Inconnu';
+    const p = _pendingOrder;
     const res = await fetch('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        chantier, delai, adresse, contact, phone, remarks,
-        supplier: supplierName,
-        items: cart.map(i => ({ article: i.article, designation: i.designation, descriptif: i.descriptif || '', qty: i.qty, prix: i.prix, catalogPrix: i.catalogPrix ?? null, unite: i.unite || 'PCE', catalog: i.catalog || '' }))
+        chantier: p.chantier, delai: p.delai, adresse: p.adresse, contact: p.contact, phone: p.phone, remarks: p.remarks,
+        supplier: p.supplier, to, cc, items: p.items
       })
     });
     const text = await res.text();
@@ -2302,10 +2336,11 @@ async function sendOrderByEmail(e) {
     try { data = JSON.parse(text); } catch(ex) { data = { error: text || 'Réponse invalide du serveur' }; }
 
     btn.disabled = false;
-    btn.textContent = '📧 Envoyer la commande';
+    btn.textContent = '📧 Confirmer et envoyer';
 
     if (res.ok && data.success) {
       if (data.needs_approval) {
+        closeModal('sendConfirmModal');
         closeModal('orderModal');
         alert(data.message || "Demande d'approbation envoyée à votre N+1.");
       } else {
@@ -2313,16 +2348,18 @@ async function sendOrderByEmail(e) {
         // commande PDF (incl. CGA) attached — no client-side mailto needed.
         clearCartInduni();
         fetch('/api/orders',{headers:{'Accept':'application/json'}}).then(r=>r.json()).then(orders=>{window._serverOrders=orders;renderDashboard();renderAnalysis();}).catch(()=>{});
+        closeModal('sendConfirmModal');
         closeModal('orderModal');
-        alert('Commande ' + data.order_number + ' envoyée à ' + (data.supplier_name || 'le fournisseur') + ' avec le bon de commande en pièce jointe (PDF).');
+        alert('Commande ' + data.order_number + ' envoyée à ' + (data.supplier_email || data.supplier_name || 'le fournisseur') + (cc?(' (copie : '+cc+')'):'') + ' avec le bon de commande en pièce jointe (PDF).');
       }
+      _pendingOrder = null;
     } else {
       alert('Erreur : ' + (data.error || 'Enregistrement échoué'));
     }
   } catch(err) {
     alert('Erreur : ' + err.message);
     btn.disabled = false;
-    btn.textContent = '📧 Envoyer la commande';
+    btn.textContent = '📧 Confirmer et envoyer';
   }
 }
 </script>

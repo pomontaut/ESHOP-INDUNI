@@ -24,4 +24,20 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     post preview_pdf_api_orders_url, params: { html: "<html></html>" }
     assert_redirected_to login_path
   end
+
+  test "create sends the order to an overridden recipient and cc when provided" do
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      to: "verifie@induni.ch", cc: "technicien@induni.ch, invalide-sans-arobase",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+    }
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal "verifie@induni.ch", body["supplier_email"]
+
+    mail = ActionMailer::Base.deliveries.last
+    assert_equal [ "verifie@induni.ch" ], mail.to
+    assert_equal [ "technicien@induni.ch" ], mail.cc, "the malformed cc entry must be dropped, not raise"
+  end
 end
