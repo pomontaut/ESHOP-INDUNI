@@ -23,6 +23,7 @@ class Api::SessionsController < ApplicationController
             ville:       c.ville,
             contact:     c.contremaitre,
             telephone:   c.natel_contremaitre,
+            emailTechnicien: c.email_technicien,
             consortium:  c.consortium
           }
         }
