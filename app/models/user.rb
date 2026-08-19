@@ -11,7 +11,8 @@ class User < ApplicationRecord
     { key: "HGC",        label: "HGC" },
     { key: "Canplast",   label: "Canplast" },
     { key: "Leuba HIAG", label: "Leuba HIAG SA" },
-    { key: "CreaBeton",  label: "CreaBeton" }
+    { key: "CreaBeton",  label: "CreaBeton" },
+    { key: "MBT",        label: "MBT" }
   ].freeze
 
   validates :email, presence: true, uniqueness: { case_sensitive: false },

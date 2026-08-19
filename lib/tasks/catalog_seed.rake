@@ -26,9 +26,12 @@ namespace :catalog do
         supplier_number: "100123867", ide_number: "CHE-100.123.867", payment_condition: "30 jours 2%"
       },
       "CreaBeton" => {
-        email: "info@creabeton.ch", phone: "0848 400 401",
+        email: "commandes@creabeton.ch", phone: "0848 400 401",
         address: "Bohler 5", postal_code: "6221", city: "Rickenbach LU", country_code: "CH",
         supplier_number: "11947"
+      },
+      "MBT" => {
+        email: "didier.hossmann@mbt-bautechnik.com"
       }
     }.freeze
 
@@ -44,6 +47,13 @@ namespace :catalog do
       supplier = Supplier.find_or_initialize_by(name: name)
       supplier.update!(attrs) if supplier.new_record?
     end
+
+    # Correction ponctuelle : l'ancienne adresse de commande CreaBeton
+    # (info@creabeton.ch) a été saisie avant que le bon contact ne soit connu.
+    # On ne la corrige que si elle vaut encore exactement l'ancienne valeur,
+    # pour ne jamais écraser une adresse modifiée depuis l'admin.
+    Supplier.where(name: "CreaBeton", email: "info@creabeton.ch")
+            .update_all(email: "commandes@creabeton.ch")
 
     catalog_path = Rails.root.join("db/seed_data/catalog_products.json")
     if File.exist?(catalog_path)
