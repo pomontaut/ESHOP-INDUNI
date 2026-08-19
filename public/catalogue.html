@@ -196,11 +196,13 @@ function goHome(){state={view:'home',catalog:null,famille:null,sous:null};docume
 function showDashboard(){state={view:'dashboard',catalog:null,famille:null,sous:null};document.getElementById('searchBox').value='';render()}
 function showAnalysis(){state={view:'analysis',catalog:null,famille:null,sous:null};document.getElementById('searchBox').value='';render()}
 
-function catalogLogoInduni(c){return c==='HGC'?HGC_LOGO:(c==='Canplast'?CAN_LOGO:(c==='Leuba HIAG'?HIAG_LOGO:INDUNI_LOGO))}
+const CREABETON_LOGO='/images/categories/hgc-famille-prefa-beton.png';
+function catalogLogoInduni(c){return c==='HGC'?HGC_LOGO:(c==='Canplast'?CAN_LOGO:(c==='Leuba HIAG'?HIAG_LOGO:(c==='CreaBeton'?CREABETON_LOGO:INDUNI_LOGO)))}
 const SUPPLIER_INFO={
   'HGC':{email:'yannick.mace@hgc.ch',phone:'0041 22 343 85 50'},
   'Canplast':{address:'Route de Sollens 2B',postal_code:'1029',city:'Villars-Ste-Croix',email:'commandes@canplast.ch',phone:'0041 21 637 37 77'},
-  'Leuba HIAG':{address:'Planchettes 1',postal_code:'1032',city:'Romanel-s-Lausanne',email:'william.bouquet@leubahiag.ch',phone:'0041 58 470 66 66'}
+  'Leuba HIAG':{address:'Planchettes 1',postal_code:'1032',city:'Romanel-s-Lausanne',email:'william.bouquet@leubahiag.ch',phone:'0041 58 470 66 66'},
+  'CreaBeton':{address:'Bohler 5',postal_code:'6221',city:'Rickenbach LU',email:'info@creabeton.ch',phone:'0848 400 401'}
 };
 function chooseCatalog(c){const p=window._userPerms;if(p&&p.allowed_suppliers&&p.allowed_suppliers.length>0&&!p.allowed_suppliers.includes(c)){return;}
 
@@ -295,16 +297,16 @@ function goFunnel(cat,fam){
   render();
 }
 function render(){const q=document.getElementById('searchBox').value.trim().toLowerCase(); if(q){return renderSearch(q)} if(state.view==='home')return renderHome(); if(state.view==='catalog')return renderCatalog(); if(state.view==='family')return renderFamily(); if(state.view==='subfamily')return renderSubFamily(); if(state.view==='level4')return renderLevel4(); if(state.view==='products')return renderProducts(); if(state.view==='dashboard')return renderDashboard(); if(state.view==='analysis')return renderAnalysis();}
-function renderHome(){const h=PRODUCTS.filter(p=>p.catalog==='HGC').length, c=PRODUCTS.filter(p=>p.catalog==='Canplast').length, l=PRODUCTS.filter(p=>p.catalog==='Leuba HIAG').length;
+function renderHome(){const h=PRODUCTS.filter(p=>p.catalog==='HGC').length, c=PRODUCTS.filter(p=>p.catalog==='Canplast').length, l=PRODUCTS.filter(p=>p.catalog==='Leuba HIAG').length, cb=PRODUCTS.filter(p=>p.catalog==='CreaBeton').length;
 const allowed=window._userPerms&&window._userPerms.allowed_suppliers;
 function canSee(key){return !allowed||allowed.length===0||allowed.includes(key);}
 const covers=[
   canSee('HGC')?`<button class="cover" onclick="chooseCatalog('HGC')"><div class="coverTop"><img src="${HGC_LOGO}" alt="HGC"></div><div class="coverText"><b>E-shop HGC</b><p class="muted">${h} articles · familles d'articles HGC</p></div></button>`:'',
   canSee('Canplast')?`<button class="cover" onclick="chooseCatalog('Canplast')"><div class="coverTop"><img src="${CAN_LOGO}" alt="Canplast"></div><div class="coverText"><b>E-shop Canplast</b><p class="muted">${c} articles · familles d'articles Canplast</p></div></button>`:'',
   canSee('Leuba HIAG')?`<button class="cover" onclick="chooseCatalog('Leuba HIAG')"><div class="coverTop"><img src="${HIAG_LOGO}" alt="Leuba HIAG"></div><div class="coverText"><b>E-shop Leuba HIAG</b><p class="muted">${l} articles · bois, coffrage, panneaux & accessoires</p></div></button>`:'',
+  canSee('CreaBeton')?`<button class="cover" onclick="chooseCatalog('CreaBeton')"><div class="coverTop" style="background-image:url(${CREABETON_LOGO});background-size:cover;background-position:center"></div><div class="coverText"><b>E-shop CreaBeton</b><p class="muted">${cb} articles · préfabriqués béton (tuyaux, regards, dalles, bordures)</p></div></button>`:'',
   `<button class="cover" style="cursor:default" onclick="alert('Module Dépôt INDUNI — bientôt disponible.')"><div class="coverTop"><img src="${INDUNI_LOGO}" alt="Dépôt INDUNI"></div><div class="coverText"><b>Dépôt INDUNI</b><p class="muted">Commande directe depuis le dépôt Induni — bientôt disponible</p></div></button>`,
   `<button class="cover" style="cursor:default" onclick="alert('E-shop MBT — bientôt disponible.')"><div class="coverTop" style="background:linear-gradient(135deg,#e7e9ec,#cfd4db);display:flex;align-items:center;justify-content:center"><div style="font-weight:900;font-size:34px;color:#8993a1;letter-spacing:.03em">MBT</div></div><div class="coverText"><b>E-shop MBT</b><p class="muted">Mägert G&amp;C Bautechnik — bientôt disponible</p></div></button>`,
-  `<button class="cover" style="cursor:default" onclick="alert('E-shop CreaBeton — bientôt disponible.')"><div class="coverTop" style="background:linear-gradient(135deg,#e7e9ec,#cfd4db);display:flex;align-items:center;justify-content:center"><div style="font-weight:900;font-size:26px;color:#8993a1;letter-spacing:.02em">CreaBeton</div></div><div class="coverText"><b>E-shop CreaBeton</b><p class="muted">Bientôt disponible</p></div></button>`,
   renderFunnelWidget(null)
 ].join('');
 app.innerHTML=`<section class="hero"><div><h1>Catalogues Achats Induni</h1><p class="muted" style="font-size:18px">Cliquez sur un logo pour accéder à l'e-shop correspondant.</p><div class="coverGrid threeCovers">${covers}</div></div></section>`}
@@ -504,6 +506,22 @@ const HGC_CONFIG = {
 const HIAG_CONFIG = {
 };
 
+// ── CREABETON : préfabriqués béton (même thématique que la famille HGC
+// "Préfa-béton" — on réutilise sa photo, faute de photos CreaBeton propres) ──
+const CREABETON_CONFIG = {
+  'Préfa-béton': {
+    gradient: 'linear-gradient(135deg,#57534e,#78716c)', icone: '🏢', badge: 'Préfa-béton',
+    photo: '/images/categories/hgc-famille-prefa-beton.png',
+    desc: 'Tuyaux CENTUB · Regards · Dalles · Bordures & pavés · Murs',
+    subs: [
+      'Tuyaux CENTUB-Röser', 'Plus-value & façonnage CENTUB', 'Fond de regard CENTUB',
+      'Fond de regard CRENO/CREMA/KERES', 'Cadre & couvercle en béton', 'Bordures & pavés',
+      'Dalles', 'Murs, équerres & blocs', 'Saut de loup', 'Aménagement extérieur'
+    ],
+    order: 1
+  }
+};
+
 
 // ── HGC : familles regroupées sous un dossier commun ──────────────────────────
 const HGC_GROUP_FAMILIES = { 'Canalisation': [ 'Canalisations PVC', 'Protection Câbles' ] };
@@ -598,6 +616,7 @@ function renderCatalog(){
     'Canplast':    CANPLAST_CONFIG,
     'HGC':         HGC_CONFIG,
     'Leuba HIAG':  HIAG_CONFIG,
+    'CreaBeton':   CREABETON_CONFIG,
   };
   const cfg = configMap[cat];
   const famCount = Object.keys(fams).length + (groups?Object.keys(groups).length:0);
@@ -629,7 +648,7 @@ function renderCatalog(){
 function renderFamily(){
   if(state.catalog==='HGC'&&HGC_GROUP_FAMILIES[state.famille]) return renderFamilyGroupPage(state.famille);
   const items=PRODUCTS.filter(p=>p.catalog===state.catalog&&p.famille===state.famille), subs=group(items,'sousFamille');
-  const famCfg=(CANPLAST_CONFIG[state.famille]||HGC_CONFIG[state.famille]||{});
+  const famCfg=(CANPLAST_CONFIG[state.famille]||HGC_CONFIG[state.famille]||CREABETON_CONFIG[state.famille]||{});
   const famPhoto=famCfg.photo||null;
   const parentGroup=state.catalog==='HGC'?hgcParentGroupOf(state.famille):null;
   const groupCrumb=parentGroup?` › <a onclick='state.view="family";state.famille=${JSON.stringify(parentGroup)};state.sous=null;render()'>${esc(parentGroup)}</a>`:'';
@@ -868,7 +887,7 @@ function renderSubFamily(){
   }
   const groups=group(base,'sousSousFamille');
   delete groups['__DIRECT__'];
-  const parentPhoto=SUBFAMILY_PHOTOS[state.famille+'|'+state.sous]||(CANPLAST_CONFIG[state.famille]||{}).photo||null;
+  const parentPhoto=SUBFAMILY_PHOTOS[state.famille+'|'+state.sous]||(CANPLAST_CONFIG[state.famille]||HGC_CONFIG[state.famille]||CREABETON_CONFIG[state.famille]||{}).photo||null;
   app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a> › <a onclick='state.view="family";render()'>${esc(state.famille)}</a> › <b>${esc(state.sous)}</b></div><div class="banner"><div style="font-size:70px">${esc(base[0]?.icone||'📦')}</div><div><h2>${esc(state.sous)}</h2><p>${base.length} articles · ${Object.keys(groups).length} sous-familles détaillées</p></div>${renderFunnelWidget(state.catalog,state.famille)}</div><div class="sectionTitle">Choisissez une sous-famille détaillée</div><p class="sub2Note">Ce niveau apparaît uniquement quand il y a assez d’articles pour que le classement soit utile.</p><div class="subgrid">${Object.entries(groups).sort((a,b)=>level2SortInduni(a[0],b[0])).map(([s,it])=>{const kind=level4KindInduni(state.sous,s,it);const onclick=kind?`state.view="level4";state.sous2=${JSON.stringify(s)};state.sous3=null;render()`:`state.view="products";state.sous2=${JSON.stringify(s)};state.sous3=null;render()`;const photo=LEVEL2_PHOTOS[state.famille+'|'+state.sous+'|'+s]||parentPhoto;return `<div class="sub" onclick='${onclick}'>${photo?`<div class="subPhoto" style="background-image:url(${photo})"></div>`:''}<b>${esc(s)}</b><p class="muted">${it.length} articles</p></div>`;}).join('')}</div>`;
 }
 

@@ -24,6 +24,11 @@ namespace :catalog do
         email: "william.bouquet@leubahiag.ch", phone: "0041 58 470 66 66",
         address: "Planchettes 1", postal_code: "1032", city: "Romanel-s-Lausanne", country_code: "CH",
         supplier_number: "100123867", ide_number: "CHE-100.123.867", payment_condition: "30 jours 2%"
+      },
+      "CreaBeton" => {
+        email: "info@creabeton.ch", phone: "0848 400 401",
+        address: "Bohler 5", postal_code: "6221", city: "Rickenbach LU", country_code: "CH",
+        supplier_number: "11947"
       }
     }.freeze
 
