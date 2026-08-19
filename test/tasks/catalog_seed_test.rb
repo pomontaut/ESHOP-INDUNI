@@ -38,6 +38,25 @@ class CatalogSeedTaskTest < ActiveSupport::TestCase
     Product.where(reference: "TEST-ORPHAN-999").delete_all
   end
 
+  test "catalog:seed keeps a discontinued product still referenced by an order line" do
+    run_seed
+
+    hgc = Supplier.find_by!(name: "HGC")
+    ordered = Product.create!(
+      supplier: hgc, reference: "TEST-ORDERED-999", name: "Article commandé puis discontinué",
+      unit_price: 1.0, famille: "Test", manually_added: false
+    )
+    order = Order.create!(supplier: hgc, number: "TEST-999")
+    OrderLine.create!(order: order, product: ordered, quantity: 1, unit_price: 1.0)
+
+    run_seed
+
+    assert Product.exists?(ordered.id), "a product referenced by an order_line must survive catalog:seed's full refresh"
+  ensure
+    order&.destroy
+    Product.where(reference: "TEST-ORDERED-999").delete_all
+  end
+
   private
 
   def run_seed

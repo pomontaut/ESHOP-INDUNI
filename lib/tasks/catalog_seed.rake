@@ -92,13 +92,18 @@ namespace :catalog do
       # as a full refresh (items missing from the current JSON are discontinued).
       # Products confirmed live from a devis import (manually_added: true)
       # aren't part of the JSON and are excluded from this cleanup, or every
-      # deploy would silently wipe them out.
+      # deploy would silently wipe them out. A discontinued product referenced
+      # by a past order is kept too (deleting it would violate the order_lines
+      # foreign key and abort every subsequent boot, as happened in production).
       [ "HGC", "Leuba HIAG" ].each do |catalog|
         supplier_id = supplier_ids[catalog]
         next unless supplier_id
 
         current_refs = items.select { |it| it["catalog"] == catalog }.map { |it| it["article"] }.to_set
-        Product.where(supplier_id: supplier_id, manually_added: false).where.not(reference: current_refs.to_a).delete_all
+        Product.where(supplier_id: supplier_id, manually_added: false)
+               .where.not(reference: current_refs.to_a)
+               .where.not(id: OrderLine.select(:product_id))
+               .delete_all
       end
     end
 
