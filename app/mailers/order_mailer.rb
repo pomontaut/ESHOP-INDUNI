@@ -1,10 +1,13 @@
 class OrderMailer < ApplicationMailer
-  def send_order(order, pdf_content = nil, to: nil, cc: nil)
+  DEFAULT_BODY = "Bonjour,\n\nVeuillez trouver ci-joint le bon de commande.\n\nMerci de bien vouloir nous faire parvenir votre confirmation de commande dans les plus brefs délais.\n\nRestant à votre disposition pour toute information complémentaire.\n\nCordialement\nINDUNI & Cie SA\nAvenue des Grandes-Communes 6\n1213 Petit-Lancy"
+
+  def send_order(order, pdf_content = nil, to: nil, cc: nil, subject: nil, body: nil)
     @order = order
+    @body  = body.presence || DEFAULT_BODY
     if pdf_content
       attachments["commande_#{@order.number}.pdf"] = { mime_type: "application/pdf", content: pdf_content }
     end
-    mail(to: to.presence || @order.supplier.email, cc: cc.presence, subject: "Commande #{@order.number}")
+    mail(to: to.presence || @order.supplier.email, cc: cc.presence, subject: subject.presence || "Commande #{@order.number}")
   end
 
   def send_order_plain(order)

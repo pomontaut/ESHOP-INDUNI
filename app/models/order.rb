@@ -23,9 +23,18 @@ class Order < ApplicationRecord
 
   before_create :set_number
 
-  def set_number
-    last = Order.where("number LIKE 'ESHOP_%'").order(:id).last
+  # Also used to preview the number a not-yet-created order will get (see
+  # Api::OrdersController#next_number), so the "Vérifier et envoyer" step can
+  # show/let the user edit the real subject before sending. Racy under
+  # concurrent submissions — purely cosmetic if two land at once, since the
+  # actual number is still assigned atomically by set_number on save.
+  def self.next_number
+    last = where("number LIKE 'ESHOP_%'").order(:id).last
     seq = last ? last.number.gsub("ESHOP_", "").to_i + 1 : 1
-    self.number = "ESHOP_#{seq.to_s.rjust(2, '0')}"
+    "ESHOP_#{seq.to_s.rjust(2, '0')}"
+  end
+
+  def set_number
+    self.number = self.class.next_number
   end
 end

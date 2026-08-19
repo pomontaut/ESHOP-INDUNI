@@ -25,6 +25,34 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to login_path
   end
 
+  test "next_number previews the number the next order will get" do
+    get next_number_api_orders_url
+    assert_response :success
+    predicted = JSON.parse(response.body)["number"]
+    assert_match(/\AESHOP_\d+\z/, predicted)
+
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+    }
+    assert_equal predicted, JSON.parse(response.body)["order_number"]
+  end
+
+  test "create uses a custom subject and body when provided" do
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      subject: "Titre personnalisé", body: "Corps personnalisé du message.",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+    }
+    assert_response :success
+
+    mail = ActionMailer::Base.deliveries.last
+    assert_equal "Titre personnalisé", mail.subject
+    body = mail.text_part ? mail.text_part.body.to_s : mail.body.to_s
+    assert_match(/Corps personnalisé du message\./, body)
+    assert_no_match(/RÉSUMÉ DE LA COMMANDE/, body)
+  end
+
   test "create sends the order to an overridden recipient and cc when provided" do
     post api_orders_url, params: {
       chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",

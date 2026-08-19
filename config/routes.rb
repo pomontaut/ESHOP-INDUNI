@@ -12,7 +12,7 @@ Rails.application.routes.draw do
   end
   namespace :api do
     resources :orders, only: [ :create, :index ] do
-      collection { post :preview_pdf }
+      collection { post :preview_pdf; get :next_number }
     end
     resources :products, only: [ :index ]
     resources :devis_imports, only: [ :create ] do

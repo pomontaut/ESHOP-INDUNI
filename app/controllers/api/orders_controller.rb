@@ -1,6 +1,12 @@
 class Api::OrdersController < ApplicationController
   skip_before_action :verify_authenticity_token
 
+  # Lets the client show/pre-fill the real order number in the "Vérifier et
+  # envoyer" step before the order actually exists. See Order.next_number.
+  def next_number
+    render json: { number: Order.next_number }
+  end
+
   def index
     orders = current_user&.admin? ? Order.all : Order.where(user: current_user)
     orders = orders.includes(:supplier, :order_lines, :user).order(created_at: :desc).limit(100)
@@ -106,13 +112,15 @@ class Api::OrdersController < ApplicationController
       }, status: :ok
     else
       # Send the order directly to the supplier, with the bon de commande PDF
-      # attached. `to`/`cc` let the user override/complete the recipients from
-      # the "Vérifier et envoyer" confirmation step (verified address, extra
-      # people in copy) instead of always defaulting to the supplier's email.
+      # attached. `to`/`cc`/`subject`/`body` let the user override the
+      # recipients and message from the "Vérifier et envoyer" confirmation
+      # step instead of always using the generic defaults.
       to = sanitize_email_list(params[:to])
       cc = sanitize_email_list(params[:cc])
+      subject = params[:subject].to_s.strip.presence
+      body    = params[:body].to_s.strip.presence
       pdf_content = render_order_pdf(order)
-      OrderMailer.send_order(order, pdf_content, to: to, cc: cc).deliver_now
+      OrderMailer.send_order(order, pdf_content, to: to, cc: cc, subject: subject, body: body).deliver_now
       render json: {
         success:        true,
         needs_approval: false,

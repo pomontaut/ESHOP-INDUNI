@@ -129,7 +129,7 @@
 <option>CHALLANDE</option>
 </select>
 </div>
-<label>Adresse de livraison *</label><textarea id="adresse" required placeholder="Rue, numéro&#10;NPA Localité"></textarea><div class="cols"><div><label>Nom du contact *</label><input id="contact" required placeholder="Prénom Nom"></div><div><label>Téléphone *</label><input id="phone" required placeholder="+41 79 000 00 00"></div></div><div id="canplastOptionsBlock" style="margin:4px 0 16px;padding:12px;border:1px solid #d8dde6;border-radius:10px;background:#fff7ed"><b>Option Canplast</b><br><label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700"><input id="canplastCrane" type="checkbox" style="width:auto;margin:0" onchange="updateCart()"> Déchargement avec grue Canplast (+ CHF 80 / place)</label><small>Tarif de livraison selon la commune renseignée ci-dessus, franco dès CHF 2’000, RPLP 2.2% en sus.</small></div><div id="creabetonOptionsBlock" style="margin:4px 0 16px;padding:12px;border:1px solid #d8dde6;border-radius:10px;background:#fff7ed"><b>Option CreaBeton</b><br><label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700"><input id="creabetonCrane" type="checkbox" style="width:auto;margin:0" onchange="updateCart()"> Déchargement grue CreaBeton, 2T max, 4m rayon (+ CHF 19.00)</label><small>Participation frais de transport selon le poids total du panier (indicatif ci-dessus) : CHF 260.00 jusqu'à 3t, CHF 210.00 de 3 à 8t, CHF 160.00 de 8 à 14t.</small></div><label>Remarques</label><textarea id="remarks" placeholder="Horaires, accès, etc."></textarea><div class="actions"><button type="button" class="secondary" onclick="closeModal('orderModal')">Annuler</button><button type="button" class="primary" style="background:#0b4f9c;border:0" onclick="previewOrder(event)">👁 Prévisualisation</button><button type="button" class="primary" style="background:#176b28;border:0" onclick="sendOrderByEmail(event)">📧 Envoyer la commande</button><button type="button" class="secondary" title="Télécharge le bon de commande et ouvre un brouillon dans votre messagerie (Outlook), à défaut d'un envoi automatique." onclick="downloadOrder(event)">✉️ Ouvrir dans Outlook</button></div></form></div></div><div class="modal" id="sendConfirmModal"><div class="modalBox"><div class="modalHead">Vérifier et envoyer <button onclick="closeModal('sendConfirmModal')">×</button></div><div class="form"><p style="margin:0 0 12px">La commande <strong id="confirmOrderNumber"></strong> va être envoyée par email au fournisseur, avec le bon de commande en pièce jointe (PDF).</p><div id="confirmModifyNote" style="display:none;margin:0 0 12px;padding:10px 12px;border-radius:8px;background:#fff7ed;color:#b45309;font-size:13px">⚠ Cette commande modifie une commande déjà envoyée. Un e-mail détaillant les changements sera envoyé aux administrateurs.</div><label style="display:block;font-weight:700;margin-bottom:6px">Destinataire (À)</label><input id="confirmSupplierEmail" type="email" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px" placeholder="contact@fournisseur.ch"><label style="display:block;font-weight:700;margin-bottom:6px">Copie (Cc) — facultatif, séparez plusieurs adresses par une virgule</label><input id="confirmCcEmail" type="text" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px" placeholder="technicien@induni.ch, autre@induni.ch"><button type="button" class="miniBtn gray" onclick="previewPendingOrder()" style="margin-bottom:12px">👁 Aperçu du bon de commande</button><p style="font-size:12px;color:#6b7280;margin:0 0 16px">Vérifiez le destinataire, la copie et l'aperçu avant de confirmer — vous pouvez tout modifier ci-dessus.</p><div class="actions"><button type="button" class="secondary" onclick="closeModal('sendConfirmModal')">Annuler</button><button id="confirmSendBtn" type="button" class="primary" style="background:#176b28;border:0" onclick="confirmSendOrder()">📧 Confirmer et envoyer</button></div></div></div></div><div class="modal" id="genericModal"><div class="modalBox"><div class="modalHead orange">Créer un article générique <button onclick="closeModal('genericModal')">×</button></div><form class="form" onsubmit="addGeneric(event)"><label>Descriptif *</label><textarea id="genDesc" required placeholder="Ex. Tuyau spécial sur mesure..."></textarea><label>N° article / Référence</label><input id="genArticle" placeholder="Laisser vide si inconnu"><label>Prix unitaire CHF *</label><input id="genPrice" type="number" step="0.01" min="0" required placeholder="0.00"><div class="actions"><button type="button" class="secondary" onclick="closeModal('genericModal')">Annuler</button><button class="primary">+ Ajouter au panier</button></div></form></div></div><div class="modal" id="devisModal"><div class="modalBox" style="width:min(920px,95vw)"><div class="modalHead" style="background:#7c3aed">Importer un devis fournisseur <button onclick="closeModal('devisModal')">×</button></div><div class="form"><label>Fournisseur</label><select id="devisSupplierSelect"><option value="HGC">HGC</option><option value="Canplast">Canplast</option><option value="Leuba HIAG">Leuba HIAG</option></select><label>Fichier PDF du devis</label><input type="file" id="devisFileInput" accept="application/pdf"><div class="actions" style="margin-top:14px"><button type="button" class="secondary" onclick="closeModal('devisModal')">Fermer</button><button type="button" class="primary" id="devisAnalyzeBtn" onclick="analyzeDevis()">Analyser le devis</button></div><div id="devisResults" style="margin-top:18px"></div></div></div></div><script>
+<label>Adresse de livraison *</label><textarea id="adresse" required placeholder="Rue, numéro&#10;NPA Localité"></textarea><div class="cols"><div><label>Nom du contact *</label><input id="contact" required placeholder="Prénom Nom"></div><div><label>Téléphone *</label><input id="phone" required placeholder="+41 79 000 00 00"></div></div><div id="canplastOptionsBlock" style="margin:4px 0 16px;padding:12px;border:1px solid #d8dde6;border-radius:10px;background:#fff7ed"><b>Option Canplast</b><br><label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700"><input id="canplastCrane" type="checkbox" style="width:auto;margin:0" onchange="updateCart()"> Déchargement avec grue Canplast (+ CHF 80 / place)</label><small>Tarif de livraison selon la commune renseignée ci-dessus, franco dès CHF 2’000, RPLP 2.2% en sus.</small></div><div id="creabetonOptionsBlock" style="margin:4px 0 16px;padding:12px;border:1px solid #d8dde6;border-radius:10px;background:#fff7ed"><b>Option CreaBeton</b><br><label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700"><input id="creabetonCrane" type="checkbox" style="width:auto;margin:0" onchange="updateCart()"> Déchargement grue CreaBeton, 2T max, 4m rayon (+ CHF 19.00)</label><small>Participation frais de transport selon le poids total du panier (indicatif ci-dessus) : CHF 260.00 jusqu'à 3t, CHF 210.00 de 3 à 8t, CHF 160.00 de 8 à 14t.</small></div><label>Remarques</label><textarea id="remarks" placeholder="Horaires, accès, etc."></textarea><div class="actions"><button type="button" class="secondary" onclick="closeModal('orderModal')">Annuler</button><button type="button" class="primary" style="background:#0b4f9c;border:0" onclick="previewOrder(event)">👁 Prévisualisation</button><button type="button" class="primary" style="background:#176b28;border:0" onclick="sendOrderByEmail(event)">📧 Envoyer la commande</button></div></form></div></div><div class="modal" id="sendConfirmModal"><div class="modalBox"><div class="modalHead">Vérifier et envoyer <button onclick="closeModal('sendConfirmModal')">×</button></div><div class="form"><p style="margin:0 0 12px">La commande <strong id="confirmOrderNumber"></strong> va être envoyée par email au fournisseur, avec le bon de commande en pièce jointe (PDF).</p><div id="confirmModifyNote" style="display:none;margin:0 0 12px;padding:10px 12px;border-radius:8px;background:#fff7ed;color:#b45309;font-size:13px">⚠ Cette commande modifie une commande déjà envoyée. Un e-mail détaillant les changements sera envoyé aux administrateurs.</div><label style="display:block;font-weight:700;margin-bottom:6px">Destinataire (À)</label><input id="confirmSupplierEmail" type="email" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px" placeholder="contact@fournisseur.ch"><label style="display:block;font-weight:700;margin-bottom:6px">Copie (Cc) — facultatif, séparez plusieurs adresses par une virgule</label><input id="confirmCcEmail" type="text" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px" placeholder="technicien@induni.ch, autre@induni.ch"><label style="display:block;font-weight:700;margin-bottom:6px">Titre de l'e-mail</label><input id="confirmSubject" type="text" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px"><label style="display:block;font-weight:700;margin-bottom:6px">Texte de la commande</label><textarea id="confirmBody" rows="7" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px;font-family:inherit;resize:vertical"></textarea><button type="button" class="miniBtn gray" onclick="previewPendingOrder()" style="margin-bottom:12px">👁 Aperçu du bon de commande (PDF)</button><p style="font-size:12px;color:#6b7280;margin:0 0 16px">Vérifiez le destinataire, la copie, le titre, le texte et l'aperçu avant de confirmer — vous pouvez tout modifier ci-dessus.</p><div class="actions"><button type="button" class="secondary" onclick="closeModal('sendConfirmModal')">Annuler</button><button id="confirmSendBtn" type="button" class="primary" style="background:#176b28;border:0" onclick="confirmSendOrder()">📧 Confirmer et envoyer</button></div></div></div></div><div class="modal" id="genericModal"><div class="modalBox"><div class="modalHead orange">Créer un article générique <button onclick="closeModal('genericModal')">×</button></div><form class="form" onsubmit="addGeneric(event)"><label>Descriptif *</label><textarea id="genDesc" required placeholder="Ex. Tuyau spécial sur mesure..."></textarea><label>N° article / Référence</label><input id="genArticle" placeholder="Laisser vide si inconnu"><label>Prix unitaire CHF *</label><input id="genPrice" type="number" step="0.01" min="0" required placeholder="0.00"><div class="actions"><button type="button" class="secondary" onclick="closeModal('genericModal')">Annuler</button><button class="primary">+ Ajouter au panier</button></div></form></div></div><div class="modal" id="devisModal"><div class="modalBox" style="width:min(920px,95vw)"><div class="modalHead" style="background:#7c3aed">Importer un devis fournisseur <button onclick="closeModal('devisModal')">×</button></div><div class="form"><label>Fournisseur</label><select id="devisSupplierSelect"><option value="HGC">HGC</option><option value="Canplast">Canplast</option><option value="Leuba HIAG">Leuba HIAG</option></select><label>Fichier PDF du devis</label><input type="file" id="devisFileInput" accept="application/pdf"><div class="actions" style="margin-top:14px"><button type="button" class="secondary" onclick="closeModal('devisModal')">Fermer</button><button type="button" class="primary" id="devisAnalyzeBtn" onclick="analyzeDevis()">Analyser le devis</button></div><div id="devisResults" style="margin-top:18px"></div></div></div></div><script>
 const CANPLAST_FAMILY_ORDER=['Canalisations PE/HDPE','Canalisations PP','Canalisations PVC','Chambres & Regards','Fournitures & Divers','Protection Câbles'];function familySortInduni(a,b){if(state.catalog==='Canplast'){const ia=CANPLAST_FAMILY_ORDER.indexOf(a),ib=CANPLAST_FAMILY_ORDER.indexOf(b);return (ia===-1?999:ia)-(ib===-1?999:ib)}return String(a).localeCompare(String(b),'fr')}
 let PRODUCTS=[];
 function initProducts(list){
@@ -1057,7 +1057,6 @@ function equivalentBlock(p){
 
 function getOrderHistory(){if(window._serverOrders&&window._serverOrders.length>=0)return window._serverOrders;try{return JSON.parse(localStorage.getItem('induni_orders_v1')||'[]')}catch(e){return []}}
 function setOrderHistory(list){localStorage.setItem('induni_orders_v1',JSON.stringify(list.slice(0,80)))}
-function saveOrderRecord(record){const list=getOrderHistory(); list.unshift(record); setOrderHistory(list)}
 function openSavedOrder(id){const rec=getOrderHistory().find(o=>o.no===id); if(!rec){alert('Commande introuvable dans ce navigateur.');return} const w=window.open('','_blank'); w.document.open(); w.document.write(rec.html||'<p>Commande non disponible.</p>'); w.document.close();}
 function deleteSavedOrder(id){if(!confirm('Supprimer cette commande du dashboard local ?'))return; setOrderHistory(getOrderHistory().filter(o=>o.no!==id)); render();}
 function exportEshopGapCsv(){
@@ -1072,13 +1071,6 @@ function exportEshopGapCsv(){
 function exportOrdersCsv(){const rows=getOrderHistory(); const header=['No commande','Date','Fournisseur','Chantier','Montant CHF','Nb lignes']; const csv=[header].concat(rows.map(o=>[o.no,o.date,o.supplier,o.chantier,o.total,o.items?.length||0])).map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='dashboard_commandes_induni.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function renderDashboard(){const rows=getOrderHistory(); const isAdmin=window._userPerms&&window._userPerms.admin; const total=rows.reduce((s,o)=>s+Number(o.total||0),0); const avg=rows.length?total/rows.length:0; const last=rows[0]?.date||'-'; const colSpan=isAdmin?7:6; const adminHeader=isAdmin?'<th>R&eacute;dacteur</th>':''; const adminCell=(o)=>isAdmin?`<td class="small">${esc(o.user_name||'')}</td>`:''; app.innerHTML=`<div class="crumbs"><a onclick="goHome()">&#127968; Accueil</a> &rsaquo; Dashboard commandes</div><div class="toolbar"><h2>Dashboard commandes</h2><button class="miniBtn gray" onclick="exportOrdersCsv()">Exporter CSV</button></div><div class="dashboardCards"><div class="kpi"><small>Commandes</small><b>${rows.length}</b></div><div class="kpi"><small>Montant total</small><b>${fmt(total)}</b></div><div class="kpi"><small>Panier moyen</small><b>${fmt(avg)}</b></div><div class="kpi"><small>Derni&egrave;re commande</small><b style="font-size:22px">${esc(last)}</b></div></div><table class="dashTable"><thead><tr><th>N&deg; commande</th><th>Date</th><th>Fournisseur</th><th>N&deg; chantier</th><th>Montant</th>${adminHeader}<th>Statut</th></tr></thead><tbody>${rows.length?rows.map(o=>`<tr><td><b>${esc(o.no)}</b></td><td>${esc(o.date)}</td><td>${esc(o.supplier)}</td><td>${esc(o.chantier)}</td><td><b>${fmt(Number(o.total||0))}</b></td>${adminCell(o)}<td>${esc(o.status||'—')}</td></tr>`).join(''):`<tr><td colspan="${colSpan}">Aucune commande pour l'instant.</td></tr>`}</tbody></table>`}
 function renderAnalysis(){const rows=getOrderHistory(); const isAdmin=window._userPerms&&window._userPerms.admin; const total=rows.reduce((s,o)=>s+Number(o.total||0),0); const bySup={}; const bySite={}; const bySector={}; const articles={}; rows.forEach(o=>{bySup[o.supplier]=(bySup[o.supplier]||0)+Number(o.total||0); bySite[o.chantier]=(bySite[o.chantier]||0)+Number(o.total||0); if(o.user_sector){bySector[o.user_sector]=(bySector[o.user_sector]||0)+Number(o.total||0);} (o.items||[]).forEach(i=>{const k=(i.article||'')+' '+(i.designation||''); articles[k]=(articles[k]||0)+Number(i.prix||0)*Number(i.qty||0);});}); const maxSup=Math.max(1,...Object.values(bySup)); const supRows=Object.entries(bySup).sort((a,b)=>b[1]-a[1]); const artRows=Object.entries(articles).sort((a,b)=>b[1]-a[1]).slice(0,10); const sectorRows=Object.entries(bySector).sort((a,b)=>b[1]-a[1]); const maxSector=Math.max(1,...Object.values(bySector)); const sectorBlock=isAdmin&&sectorRows.length?`<div class="analysisBlock"><h3>Dépenses par secteur</h3>${sectorRows.map(([k,v])=>`<div class="barRow"><b>${esc(k)}</b><div class="barOuter"><div class="barInner" style="width:${Math.round(v/maxSector*100)}%"></div></div><span>${fmt(v)}</span></div>`).join('')}</div>`:''; app.innerHTML=`<div class="crumbs"><a onclick="goHome()">&#127968; Accueil</a> &rsaquo; Analyse achat</div><div class="toolbar"><h2>Analyse achat</h2><p class="muted">Indicateurs calculés sur les commandes enregistrées${isAdmin?' (toutes les équipes)':' (vos commandes)'}.</p></div><div class="dashboardCards"><div class="kpi"><small>Dépense totale</small><b>${fmt(total)}</b></div><div class="kpi"><small>Nombre de commandes</small><b>${rows.length}</b></div><div class="kpi"><small>Panier moyen</small><b>${fmt(rows.length?total/rows.length:0)}</b></div><div class="kpi"><small>Fournisseur principal</small><b style="font-size:22px">${esc(supRows[0]?.[0]||'-')}</b></div></div><div class="analysisBlock"><h3>Dépenses par fournisseur</h3>${supRows.length?supRows.map(([k,v])=>`<div class="barRow"><b>${esc(k)}</b><div class="barOuter"><div class="barInner" style="width:${Math.round(v/maxSup*100)}%"></div></div><span>${fmt(v)}</span></div>`).join(''):'<p class="muted">Aucune donnée.</p>'}</div>${sectorBlock}<div class="analysisBlock"><h3>Top articles commandés</h3><table class="dashTable"><thead><tr><th>Article</th><th>Montant</th></tr></thead><tbody>${artRows.length?artRows.map(([k,v])=>`<tr><td>${esc(k)}</td><td><b>${fmt(v)}</b></td></tr>`).join(''):'<tr><td colspan="2" class="muted">Aucune donnée.</td></tr>'}</tbody></table></div><div class="analysisBlock"><h3>Actions achats proposées</h3><p>1. Suivre les fournisseurs les plus utilisés et renégocier les familles à volume élevé.</p><p>2. Contrôler les commandes sans équivalent détecté pour identifier les achats spécifiques.</p><p>3. Utiliser le comparatif fournisseur avant validation pour réduire les écarts de prix.</p></div>`}
-function openOutlookDraft(no,chantier,supplier,cc){
-  const to=encodeURIComponent((SUPPLIER_INFO[supplier]&&SUPPLIER_INFO[supplier].email)||'');
-  const subject=encodeURIComponent('Bon de commande '+no+' - chantier '+chantier);
-  const body=encodeURIComponent('Bonjour,\n\nVeuillez trouver ci-joint le bon de commande n° '+no+' pour le chantier '+chantier+'.\n\nMerci de bien vouloir nous faire parvenir votre confirmation de commande dans les plus brefs délais.\n\nRestant à votre disposition pour toute information complémentaire.\n\nCordialement\nINDUNI & Cie SA\nAvenue des Grandes-Communes 6\n1213 Petit-Lancy');
-  const ccParam=cc?'&cc='+encodeURIComponent(cc):'';
-  window.location.href='mailto:'+to+'?subject='+subject+ccParam+'&body='+body;
-}
 
 function piecePriceHtmlInduni(p){
   if(!isTuyauContextInduni(p.sousFamille,p.sousSousFamille)&&!normEqText(p.famille||'').includes('tuyau')) return '';
@@ -1556,53 +1548,7 @@ function confirmNomenclature(id){
     })
     .catch(()=>alert('Erreur réseau.'));
 }
-async function blobToBase64(blob){
-  const buf=await blob.arrayBuffer();
-  const bytes=new Uint8Array(buf);
-  let binary='';
-  const chunk=0x8000;
-  for(let i=0;i<bytes.length;i+=chunk) binary+=String.fromCharCode.apply(null,bytes.subarray(i,i+chunk));
-  return btoa(binary);
-}
-function utf8ToBase64(str){return btoa(unescape(encodeURIComponent(str)))}
-function encodeMimeHeader(str){return '=?UTF-8?B?'+utf8ToBase64(str)+'?='}
-function base64WithLineBreaks(base64){return base64.match(/.{1,76}/g).join('\r\n')}
-// Un mailto: ne peut jamais transporter de pièce jointe (limitation navigateur/OS
-// incontournable). On génère à la place un fichier .eml (message e-mail complet,
-// au format standard) avec le PDF déjà encodé en pièce jointe : un double-clic
-// dessus l'ouvre directement dans Outlook, prêt à envoyer.
-function buildEmlWithAttachment({to,cc,subject,body,pdfBase64,pdfFilename}){
-  const boundary='----=_INDUNI_'+Date.now();
-  const lines=['To: '+to];
-  if(cc) lines.push('Cc: '+cc);
-  lines.push('Subject: '+encodeMimeHeader(subject));
-  lines.push('MIME-Version: 1.0');
-  lines.push('Content-Type: multipart/mixed; boundary="'+boundary+'"');
-  lines.push('');
-  lines.push('--'+boundary);
-  lines.push('Content-Type: text/plain; charset="UTF-8"');
-  lines.push('Content-Transfer-Encoding: 8bit');
-  lines.push('');
-  lines.push(body);
-  lines.push('');
-  lines.push('--'+boundary);
-  lines.push('Content-Type: application/pdf; name="'+pdfFilename+'"');
-  lines.push('Content-Disposition: attachment; filename="'+pdfFilename+'"');
-  lines.push('Content-Transfer-Encoding: base64');
-  lines.push('');
-  lines.push(base64WithLineBreaks(pdfBase64));
-  lines.push('');
-  lines.push('--'+boundary+'--');
-  lines.push('');
-  return lines.join('\r\n');
-}
-function downloadEml(emlContent,filename){
-  const blob=new Blob([emlContent],{type:'message/rfc822'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-}
-// Notification discrète (ne bloque pas, pas de clic requis) pour remplacer les
-// alert() qui ajoutaient une étape manuelle à chaque "Ouvrir dans Outlook".
+// Notification discrète (ne bloque pas, pas de clic requis).
 function showToast(msg){
   const el=document.createElement('div');
   el.textContent=msg;
@@ -1617,30 +1563,6 @@ function showToast(msg){
 function chantierTechnicienEmail(nomChantier){
   const c=(window._chantiers||[]).find(x=>x.nom===nomChantier);
   return (c&&c.emailTechnicien)||'';
-}
-async function downloadOrder(e){e.preventDefault(); const chantier=document.getElementById('chantier').value, delai=document.getElementById('delai').value; if(!chantier||!delai){alert('Veuillez remplir le N° de chantier et le délai.');return;} if(!cart.length){alert('Le panier est vide.');return;} const no='BC-'+Math.floor(100000+Math.random()*900000), today=new Date().toLocaleDateString('fr-CH'); const billingMerchant=document.getElementById('billingMerchant')?document.getElementById('billingMerchant').value:''; const sub=cart.reduce((s,i)=>s+i.prix*i.qty,0), supplier=cartSupplier(), tdet=transportDetailsInduni(sub,supplier), total=sub+tdet.totalTransport; if((supplier==='Canplast')&&!billingMerchant){alert('Veuillez choisir le marchand pour facturation.');return;} const rows=cart.map((i,k)=>`<tr><td>${k+1}</td><td><b>${esc(i.designation)}</b><br><small>${esc(i.descriptif)}</small></td><td>${esc(i.article)}</td><td>${i.qty}<br><small>${esc(i.unite)}</small></td><td>${fmt(i.prix)}</td><td><b>${fmt(i.prix*i.qty)}</b></td></tr>`).join(''); const order=buildOrderHtml(no,today,chantier,delai,billingMerchant,supplier,rows,sub,tdet,total); const orderForPdf=buildOrderHtml(no,today,chantier,delai,billingMerchant,supplier,rows,sub,tdet,total,true);
-  let pdfBlob=null;
-  try{
-    const res=await fetch('/api/orders/preview_pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({html:orderForPdf,filename:no+'_bon_de_commande'})});
-    if(res.ok) pdfBlob=await res.blob();
-  }catch(err){ /* pas de réseau / serveur indisponible : on retombe sur mailto + HTML ci-dessous */ }
-  saveOrderRecord({no:no,date:today,supplier:supplier,chantier:chantier,total:total,html:order,items:cart.map(i=>({catalog:i.catalog,article:i.article,designation:i.designation,prix:i.prix,catalogPrix:i.catalogPrix??null,qty:i.qty,unite:i.unite}))});
-  const ccEmail=chantierTechnicienEmail(chantier);
-  if(pdfBlob){
-    const pdfBase64=await blobToBase64(pdfBlob);
-    const supplierEmail=(SUPPLIER_INFO[supplier]&&SUPPLIER_INFO[supplier].email)||'';
-    const body='Bonjour,\n\nVeuillez trouver ci-joint le bon de commande n° '+no+' pour le chantier '+chantier+'.\n\nMerci de bien vouloir nous faire parvenir votre confirmation de commande dans les plus brefs délais.\n\nRestant à votre disposition pour toute information complémentaire.\n\nCordialement\nINDUNI & Cie SA\nAvenue des Grandes-Communes 6\n1213 Petit-Lancy';
-    const eml=buildEmlWithAttachment({to:supplierEmail,cc:ccEmail,subject:'Bon de commande '+no+' - chantier '+chantier,body,pdfBase64,pdfFilename:no+'_bon_de_commande.pdf'});
-    downloadEml(eml,no+'_email_outlook.eml');
-    closeModal('orderModal');
-    showToast('Commande enregistrée. Ouvrez le fichier téléchargé (en bas du navigateur) pour l’ouvrir dans Outlook, prêt à vérifier et envoyer.');
-  }else{
-    const blob=new Blob([order],{type:'text/html;charset=utf-8'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=no+'_bon_de_commande.html'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-    closeModal('orderModal');
-    showToast('Commande enregistrée. Outlook va s’ouvrir avec un message prérempli — pour joindre le PDF, ouvrez le bon téléchargé puis Imprimer / PDF, puis attachez-le dans Outlook.');
-    openOutlookDraft(no,chantier,supplier,ccEmail);
-  }
 }
 function isChantierConsortium(nom){const c=(window._chantiers||[]).find(x=>x.nom===nom); return !!(c&&c.consortium);}
 function buildOrderHtml(no,today,chantier,delai,billingMerchant,supplier,rows,sub,tdet,total,forPdf){
@@ -2311,9 +2233,23 @@ function sendOrderByEmail(e) {
   document.getElementById('confirmOrderNumber').textContent = no;
   document.getElementById('confirmSupplierEmail').value = (SUPPLIER_INFO[supplier] && SUPPLIER_INFO[supplier].email) || '';
   document.getElementById('confirmCcEmail').value = chantierTechnicienEmail(chantier);
+  const subjectEl = document.getElementById('confirmSubject');
+  const placeholderSubject = 'Commande — chantier ' + chantier;
+  subjectEl.value = placeholderSubject;
+  document.getElementById('confirmBody').value = 'Bonjour,\n\nVeuillez trouver ci-joint le bon de commande.\n\nMerci de bien vouloir nous faire parvenir votre confirmation de commande dans les plus brefs délais.\n\nRestant à votre disposition pour toute information complémentaire.\n\nCordialement\nINDUNI & Cie SA\nAvenue des Grandes-Communes 6\n1213 Petit-Lancy';
   const modifyNote = document.getElementById('confirmModifyNote');
   if (modifyNote) modifyNote.style.display = _modifyingOrderId ? 'block' : 'none';
   openModal('sendConfirmModal');
+
+  // Le vrai numéro (ESHOP_xx) n'est attribué qu'à la création de la commande
+  // côté serveur : on va chercher une prévision pour préremplir le titre
+  // sans bloquer l'ouverture de la fenêtre. Ne touche pas au champ si
+  // l'utilisateur l'a déjà modifié entre-temps.
+  fetch('/api/orders/next_number').then(r => r.json()).then(data => {
+    if (data.number && subjectEl.value === placeholderSubject) {
+      subjectEl.value = 'Commande ' + data.number;
+    }
+  }).catch(() => {});
 }
 
 function previewPendingOrder(){
@@ -2328,6 +2264,8 @@ async function confirmSendOrder() {
   if (!_pendingOrder) { closeModal('sendConfirmModal'); return; }
   const to = document.getElementById('confirmSupplierEmail').value.trim();
   const cc = document.getElementById('confirmCcEmail').value.trim();
+  const subject = document.getElementById('confirmSubject').value.trim();
+  const body = document.getElementById('confirmBody').value.trim();
   if (!to) { alert('Veuillez indiquer une adresse e-mail de destinataire.'); return; }
 
   const btn = document.getElementById('confirmSendBtn');
@@ -2341,7 +2279,7 @@ async function confirmSendOrder() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chantier: p.chantier, delai: p.delai, adresse: p.adresse, contact: p.contact, phone: p.phone, remarks: p.remarks,
-        supplier: p.supplier, to, cc, items: p.items, modifies_order_id: p.modifiesOrderId || null
+        supplier: p.supplier, to, cc, subject, body, items: p.items, modifies_order_id: p.modifiesOrderId || null
       })
     });
     const text = await res.text();
