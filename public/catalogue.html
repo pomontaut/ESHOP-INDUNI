@@ -1031,6 +1031,15 @@ function setOrderHistory(list){localStorage.setItem('induni_orders_v1',JSON.stri
 function saveOrderRecord(record){const list=getOrderHistory(); list.unshift(record); setOrderHistory(list)}
 function openSavedOrder(id){const rec=getOrderHistory().find(o=>o.no===id); if(!rec){alert('Commande introuvable dans ce navigateur.');return} const w=window.open('','_blank'); w.document.open(); w.document.write(rec.html||'<p>Commande non disponible.</p>'); w.document.close();}
 function deleteSavedOrder(id){if(!confirm('Supprimer cette commande du dashboard local ?'))return; setOrderHistory(getOrderHistory().filter(o=>o.no!==id)); render();}
+function exportEshopGapCsv(){
+  const lines=window._eshopGapLines||[];
+  const header=['N° commande','Date','Fournisseur','Chantier','Référence','Désignation','Qté','Unité','Prix e-shop (u.)','Prix devis (u.)','Gain CHF','Gain %'];
+  const csv=[header].concat(lines.map(l=>[l.no,l.date,l.supplier,l.chantier,l.article,l.designation,l.qty,l.unite,l.catalogPrice.toFixed(2),l.paidPrice.toFixed(2),l.gainTotal.toFixed(2),l.gainPct.toFixed(1)]))
+    .map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ecart_prix_devis_eshop_induni.csv'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
 function exportOrdersCsv(){const rows=getOrderHistory(); const header=['No commande','Date','Fournisseur','Chantier','Montant CHF','Nb lignes']; const csv=[header].concat(rows.map(o=>[o.no,o.date,o.supplier,o.chantier,o.total,o.items?.length||0])).map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='dashboard_commandes_induni.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function renderDashboard(){const rows=getOrderHistory(); const isAdmin=window._userPerms&&window._userPerms.admin; const total=rows.reduce((s,o)=>s+Number(o.total||0),0); const avg=rows.length?total/rows.length:0; const last=rows[0]?.date||'-'; const colSpan=isAdmin?7:6; const adminHeader=isAdmin?'<th>R&eacute;dacteur</th>':''; const adminCell=(o)=>isAdmin?`<td class="small">${esc(o.user_name||'')}</td>`:''; app.innerHTML=`<div class="crumbs"><a onclick="goHome()">&#127968; Accueil</a> &rsaquo; Dashboard commandes</div><div class="toolbar"><h2>Dashboard commandes</h2><button class="miniBtn gray" onclick="exportOrdersCsv()">Exporter CSV</button></div><div class="dashboardCards"><div class="kpi"><small>Commandes</small><b>${rows.length}</b></div><div class="kpi"><small>Montant total</small><b>${fmt(total)}</b></div><div class="kpi"><small>Panier moyen</small><b>${fmt(avg)}</b></div><div class="kpi"><small>Derni&egrave;re commande</small><b style="font-size:22px">${esc(last)}</b></div></div><table class="dashTable"><thead><tr><th>N&deg; commande</th><th>Date</th><th>Fournisseur</th><th>N&deg; chantier</th><th>Montant</th>${adminHeader}<th>Statut</th></tr></thead><tbody>${rows.length?rows.map(o=>`<tr><td><b>${esc(o.no)}</b></td><td>${esc(o.date)}</td><td>${esc(o.supplier)}</td><td>${esc(o.chantier)}</td><td><b>${fmt(Number(o.total||0))}</b></td>${adminCell(o)}<td>${esc(o.status||'—')}</td></tr>`).join(''):`<tr><td colspan="${colSpan}">Aucune commande pour l'instant.</td></tr>`}</tbody></table>`}
 function renderAnalysis(){const rows=getOrderHistory(); const isAdmin=window._userPerms&&window._userPerms.admin; const total=rows.reduce((s,o)=>s+Number(o.total||0),0); const bySup={}; const bySite={}; const bySector={}; const articles={}; rows.forEach(o=>{bySup[o.supplier]=(bySup[o.supplier]||0)+Number(o.total||0); bySite[o.chantier]=(bySite[o.chantier]||0)+Number(o.total||0); if(o.user_sector){bySector[o.user_sector]=(bySector[o.user_sector]||0)+Number(o.total||0);} (o.items||[]).forEach(i=>{const k=(i.article||'')+' '+(i.designation||''); articles[k]=(articles[k]||0)+Number(i.prix||0)*Number(i.qty||0);});}); const maxSup=Math.max(1,...Object.values(bySup)); const supRows=Object.entries(bySup).sort((a,b)=>b[1]-a[1]); const artRows=Object.entries(articles).sort((a,b)=>b[1]-a[1]).slice(0,10); const sectorRows=Object.entries(bySector).sort((a,b)=>b[1]-a[1]); const maxSector=Math.max(1,...Object.values(bySector)); const sectorBlock=isAdmin&&sectorRows.length?`<div class="analysisBlock"><h3>Dépenses par secteur</h3>${sectorRows.map(([k,v])=>`<div class="barRow"><b>${esc(k)}</b><div class="barOuter"><div class="barInner" style="width:${Math.round(v/maxSector*100)}%"></div></div><span>${fmt(v)}</span></div>`).join('')}</div>`:''; app.innerHTML=`<div class="crumbs"><a onclick="goHome()">&#127968; Accueil</a> &rsaquo; Analyse achat</div><div class="toolbar"><h2>Analyse achat</h2><p class="muted">Indicateurs calculés sur les commandes enregistrées${isAdmin?' (toutes les équipes)':' (vos commandes)'}.</p></div><div class="dashboardCards"><div class="kpi"><small>Dépense totale</small><b>${fmt(total)}</b></div><div class="kpi"><small>Nombre de commandes</small><b>${rows.length}</b></div><div class="kpi"><small>Panier moyen</small><b>${fmt(rows.length?total/rows.length:0)}</b></div><div class="kpi"><small>Fournisseur principal</small><b style="font-size:22px">${esc(supRows[0]?.[0]||'-')}</b></div></div><div class="analysisBlock"><h3>Dépenses par fournisseur</h3>${supRows.length?supRows.map(([k,v])=>`<div class="barRow"><b>${esc(k)}</b><div class="barOuter"><div class="barInner" style="width:${Math.round(v/maxSup*100)}%"></div></div><span>${fmt(v)}</span></div>`).join(''):'<p class="muted">Aucune donnée.</p>'}</div>${sectorBlock}<div class="analysisBlock"><h3>Top articles commandés</h3><table class="dashTable"><thead><tr><th>Article</th><th>Montant</th></tr></thead><tbody>${artRows.length?artRows.map(([k,v])=>`<tr><td>${esc(k)}</td><td><b>${fmt(v)}</b></td></tr>`).join(''):'<tr><td colspan="2" class="muted">Aucune donnée.</td></tr>'}</tbody></table></div><div class="analysisBlock"><h3>Actions achats proposées</h3><p>1. Suivre les fournisseurs les plus utilisés et renégocier les familles à volume élevé.</p><p>2. Contrôler les commandes sans équivalent détecté pour identifier les achats spécifiques.</p><p>3. Utiliser le comparatif fournisseur avant validation pour réduire les écarts de prix.</p></div>`}
@@ -1377,10 +1386,16 @@ function renderDevisResults(){
   const rows=devisResultItems.map((it,k)=>{
     const badges=[];
     if(it.generic) badges.push('<span class="tag" style="position:static;background:#f1642a">Article générique</span>');
-    const eshopNote=(it.matched&&it.prix!=null)
-      ?`<div style="margin-top:4px;font-size:12px;color:#555">Article référencé e-shop — prix e-shop (référence) : <b>${fmt(it.prix)}</b> pour information</div>`
+    // Un article déjà référencé au catalogue e-shop ne doit jamais être commandé
+    // plus cher via un devis que le prix e-shop : ça viderait de son sens le
+    // suivi "gain vs e-shop" et reviendrait à payer plus cher que nécessaire.
+    // Le prix saisi est donc plafonné au prix e-shop (voir clampDevisPrice).
+    const hasRefPrice=it.matched&&it.prix!=null;
+    const eshopNote=hasRefPrice
+      ?`<div style="margin-top:4px;font-size:12px;color:#555">Article référencé e-shop — prix e-shop (référence) : <b>${fmt(it.prix)}</b>. Le prix du devis ne peut pas dépasser ce montant.</div><div data-devis-pricewarn="${k}" style="display:none;margin-top:2px;font-size:12px;color:#b91c1c;font-weight:bold">⚠ Prix plafonné au prix e-shop (${fmt(it.prix)}).</div>`
       :'';
-    const priceCell=`<input type="number" step="0.01" min="0" placeholder="0.00" value="${it.devisPrix!=null?Number(it.devisPrix).toFixed(2):(it.prix!=null?Number(it.prix).toFixed(2):'')}" data-devis-price="${k}" style="width:90px;border:1px solid #ddd;border-radius:6px;padding:6px">`;
+    const maxAttr=hasRefPrice?` max="${Number(it.prix)}"`:'';
+    const priceCell=`<input type="number" step="0.01" min="0"${maxAttr} placeholder="0.00" value="${it.devisPrix!=null?Number(it.devisPrix).toFixed(2):(it.prix!=null?Number(it.prix).toFixed(2):'')}" data-devis-price="${k}" oninput="clampDevisPrice(${k})" style="width:90px;border:1px solid #ddd;border-radius:6px;padding:6px">`;
     let catalogRow='';
     if(it.generic&&!it.isSurcharge){
       const options=categoryOptionsForSupplier(it.catalog);
@@ -1399,6 +1414,20 @@ function renderDevisResults(){
   }).join('');
   results.innerHTML=`<div class="sub2Note">${devisResultItems.length} ligne(s) détectée(s). Décoche celles à exclure. Le prix repris pour la commande est celui du devis — modifie-le si besoin.</div><table class="dashTable"><thead><tr><th></th><th>Référence</th><th>Désignation</th><th>Qté</th><th>Prix devis (repris pour la commande)</th></tr></thead><tbody>${rows}</tbody></table><div class="actions" style="margin-top:14px"><button type="button" class="primary" onclick="addDevisItemsToCart()">+ Ajouter la sélection au panier</button></div>`;
 }
+function clampDevisPrice(k){
+  const it=devisResultItems[k];
+  if(!it||!it.matched||it.prix==null) return;
+  const input=document.querySelector(`[data-devis-price="${k}"]`);
+  const warn=document.querySelector(`[data-devis-pricewarn="${k}"]`);
+  if(!input) return;
+  const max=Number(it.prix);
+  if(Number(input.value)>max){
+    input.value=max.toFixed(2);
+    if(warn) warn.style.display='block';
+  } else if(warn){
+    warn.style.display='none';
+  }
+}
 function toggleDevisCategorySelect(k){
   const sel=document.querySelector(`[data-devis-category="${k}"]`);
   const cb=document.querySelector(`[data-devis-unclassified="${k}"]`);
@@ -1413,7 +1442,10 @@ function addDevisItemsToCart(){
     const checkbox=results.querySelector(`[data-devis-check="${k}"]`);
     if(!checkbox||!checkbox.checked) return;
     const priceInput=results.querySelector(`[data-devis-price="${k}"]`);
-    const prix=parseFloat(priceInput&&priceInput.value)||0;
+    let prix=parseFloat(priceInput&&priceInput.value)||0;
+    // Rempart final si le champ a été modifié sans déclencher clampDevisPrice
+    // (ex. collage direct d'une valeur) : jamais plus cher que le prix e-shop.
+    if(it.matched&&it.prix!=null&&prix>Number(it.prix)) prix=Number(it.prix);
     setCartSupplierIfNeeded(it.catalog);
     const existing=cart.find(c=>normalizeSupplierName(c.catalog)===normalizeSupplierName(it.catalog)&&c.article===it.article);
     if(existing){existing.qty=(Number(existing.qty)||0)+(Number(it.qty)||0);}
@@ -1909,6 +1941,29 @@ function renderAnalysis(){
   const eshopKpi=eshopOrders.length?`<div class="kpi"><small>Gain cumulé vs prix e-shop</small><b style="font-size:22px;color:${gainColor}">${fmt(eshopTotalGain)}</b><small>${eshopTotalGainPct.toFixed(1)}%</small></div>`:'';
   const eshopBlock=eshopOrders.length?`<div class="analysisBlock"><h3>Écart prix devis / prix e-shop de référence</h3><p class="muted">Commandes contenant des articles déjà référencés au catalogue e-shop, comparés au prix obtenu sur le devis fournisseur.</p><table class="dashTable"><thead><tr><th>N° commande</th><th>Date</th><th>Fournisseur</th><th>Prix e-shop (référence)</th><th>Prix payé (devis)</th><th>Gain CHF</th><th>Gain %</th></tr></thead><tbody>${eshopOrders.map(o=>`<tr><td><b>${esc(o.no)}</b></td><td>${esc(o.date)}</td><td>${esc(o.supplier)}</td><td>${fmt(o.catalogTotal)}</td><td>${fmt(o.paidTotal)}</td><td style="color:${o.gain>=0?'#176b28':'#b91c1c'}"><b>${fmt(o.gain)}</b></td><td style="color:${o.gain>=0?'#176b28':'#b91c1c'}">${o.gainPct.toFixed(1)}%</td></tr>`).join('')}</tbody></table></div>`:'';
 
+  // Détail par référence (même source que le bloc ci-dessus, mais éclaté ligne
+  // par ligne) : permet d'identifier précisément quels articles ont vu leur
+  // prix baisser (gain positif, en vert) — ou, historiquement, dépasser le
+  // prix e-shop (gain négatif, en rouge ; depuis le plafonnement du prix de
+  // devis dans "Importer un devis", ce cas ne devrait plus se reproduire).
+  const eshopLines=[];
+  rows.forEach(o=>{
+    (o.items||[]).forEach(i=>{
+      if(i.catalogPrix==null) return;
+      const catalogPrice=Number(i.catalogPrix), paidPrice=Number(i.prix||0), qty=Number(i.qty||0);
+      const gainUnit=catalogPrice-paidPrice;
+      eshopLines.push({
+        no:o.no, date:o.date, supplier:o.supplier, chantier:o.chantier,
+        article:i.article||'', designation:i.designation||'', qty, unite:i.unite||'',
+        catalogPrice, paidPrice, gainUnit, gainTotal:gainUnit*qty,
+        gainPct:catalogPrice?gainUnit/catalogPrice*100:0
+      });
+    });
+  });
+  eshopLines.sort((a,b)=>Math.abs(b.gainTotal)-Math.abs(a.gainTotal));
+  window._eshopGapLines=eshopLines;
+  const eshopLinesBlock=eshopLines.length?`<div class="analysisBlock"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h3>Détail par référence — écart prix devis / prix e-shop</h3><button class="miniBtn gray" onclick="exportEshopGapCsv()">Exporter CSV</button></div><p class="muted">Une ligne par article commandé via devis et déjà référencé au catalogue e-shop. Vert = prix devis inférieur au prix e-shop (gain). Rouge = prix devis supérieur (dépassement du prix de référence — désormais bloqué à la saisie du devis).</p><table class="dashTable"><thead><tr><th>N° commande</th><th>Date</th><th>Fournisseur</th><th>Chantier</th><th>Référence</th><th>Désignation</th><th>Qté</th><th>Prix e-shop (u.)</th><th>Prix devis (u.)</th><th>Gain CHF</th><th>Gain %</th></tr></thead><tbody>${eshopLines.map(l=>`<tr><td><b>${esc(l.no)}</b></td><td>${esc(l.date)}</td><td>${esc(l.supplier)}</td><td>${esc(l.chantier)}</td><td><b>${esc(l.article)}</b></td><td>${esc(l.designation)}</td><td>${l.qty} ${esc(l.unite)}</td><td>${fmt(l.catalogPrice)}</td><td>${fmt(l.paidPrice)}</td><td style="color:${l.gainTotal>=0?'#176b28':'#b91c1c'}"><b>${fmt(l.gainTotal)}</b></td><td style="color:${l.gainTotal>=0?'#176b28':'#b91c1c'}">${l.gainPct.toFixed(1)}%</td></tr>`).join('')}</tbody></table></div>`:'';
+
   // Commandes consortium (chantier marqué "consortium") vs Induni seul —
   // isChantierConsortium() croise le nom de chantier de la commande avec la
   // liste des chantiers chargée via /api/me.
@@ -1920,7 +1975,7 @@ function renderAnalysis(){
   const pct=(v)=>consortiumSoloTotal?Math.round(v/consortiumSoloTotal*100):0;
   const consortiumBlock=rows.length?`<div class="analysisBlock"><h3>Commandes consortium vs Induni seul</h3><table class="dashTable"><thead><tr><th>Type de chantier</th><th>Nb commandes</th><th>Montant total</th><th>% du total</th></tr></thead><tbody><tr><td><b>Consortium</b></td><td>${consortiumRows.length}</td><td>${fmt(consortiumTotal)}</td><td>${pct(consortiumTotal)}%</td></tr><tr><td><b>Induni seul</b></td><td>${soloRows.length}</td><td>${fmt(soloTotal)}</td><td>${pct(soloTotal)}%</td></tr></tbody></table></div>`:'';
 
-  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › Analyse achat</div><div class="toolbar"><h2>Analyse achat</h2><p class="muted">Indicateurs calculés sur les commandes générées dans cet outil.</p></div><div class="dashboardCards"><div class="kpi"><small>Dépense totale suivie</small><b>${fmt(total)}</b></div><div class="kpi"><small>Nombre de commandes</small><b>${rows.length}</b></div><div class="kpi"><small>Panier moyen</small><b>${fmt(rows.length?total/rows.length:0)}</b></div><div class="kpi"><small>Fournisseur principal</small><b style="font-size:22px">${esc(supRows[0]?.[0]||'-')}</b></div>${eshopKpi}</div><div class="chartGrid">${svgPieV49(supRows,'Répartition dépenses par fournisseur')}${svgBarsV49(famRows,'Top familles d’achat')}${svgBarsV49(siteRows,'Dépenses par chantier')}${svgBarsV49(artRows,'Top articles commandés')}</div><div class="analysisBlock"><h3>Dépenses par fournisseur</h3>${supRows.length?supRows.map(([k,v])=>`<div class="barRow"><b>${esc(k)}</b><div class="barOuter"><div class="barInner" style="width:${Math.round(v/maxSup*100)}%"></div></div><span>${fmt(v)}</span></div>`).join(''):'<p class="muted">Aucune donnée.</p>'}</div>${consortiumBlock}${eshopBlock}<div class="analysisBlock"><h3>Actions achats proposées</h3><p>1. Consolider les volumes par famille forte et négocier en priorité avec le fournisseur principal.</p><p>2. Suivre les chantiers récurrents pour anticiper les commandes répétitives via la fonction Dupliquer.</p><p>3. Contrôler les articles à fort montant et utiliser le comparatif fournisseur avant validation.</p></div>`;
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › Analyse achat</div><div class="toolbar"><h2>Analyse achat</h2><p class="muted">Indicateurs calculés sur les commandes générées dans cet outil.</p></div><div class="dashboardCards"><div class="kpi"><small>Dépense totale suivie</small><b>${fmt(total)}</b></div><div class="kpi"><small>Nombre de commandes</small><b>${rows.length}</b></div><div class="kpi"><small>Panier moyen</small><b>${fmt(rows.length?total/rows.length:0)}</b></div><div class="kpi"><small>Fournisseur principal</small><b style="font-size:22px">${esc(supRows[0]?.[0]||'-')}</b></div>${eshopKpi}</div><div class="chartGrid">${svgPieV49(supRows,'Répartition dépenses par fournisseur')}${svgBarsV49(famRows,'Top familles d’achat')}${svgBarsV49(siteRows,'Dépenses par chantier')}${svgBarsV49(artRows,'Top articles commandés')}</div><div class="analysisBlock"><h3>Dépenses par fournisseur</h3>${supRows.length?supRows.map(([k,v])=>`<div class="barRow"><b>${esc(k)}</b><div class="barOuter"><div class="barInner" style="width:${Math.round(v/maxSup*100)}%"></div></div><span>${fmt(v)}</span></div>`).join(''):'<p class="muted">Aucune donnée.</p>'}</div>${consortiumBlock}${eshopBlock}${eshopLinesBlock}<div class="analysisBlock"><h3>Actions achats proposées</h3><p>1. Consolider les volumes par famille forte et négocier en priorité avec le fournisseur principal.</p><p>2. Suivre les chantiers récurrents pour anticiper les commandes répétitives via la fonction Dupliquer.</p><p>3. Contrôler les articles à fort montant et utiliser le comparatif fournisseur avant validation.</p></div>`;
 }
 /* === fin patch v49 === */
 
