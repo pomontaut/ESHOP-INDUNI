@@ -77,4 +77,8 @@ COPY --chown=rails:rails --from=build /rails /rails
 # lib/tasks/catalog_seed.rake and lib/tasks/users_bootstrap.rake).
 EXPOSE 3000
 ENV PORT=3000
-CMD ["bash", "-c", "./bin/rails db:prepare && ./bin/rails catalog:seed && ./bin/rails users:ensure_admin && exec bundle exec puma -b tcp://0.0.0.0:${PORT}"]
+# Temporary boot markers (plain `echo`, unbuffered, printed even if a later
+# Ruby step hangs or gets SIGKILLed before flushing its own output) — added
+# to pin down exactly which step a currently-unexplained healthcheck failure
+# is stuck on. Remove once resolved.
+CMD ["bash", "-c", "echo '[boot] starting' && ./bin/rails db:prepare && echo '[boot] db:prepare OK' && ./bin/rails catalog:seed && echo '[boot] catalog:seed OK' && ./bin/rails users:ensure_admin && echo '[boot] users:ensure_admin OK, starting puma' && exec bundle exec puma -b tcp://0.0.0.0:${PORT}"]
