@@ -204,7 +204,7 @@ function showDashboard(){state={view:'dashboard',catalog:null,famille:null,sous:
 function showAnalysis(){state={view:'analysis',catalog:null,famille:null,sous:null};document.getElementById('searchBox').value='';render()}
 
 const CREABETON_LOGO='/images/categories/creabeton.png';
-const MBT_LOGO='/images/categories/hgc-famille-coffrage-etaiement.png';
+const MBT_LOGO='/images/categories/mbt.png';
 function catalogLogoInduni(c){return c==='HGC'?HGC_LOGO:(c==='Canplast'?CAN_LOGO:(c==='Leuba HIAG'?HIAG_LOGO:(c==='CreaBeton'?CREABETON_LOGO:(c==='MBT'?MBT_LOGO:INDUNI_LOGO))))}
 const SUPPLIER_INFO={
   'HGC':{email:'yannick.mace@hgc.ch',phone:'0041 22 343 85 50'},
@@ -315,7 +315,7 @@ const covers=[
   canSee('Leuba HIAG')?`<button class="cover" onclick="chooseCatalog('Leuba HIAG')"><div class="coverTop"><img src="${HIAG_LOGO}" alt="Leuba HIAG"></div><div class="coverText"><b>E-shop Leuba HIAG</b><p class="muted">${l} articles · bois, coffrage, panneaux & accessoires</p></div></button>`:'',
   canSee('CreaBeton')?`<button class="cover" onclick="chooseCatalog('CreaBeton')"><div class="coverTop"><img src="${CREABETON_LOGO}" alt="CreaBeton"></div><div class="coverText"><b>E-shop CreaBeton</b><p class="muted">${cb} articles · préfabriqués béton (tuyaux, regards, dalles, bordures)</p></div></button>`:'',
   `<button class="cover" style="cursor:default" onclick="alert('Module Dépôt INDUNI — bientôt disponible.')"><div class="coverTop"><img src="${INDUNI_LOGO}" alt="Dépôt INDUNI"></div><div class="coverText"><b>Dépôt INDUNI</b><p class="muted">Commande directe depuis le dépôt Induni — bientôt disponible</p></div></button>`,
-  canSee('MBT')?`<button class="cover" onclick="chooseCatalog('MBT')"><div class="coverTop" style="background:white;display:flex;align-items:center;justify-content:center;padding:14px;gap:12px"><div style="border-left:5px solid #e2261a;padding-left:10px"><div style="font-family:Arial,sans-serif;font-weight:900;font-style:italic;font-size:34px;color:#e2261a;letter-spacing:-1px;line-height:1">MBT</div><div style="font-weight:700;font-size:10px;color:#1a1a1a;letter-spacing:.01em;margin-top:2px">Mägert G&amp;C Bautechnik</div></div><div style="border-left:2px solid #e2261a;padding-left:10px;font-weight:800;font-size:10px;color:#e2261a;line-height:1.6;letter-spacing:.02em">ABSCHALUNG<br>SICHERHEIT<br>FIXATION</div></div><div class="coverText"><b>E-shop MBT</b><p class="muted">${mbt} articles · coffrage (Net-Form, clous)</p></div></button>`:'',
+  canSee('MBT')?`<button class="cover" onclick="chooseCatalog('MBT')"><div class="coverTop"><img src="${MBT_LOGO}" alt="MBT"></div><div class="coverText"><b>E-shop MBT</b><p class="muted">${mbt} articles · coffrage (Net-Form, clous)</p></div></button>`:'',
   renderFunnelWidget(null)
 ].join('');
 app.innerHTML=`<section class="hero"><div><h1>Catalogues Achats Induni</h1><p class="muted" style="font-size:18px">Cliquez sur un logo pour accéder à l'e-shop correspondant.</p><div class="coverGrid threeCovers">${covers}</div></div></section>`}
@@ -531,12 +531,10 @@ const CREABETON_CONFIG = {
   }
 };
 
-// ── MBT : accessoires de coffrage (même thématique que la famille HGC
-// "Coffrage & Étaiement" — on réutilise sa photo, faute de photos MBT propres) ──
 const MBT_CONFIG = {
   'Coffrage': {
     gradient: 'linear-gradient(135deg,#7c3f1d,#c2703a)', icone: '🔧', badge: 'Coffrage',
-    photo: '/images/categories/hgc-famille-coffrage-etaiement.png',
+    photo: '/images/categories/mbt.png',
     desc: 'Net-Form · Clous',
     subs: [ 'Net-Form', 'Clous' ],
     order: 1
