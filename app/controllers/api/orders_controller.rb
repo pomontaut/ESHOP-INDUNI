@@ -61,6 +61,8 @@ class Api::OrdersController < ApplicationController
     approval_status = needs_approval ? "pending_approval" : "approved"
     order_status    = needs_approval ? "pending_approval" : "sent"
 
+    modifies_order = Order.find_by(id: params[:modifies_order_id]) if params[:modifies_order_id].present?
+
     order = Order.create!(
       supplier:        supplier,
       user:            current_user,
@@ -68,7 +70,8 @@ class Api::OrdersController < ApplicationController
       approval_status: approval_status,
       approver_email:  current_user&.approver_email,
       order_date:      Date.today,
-      notes:           "Chantier: #{chantier} | Délai souhaité: #{delai}"
+      notes:           "Chantier: #{chantier} | Délai souhaité: #{delai}",
+      modifies_order:  modifies_order
     )
 
     items.each do |item|
@@ -83,6 +86,12 @@ class Api::OrdersController < ApplicationController
         unit_price:   item[:prix].to_f,
         catalog_price: item[:catalogPrix].presence && item[:catalogPrix].to_f
       )
+    end
+
+    if modifies_order
+      # Best-effort: a notification failure must never break the order itself.
+      diff = build_order_diff(modifies_order, items)
+      OrderMailer.order_modified(order, modifies_order, diff, current_user).deliver_now rescue nil
     end
 
     if needs_approval
@@ -118,6 +127,30 @@ class Api::OrdersController < ApplicationController
   end
 
   private
+
+  # Compares the new order's items against the order it modifies, so the
+  # admin notification can show exactly what changed rather than just the
+  # fact that *something* changed.
+  def build_order_diff(original_order, items)
+    original = original_order.order_lines.includes(:product).index_by { |l| l.product.reference }
+    new_items = items.index_by { |it| it[:article].to_s }
+
+    added = new_items.except(*original.keys).map { |ref, it|
+      { reference: ref, designation: it[:designation].to_s, qty: it[:qty].to_i, prix: it[:prix].to_f }
+    }
+    removed = original.except(*new_items.keys).map { |ref, line|
+      { reference: ref, designation: line.product.name, qty: line.quantity, prix: line.unit_price.to_f }
+    }
+    changed = (original.keys & new_items.keys).filter_map { |ref|
+      line = original[ref]
+      it   = new_items[ref]
+      next if line.quantity == it[:qty].to_i && line.unit_price.to_f.round(2) == it[:prix].to_f.round(2)
+      { reference: ref, designation: it[:designation].to_s,
+        old_qty: line.quantity, new_qty: it[:qty].to_i,
+        old_prix: line.unit_price.to_f, new_prix: it[:prix].to_f }
+    }
+    { added: added, removed: removed, changed: changed }
+  end
 
   EMAIL_RE = /\A[^@\s,]+@[^@\s,]+\.[^@\s,]+\z/
 

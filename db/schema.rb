@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_14_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_19_140000) do
   create_table "chantiers", force: :cascade do |t|
     t.string "adresse"
     t.string "carte_interactive"
@@ -53,6 +53,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_14_140000) do
     t.string "approval_token"
     t.string "approver_email"
     t.datetime "created_at", null: false
+    t.integer "modifies_order_id"
     t.text "notes"
     t.string "number"
     t.date "order_date"
@@ -60,6 +61,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_14_140000) do
     t.integer "supplier_id", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id"
+    t.index ["modifies_order_id"], name: "index_orders_on_modifies_order_id"
     t.index ["supplier_id"], name: "index_orders_on_supplier_id"
     t.index ["user_id"], name: "index_orders_on_user_id"
   end
@@ -131,6 +133,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_14_140000) do
 
   add_foreign_key "order_lines", "orders"
   add_foreign_key "order_lines", "products"
+  add_foreign_key "orders", "orders", column: "modifies_order_id", on_delete: :nullify
   add_foreign_key "orders", "suppliers"
   add_foreign_key "orders", "users"
   add_foreign_key "products", "suppliers"

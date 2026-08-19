@@ -1,6 +1,7 @@
 class Order < ApplicationRecord
   belongs_to :supplier
   belongs_to :user, optional: true
+  belongs_to :modifies_order, class_name: "Order", optional: true
   has_many :order_lines, dependent: :destroy
   has_many :products, through: :order_lines
 

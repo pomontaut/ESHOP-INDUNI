@@ -1,0 +1,26 @@
+Commande <%= @original_order.number %> modifiée
+
+<%= @editor&.full_name || "Un utilisateur" %> (<%= @editor&.email %>) a modifié la commande <%= @original_order.number %> le <%= Time.current.strftime("%d.%m.%Y à %H:%M") %>.
+Cette modification a généré une nouvelle commande : <%= @new_order.number %>.
+
+<% if @diff[:added].any? %>
+Articles ajoutés :
+<% @diff[:added].each do |it| -%>
++ <%= it[:designation] %> (<%= it[:reference] %>) x<%= it[:qty] %> — <%= number_with_delimiter(it[:prix].round(2)) %> CHF
+<% end -%>
+<% end -%>
+<% if @diff[:removed].any? %>
+Articles supprimés :
+<% @diff[:removed].each do |it| -%>
+- <%= it[:designation] %> (<%= it[:reference] %>) x<%= it[:qty] %> — <%= number_with_delimiter(it[:prix].round(2)) %> CHF
+<% end -%>
+<% end -%>
+<% if @diff[:changed].any? %>
+Articles modifiés :
+<% @diff[:changed].each do |it| -%>
+~ <%= it[:designation] %> (<%= it[:reference] %>) : qté <%= it[:old_qty] %> → <%= it[:new_qty] %>, prix <%= number_with_delimiter(it[:old_prix].round(2)) %> → <%= number_with_delimiter(it[:new_prix].round(2)) %> CHF
+<% end -%>
+<% end -%>
+
+Commande d'origine : <%= @original_order.number %> (<%= number_with_delimiter(@original_order.total.to_i) %> CHF)
+Nouvelle commande : <%= @new_order.number %> (<%= number_with_delimiter(@new_order.total.to_i) %> CHF)

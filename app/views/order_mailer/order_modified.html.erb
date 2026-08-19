@@ -1,0 +1,62 @@
+<p>Bonjour,</p>
+
+<p>
+  <strong><%= @editor&.full_name || "Un utilisateur" %></strong>
+  (<%= @editor&.email %>) a modifié la commande <strong><%= @original_order.number %></strong>
+  le <%= Time.current.strftime("%d.%m.%Y à %H:%M") %>.
+</p>
+
+<p>Cette modification a généré une nouvelle commande : <strong><%= @new_order.number %></strong>.</p>
+
+<% if @diff[:added].any? %>
+  <h3 style="margin:20px 0 8px;color:#176b28;">Articles ajoutés</h3>
+  <table style="border-collapse:collapse;width:100%;max-width:600px;">
+    <% @diff[:added].each do |it| %>
+      <tr>
+        <td style="padding:6px;border:1px solid #ddd;"><%= it[:designation] %> (<%= it[:reference] %>)</td>
+        <td style="padding:6px;border:1px solid #ddd;text-align:right;">x<%= it[:qty] %></td>
+        <td style="padding:6px;border:1px solid #ddd;text-align:right;"><%= number_with_delimiter(it[:prix].round(2)) %> CHF</td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>
+
+<% if @diff[:removed].any? %>
+  <h3 style="margin:20px 0 8px;color:#b91c1c;">Articles supprimés</h3>
+  <table style="border-collapse:collapse;width:100%;max-width:600px;">
+    <% @diff[:removed].each do |it| %>
+      <tr>
+        <td style="padding:6px;border:1px solid #ddd;"><%= it[:designation] %> (<%= it[:reference] %>)</td>
+        <td style="padding:6px;border:1px solid #ddd;text-align:right;">x<%= it[:qty] %></td>
+        <td style="padding:6px;border:1px solid #ddd;text-align:right;"><%= number_with_delimiter(it[:prix].round(2)) %> CHF</td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>
+
+<% if @diff[:changed].any? %>
+  <h3 style="margin:20px 0 8px;color:#b45309;">Articles modifiés</h3>
+  <table style="border-collapse:collapse;width:100%;max-width:600px;">
+    <thead>
+      <tr style="background:#0c1d34;color:white;">
+        <th style="padding:6px;text-align:left;">Article</th>
+        <th style="padding:6px;text-align:right;">Qté avant → après</th>
+        <th style="padding:6px;text-align:right;">Prix avant → après</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @diff[:changed].each do |it| %>
+        <tr>
+          <td style="padding:6px;border:1px solid #ddd;"><%= it[:designation] %> (<%= it[:reference] %>)</td>
+          <td style="padding:6px;border:1px solid #ddd;text-align:right;"><%= it[:old_qty] %> → <strong><%= it[:new_qty] %></strong></td>
+          <td style="padding:6px;border:1px solid #ddd;text-align:right;"><%= number_with_delimiter(it[:old_prix].round(2)) %> → <strong><%= number_with_delimiter(it[:new_prix].round(2)) %></strong> CHF</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<table style="border-collapse:collapse;width:100%;max-width:600px;margin-top:20px;">
+  <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Commande d'origine</td><td style="padding:8px;border:1px solid #ddd;"><%= @original_order.number %> — <%= number_with_delimiter(@original_order.total.to_i) %> CHF</td></tr>
+  <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Nouvelle commande</td><td style="padding:8px;border:1px solid #ddd;"><%= @new_order.number %> — <%= number_with_delimiter(@new_order.total.to_i) %> CHF</td></tr>
+</table>

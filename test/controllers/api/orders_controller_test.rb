@@ -40,4 +40,30 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "verifie@induni.ch" ], mail.to
     assert_equal [ "technicien@induni.ch" ], mail.cc, "the malformed cc entry must be dropped, not raise"
   end
+
+  test "create notifies admins with the diff when modifying a previous order" do
+    original = orders(:one)
+    admin = users(:one)
+    assert admin.admin?, "fixture user :one must be an admin for this test to be meaningful"
+
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: original.supplier.name,
+      modifies_order_id: original.id,
+      items: [
+        { article: original.order_lines.first.product.reference, designation: "Article existant", qty: 3, prix: 9.99 },
+        { article: "ART-99", designation: "Article ajouté", qty: 2, prix: 20.0 }
+      ]
+    }
+
+    assert_response :success
+    new_order = Order.order(:id).last
+    assert_equal original.id, new_order.modifies_order_id
+
+    notif = ActionMailer::Base.deliveries.find { |m| m.subject.include?(original.number) && m.subject.include?("modifiée") }
+    assert notif, "an admin notification mail must be sent when modifies_order_id is provided"
+    assert_includes notif.to, admin.email
+    body = notif.text_part ? notif.text_part.body.to_s : notif.body.to_s
+    assert_match(/Article ajouté/, body)
+    assert_match(/qté 1 → 3/, body)
+  end
 end

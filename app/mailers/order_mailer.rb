@@ -12,6 +12,19 @@ class OrderMailer < ApplicationMailer
     mail(to: @order.supplier.email, subject: "Commande #{@order.number}")
   end
 
+  # Notifies every admin when a user re-submits a previously generated order
+  # with changes (via "Modifier" in the dashboard), so they know who changed
+  # what, and when, without having to compare two orders by hand.
+  def order_modified(new_order, original_order, diff, editor)
+    @new_order      = new_order
+    @original_order = original_order
+    @diff           = diff
+    @editor         = editor
+    admin_emails = User.where(admin: true).pluck(:email)
+    return if admin_emails.empty?
+    mail(to: admin_emails, subject: "Commande #{original_order.number} modifiée par #{editor&.full_name || 'un utilisateur'} — nouvelle commande #{new_order.number}")
+  end
+
   def approval_request(order)
     @order       = order
     @user        = order.user
