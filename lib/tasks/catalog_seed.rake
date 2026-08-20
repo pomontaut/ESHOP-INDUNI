@@ -32,6 +32,10 @@ namespace :catalog do
       },
       "MBT" => {
         email: "didier.hossmann@mbt-bautechnik.com"
+      },
+      "ALZO AG" => {
+        email: "info@alzo.ch", phone: "041 500 50 16", fax: "041 500 50 17",
+        address: "12 Unterleh", postal_code: "6300", city: "Zug", country_code: "CH"
       }
     }.freeze
 
