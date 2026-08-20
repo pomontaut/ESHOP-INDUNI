@@ -2414,6 +2414,11 @@ function setBrentRange(n){
   renderMarketIndexDetail(MARKET_INDICES,window._selectedMarketIndex,window._dieselPrices,window._canplastSurcharges,window._brentPrices);
 }
 function resetBrentRange(){ setBrentRange(DEFAULT_RANGE); }
+function setEurChfRange(n){
+  window._eurChfRange=n;
+  renderIntelligenceBuyingDetail(window._eurChfRates);
+}
+function resetEurChfRange(){ setEurChfRange(DEFAULT_RANGE); }
 function pearsonCorrelation(xs,ys){
   const n=xs.length;
   if(n<2) return null;
@@ -2665,15 +2670,43 @@ function computeIntelBuying(){
 
   document.getElementById('intelResult').innerHTML=`<div class="kpi" style="border-left:4px solid ${verdictColor}"><small>Hausse réelle justifiée (coûts documentés)</small><b style="font-size:26px;color:${verdictColor}">${justified>=0?'+':''}${justified.toFixed(1)}%</b></div><p style="margin-top:10px;font-weight:700;color:${verdictColor}">${verdictHtml}</p>${gapHtml}`;
 }
+function loadEurChfRates(){
+  return fetch('/eurchf_rates.json').then(r=>r.json()).catch(()=>({dates:[],values:[]}));
+}
 function renderIntelligenceBuying(){
+  const crumbs='<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Intelligence Buying</div>';
+  app.innerHTML=crumbs+'<p class="muted">Chargement…</p>';
+  loadEurChfRates().then(eurchf=>{
+    window._eurChfRates=eurchf;
+    renderIntelligenceBuyingDetail(eurchf);
+  });
+}
+function renderIntelligenceBuyingDetail(eurchf){
+  eurchf=eurchf||window._eurChfRates||{dates:[],values:[]};
   const crumbs='<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Intelligence Buying</div>';
   const defaultTransport=intelBuyingDefaultTransportPct();
   const presetOptions=Object.keys(INTEL_BUYING_PRESETS).map(k=>`<option value="${esc(k)}">${esc(k)}</option>`).join('');
+
+  const eValues=eurchf.values||[];
+  const eWeek=seriesChangeAt(eValues,1), eMonth=seriesChangeAt(eValues,4), eYear=seriesChangeAt(eValues,52);
+  let eLastIdx=eValues.length-1; while(eLastIdx>=0&&eValues[eLastIdx]==null) eLastIdx--;
+  const eCurrent=eLastIdx>=0?eValues[eLastIdx]:null;
+  const eRange=(window._eurChfRange!=null)?window._eurChfRange:DEFAULT_RANGE;
+  const eDatesAll=eurchf.dates||[];
+  const eSliceDates=eRange>0?eDatesAll.slice(-eRange):eDatesAll;
+  const eSliceValues=eRange>0?eValues.slice(-eRange):eValues;
+  const eChart=eSliceValues.length?svgTrendChartV52(eSliceDates,eSliceValues,{decimals:4}):'<p class="muted">Aucune donnée.</p>';
+  const eRangeLabel=eRange>0?(eRange+' dernières semaines'):'depuis 2016';
+  const eRangeButtons=rangeButtonsHtml(eRange,'setEurChfRange','resetEurChfRange');
+  const defaultFxChange=eMonth&&eMonth.deltaPct!=null?Math.round(eMonth.deltaPct*10)/10:0;
+  const eurChfBlock=eValues.length?`<div class="analysisBlock"><h3>💱 Taux de change EUR/CHF</h3><p class="muted">Cours hebdomadaire (clôture du dernier jour de bourse).</p><div class="dashboardCards">${genericChangeTile('Évolution 1 semaine',eWeek,'')}${genericChangeTile('Évolution 4 semaines',eMonth,'')}${genericChangeTile('Évolution 1 an',eYear,'')}<div class="kpi"><small>Cours actuel</small><b style="font-size:22px">${eCurrent!=null?eCurrent.toFixed(4):'n/d'}</b><small class="muted">EUR/CHF</small></div></div><div class="chartCard" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">EUR/CHF — ${eRangeLabel}</h3><div style="display:flex;gap:6px;flex-wrap:wrap">${eRangeButtons}</div></div>${eChart}</div></div>`
+    :`<div class="analysisBlock"><h3>💱 Taux de change EUR/CHF</h3><p class="muted">Aucun historique chargé pour l'instant — envoie-moi un export (date + taux, comme pour le Brent) et j'intègre le suivi automatique ici, avec application directe dans le calcul ci-dessous pour les matières facturées en EUR.</p></div>`;
+
   app.innerHTML=`${crumbs}<div class="toolbar"><h2>🧠 Intelligence Buying</h2><p class="muted">Vérifie si une hausse annoncée par un fournisseur est justifiée par les coûts réels documentés, plutôt que d'accepter un pourcentage global appliqué au tarif catalogue. Règle appliquée : une hausse n'est retenue que si le mouvement réel dépasse ±5% ; en dessous, elle est refusée ; une baisse réelle de plus de 5% doit au contraire déclencher une demande de réduction.</p></div>
 
-  <div class="analysisBlock"><h3>💱 Taux de change EUR/CHF</h3><p class="muted">Aucun historique chargé pour l'instant — envoie-moi un export (date + taux, comme pour le Brent) et j'intègre le suivi automatique ici, avec application directe dans le calcul ci-dessous pour les matières facturées en EUR.</p></div>
+  ${eurChfBlock}
 
-  <div class="analysisBlock"><h3>🧪 Indice Polyéthylène (PE)</h3><p class="muted">Aucun historique chargé pour l'instant — envoie-moi un export (date + valeur, en EUR, CHF ou USD selon la devise disponible) pour activer le suivi ici, utile pour les tuyaux PE/PP en plus des tuyaux PVC.</p></div>
+  <div class="analysisBlock"><h3>🧪 Indice Polyéthylène (PE)</h3><p class="muted">Reçu sous forme de graphique (image) uniquement pour l'instant — je ne peux pas en extraire des valeurs numériques fiables en lisant les pixels d'une courbe (ça donnerait des chiffres approximatifs présentés comme précis, ce qui serait trompeur pour un outil de décision). Pour l'activer ici comme les autres indicateurs : soit un export chiffré (CSV/xlsx) depuis businessanalytiq si disponible, soit simplement la valeur actuelle et les valeurs à 1/3/12 mois pour la courbe "Europe actual" (la plus pertinente pour un fournisseur basé en Italie/Rép. tchèque) — je les intègre comme points de référence.</p></div>
 
   <div class="analysisBlock"><h3>🧮 Vérificateur de hausse — décomposition du coût</h3>
     <div style="max-width:420px;margin-bottom:14px"><label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:4px">Famille de produit</label><select onchange="onIntelPresetChange(this.value)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:9px">${presetOptions}</select></div>
@@ -2692,7 +2725,7 @@ function renderIntelligenceBuying(){
         <label style="font-size:11.5px;color:#697386">Variation prix résine (communiqué par le fournisseur/ICIS-PIE)</label>
         <input id="intelResinChange" type="number" step="0.1" value="0" oninput="computeIntelBuying()" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:7px">
         <label style="display:flex;align-items:center;gap:5px;margin-top:5px;font-size:11.5px"><input type="checkbox" id="intelFxApplies" onchange="computeIntelBuying()"> Résine facturée en EUR — appliquer aussi la variation EUR/CHF</label>
-        <input id="intelFxChange" type="number" step="0.1" value="0" placeholder="Variation EUR/CHF % (en attente de données)" oninput="computeIntelBuying()" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:7px;margin-top:5px">
+        <input id="intelFxChange" type="number" step="0.1" value="${defaultFxChange}" placeholder="Variation EUR/CHF %" oninput="computeIntelBuying()" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:7px;margin-top:5px">
       </div>
       <div>
         <label style="font-size:11.5px;color:#697386">Variation coût énergie</label>

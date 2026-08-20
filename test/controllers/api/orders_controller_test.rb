@@ -98,6 +98,24 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ author.email ], mail.cc
   end
 
+  test "create corrects a stale ESHOP_NN number in a custom subject to the real order number" do
+    # Simulates the frontend having pre-filled the subject from a next_number
+    # preview that went stale because another order was created in between —
+    # the attachment always uses the real, just-created order.number, so the
+    # subject must never be allowed to disagree with it.
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      subject: "Commande ESHOP_9999",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+    }
+    assert_response :success
+    order_number = JSON.parse(response.body)["order_number"]
+
+    mail = ActionMailer::Base.deliveries.last
+    assert_equal "Commande #{order_number}", mail.subject
+    assert_equal "commande_#{order_number}.pdf", mail.attachments.first.filename
+  end
+
   test "create notifies admins with the diff when modifying a previous order" do
     original = orders(:one)
     admin = users(:one)

@@ -141,6 +141,16 @@ class Api::OrdersController < ApplicationController
       cc_addresses << current_user.email if current_user&.email.present?
       cc = cc_addresses.uniq.join(", ").presence
       subject = params[:subject].to_s.strip.presence
+      # The "Vérifier et envoyer" step pre-fills the subject with a number
+      # previewed via next_number *before* the order actually exists (so the
+      # user can see/edit the real-looking subject up front) — if another
+      # order is created in the meantime, that preview goes stale and would
+      # otherwise ship with the wrong number in the subject while the PDF
+      # attachment (built from the real, just-created order) is correct.
+      # The order number itself is never user-editable content, so any
+      # ESHOP_NN pattern found is corrected to the real one rather than left
+      # to silently mismatch the attachment.
+      subject = subject.gsub(/ESHOP_\d+/, order.number) if subject&.match?(/ESHOP_\d+/)
       body    = params[:body].to_s.strip.presence
       # Persisted so a failed send can be retried later (see #resend) with the
       # exact same recipients/message, instead of falling back to generic
