@@ -1,5 +1,6 @@
 class OrderReceptionsController < ApplicationController
   skip_before_action :require_login
+  layout "minimal"
 
   before_action :load_order
 
