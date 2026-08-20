@@ -2320,18 +2320,61 @@ function onMarketIndexChange(value){
 function loadDieselPrices(){
   return fetch('/api/diesel_prices').then(r=>r.json()).catch(()=>[]);
 }
+function loadCanplastSurcharges(){
+  return fetch('/api/canplast_surcharges').then(r=>r.json()).catch(()=>[]);
+}
 function renderMarketIndices(){
   const crumbs='<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Indicateurs de marché</div>';
   app.innerHTML=crumbs+'<p class="muted">Chargement des indices…</p>';
-  Promise.all([loadMarketIndices(),loadDieselPrices()]).then(([data,diesel])=>{
+  Promise.all([loadMarketIndices(),loadDieselPrices(),loadCanplastSurcharges()]).then(([data,diesel,canplast])=>{
     const materials=Object.keys(data.series);
     const current=(window._selectedMarketIndex && materials.includes(window._selectedMarketIndex)) ? window._selectedMarketIndex : materials[0];
     window._selectedMarketIndex=current;
     window._dieselPrices=diesel;
-    renderMarketIndexDetail(data,current,diesel);
+    window._canplastSurcharges=canplast;
+    renderMarketIndexDetail(data,current,diesel,canplast);
   }).catch(()=>{
     app.innerHTML=crumbs+'<p style="color:#b91c1c">Impossible de charger les indices.</p>';
   });
+}
+function canplastGroups(canplast){
+  const seen=new Set(),out=[];
+  (canplast||[]).forEach(r=>{ if(!seen.has(r.codes)){seen.add(r.codes);out.push({codes:r.codes,label:r.label});} });
+  return out;
+}
+function canplastTimelineFor(canplast,codes){
+  return (canplast||[]).filter(r=>r.codes===codes).sort((a,b)=>a.effectiveDate.localeCompare(b.effectiveDate));
+}
+function canplastChangeTile(label,ch){
+  if(!ch) return `<div class="kpi"><small>${esc(label)}</small><b style="font-size:18px;color:#8994a3">n/d</b></div>`;
+  const up=ch.deltaPts>=0;
+  const color=up?'#b91c1c':'#176b28';
+  const arrow=up?'▲':'▼';
+  return `<div class="kpi"><small>${esc(label)}</small><b style="font-size:22px;color:${color}">${arrow} ${ch.deltaPts>=0?'+':''}${ch.deltaPts.toFixed(1)} pts</b><small style="color:${color};font-weight:800">${esc(ch.fromLabel)}</small></div>`;
+}
+function onCanplastGroupChange(codes){
+  window._selectedCanplastGroup=codes;
+  renderMarketIndexDetail(MARKET_INDICES,window._selectedMarketIndex,window._dieselPrices,window._canplastSurcharges);
+}
+async function saveCanplastSurcharge(){
+  const codes=window._selectedCanplastGroup;
+  const group=canplastGroups(window._canplastSurcharges).find(g=>g.codes===codes);
+  if(!group){alert('Choisis un groupe d’articles.');return}
+  const dateInput=document.getElementById('canplastNewDate');
+  const pctInput=document.getElementById('canplastNewPct');
+  const effectiveDate=dateInput.value;
+  const pct=parseFloat(pctInput.value);
+  if(!effectiveDate){alert('Indique la date d’effet.');return}
+  if(isNaN(pct)){alert('Indique le pourcentage de surrenchérissement.');return}
+  try{
+    const resp=await fetch('/api/canplast_surcharges',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'codes='+encodeURIComponent(codes)+'&label='+encodeURIComponent(group.label)+'&effective_date='+encodeURIComponent(effectiveDate)+'&surcharge_pct='+encodeURIComponent(pct)});
+    const data=await resp.json();
+    if(!resp.ok||data.error) throw new Error(data.error||('HTTP '+resp.status));
+    window._canplastSurcharges=await loadCanplastSurcharges();
+    renderMarketIndexDetail(MARKET_INDICES,window._selectedMarketIndex,window._dieselPrices,window._canplastSurcharges);
+  }catch(e){
+    alert("Impossible d'enregistrer : "+e.message);
+  }
 }
 function dieselWeeklyChange(diesel,weeksBack){
   if(!diesel||diesel.length<1+weeksBack) return null;
@@ -2359,8 +2402,9 @@ async function saveDieselPrice(){
     alert("Impossible d'enregistrer le prix : "+e.message);
   }
 }
-function renderMarketIndexDetail(data,current,diesel){
+function renderMarketIndexDetail(data,current,diesel,canplast){
   diesel=diesel||window._dieselPrices||[];
+  canplast=canplast||window._canplastSurcharges||[];
   const materials=Object.keys(data.series);
   const options=materials.map(m=>`<option value="${esc(m)}"${m===current?' selected':''}>${esc(m)} (${esc(data.codes[m]||'')})</option>`).join('');
   const values=data.series[current];
@@ -2379,7 +2423,22 @@ function renderMarketIndexDetail(data,current,diesel){
   const dieselLast=diesel.length?diesel[diesel.length-1]:null;
   const dieselAdminForm=(window._userPerms&&window._userPerms.admin)?`<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label style="font-size:12.5px;font-weight:800">Prix de cette semaine (CHF/litre TVA incl.)</label><input id="dieselNewPrice" type="number" step="0.01" min="0" placeholder="ex. 2.19" style="width:110px;border:1px solid #ddd;border-radius:6px;padding:6px"><button class="miniBtn" onclick="saveDieselPrice()">Enregistrer</button></div>`:'';
   const dieselChart=diesel.length?svgLineChartV49(diesel.slice(-26).map(d=>d.weekStart.slice(5)),diesel.slice(-26).map(d=>d.price)):'<p class="muted">Aucune donnée.</p>';
-  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Indicateurs de marché</div><div class="toolbar"><h2>📈 Indicateurs de marché — indices KBOB</h2><p class="muted">Indices des prix à la production (KBOB, publiés par trimestre). Une variation nulle sur 1 mois est normale si le mois choisi reste dans le même trimestre que le précédent relevé — les hausses (rouge) et baisses (vert) sont vues du point de vue d'un acheteur.</p></div><div style="max-width:560px;margin-bottom:16px"><label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:4px">Matériau / indice KBOB</label><select onchange="onMarketIndexChange(this.value)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:9px">${options}</select></div><div class="dashboardCards">${marketChangeTile('Évolution 1 mois',c1)}${marketChangeTile('Évolution 3 mois',c3)}${marketChangeTile('Évolution 1 an',c12)}<div class="kpi"><small>Indice actuel</small><b style="font-size:22px">${currentValue!=null?currentValue.toFixed(1):'n/d'}</b><small class="muted">${esc(data.codes[current]||'')}</small></div></div><div class="chartGrid"><div class="chartCard"><h3>${esc(current)} — 3 dernières années</h3>${svgLineChartV49(rDates,rValues)}</div></div><div class="analysisBlock" style="margin-top:18px"><h3>⛽ Carburant diesel — surcharge nationale ASTAG</h3><p class="muted">Prix moyen hebdomadaire du diesel à la pompe (CHF/litre TVA incl., source ASTAG/IRU). Surcharge calculée par rapport à la base ASTAG 0% = CHF 1.64/litre.${dieselAdminForm}</p><div class="dashboardCards">${dieselChangeTile('Évolution 1 semaine',d1)}${dieselChangeTile('Évolution 4 semaines',d4)}${dieselChangeTile('Depuis le 1er janvier 2026',dYtd)}<div class="kpi"><small>Prix actuel</small><b style="font-size:22px">${dieselLast?dieselLast.price.toFixed(2)+' CHF/l':'n/d'}</b><small class="muted">${dieselLast?'surcharge '+dieselLast.surchargePct.toFixed(1)+'%':''}</small></div></div><div class="chartCard" style="margin-top:12px"><h3>Prix diesel — 26 dernières semaines</h3>${dieselChart}</div></div>`;
+
+  const cpGroups=canplastGroups(canplast);
+  const cpCurrent=(window._selectedCanplastGroup && cpGroups.some(g=>g.codes===window._selectedCanplastGroup)) ? window._selectedCanplastGroup : (cpGroups[0]&&cpGroups[0].codes);
+  window._selectedCanplastGroup=cpCurrent;
+  const cpTimeline=canplastTimelineFor(canplast,cpCurrent);
+  const cpOptions=cpGroups.map(g=>`<option value="${esc(g.codes)}"${g.codes===cpCurrent?' selected':''}>${esc(g.label)} (${esc(g.codes)})</option>`).join('');
+  const cpLast=cpTimeline.length?cpTimeline[cpTimeline.length-1]:null;
+  const cpFirst=cpTimeline.length?cpTimeline[0]:null;
+  const cpPrev=cpTimeline.length>1?cpTimeline[cpTimeline.length-2]:null;
+  const cpSincePrev=cpPrev?{deltaPts:cpLast.surchargePct-cpPrev.surchargePct,fromLabel:'depuis le '+dateFR(cpPrev.effectiveDate)}:null;
+  const cpSinceFirst=(cpFirst&&cpLast&&cpFirst!==cpLast)?{deltaPts:cpLast.surchargePct-cpFirst.surchargePct,fromLabel:'depuis le '+dateFR(cpFirst.effectiveDate)}:null;
+  const cpChart=cpTimeline.length?svgLineChartV49(cpTimeline.map(r=>dateFR(r.effectiveDate)),cpTimeline.map(r=>r.surchargePct)):'<p class="muted">Aucune donnée.</p>';
+  const cpAdminForm=(window._userPerms&&window._userPerms.admin)?`<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label style="font-size:12.5px;font-weight:800">Nouvelle date d'effet</label><input id="canplastNewDate" type="date" style="border:1px solid #ddd;border-radius:6px;padding:6px"><label style="font-size:12.5px;font-weight:800">Surrenchérissement %</label><input id="canplastNewPct" type="number" step="0.1" min="0" placeholder="ex. 65" style="width:90px;border:1px solid #ddd;border-radius:6px;padding:6px"><button class="miniBtn" onclick="saveCanplastSurcharge()">Enregistrer pour ce groupe</button></div>`:'';
+  const cpTable=cpTimeline.length?`<table class="dashTable" style="margin-top:10px"><thead><tr><th>Date d'effet</th><th>Surrenchérissement</th><th>Source</th></tr></thead><tbody>${cpTimeline.map(r=>`<tr><td>${dateFR(r.effectiveDate)}</td><td><b>${r.surchargePct.toFixed(1)}%</b></td><td class="muted">${esc(r.source||'')}</td></tr>`).join('')}</tbody></table>`:'';
+
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Indicateurs de marché</div><div class="toolbar"><h2>📈 Indicateurs de marché — indices KBOB</h2><p class="muted">Indices des prix à la production (KBOB, publiés par trimestre). Une variation nulle sur 1 mois est normale si le mois choisi reste dans le même trimestre que le précédent relevé — les hausses (rouge) et baisses (vert) sont vues du point de vue d'un acheteur.</p></div><div style="max-width:560px;margin-bottom:16px"><label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:4px">Matériau / indice KBOB</label><select onchange="onMarketIndexChange(this.value)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:9px">${options}</select></div><div class="dashboardCards">${marketChangeTile('Évolution 1 mois',c1)}${marketChangeTile('Évolution 3 mois',c3)}${marketChangeTile('Évolution 1 an',c12)}<div class="kpi"><small>Indice actuel</small><b style="font-size:22px">${currentValue!=null?currentValue.toFixed(1):'n/d'}</b><small class="muted">${esc(data.codes[current]||'')}</small></div></div><div class="chartGrid"><div class="chartCard"><h3>${esc(current)} — 3 dernières années</h3>${svgLineChartV49(rDates,rValues)}</div></div><div class="analysisBlock" style="margin-top:18px"><h3>⛽ Carburant diesel — surcharge nationale ASTAG</h3><p class="muted">Prix moyen hebdomadaire du diesel à la pompe (CHF/litre TVA incl., source ASTAG/IRU). Surcharge calculée par rapport à la base ASTAG 0% = CHF 1.64/litre.${dieselAdminForm}</p><div class="dashboardCards">${dieselChangeTile('Évolution 1 semaine',d1)}${dieselChangeTile('Évolution 4 semaines',d4)}${dieselChangeTile('Depuis le 1er janvier 2026',dYtd)}<div class="kpi"><small>Prix actuel</small><b style="font-size:22px">${dieselLast?dieselLast.price.toFixed(2)+' CHF/l':'n/d'}</b><small class="muted">${dieselLast?'surcharge '+dieselLast.surchargePct.toFixed(1)+'%':''}</small></div></div><div class="chartCard" style="margin-top:12px"><h3>Prix diesel — 26 dernières semaines</h3>${dieselChart}</div></div><div class="analysisBlock" style="margin-top:18px"><h3>🧱 Canplast — surrenchérissement par famille d'articles</h3><p class="muted">Suivi des avis de hausse (et baisse) Canplast successifs, par groupe d'articles PVC/PE/PP. ⚠️ Une baisse a été annoncée le 15.06.2026 (Baisses-15.06.26.pdf) mais sa valeur n'a pas pu être extraite des documents fournis — la dernière valeur ci-dessous peut donc ne plus être à jour depuis cette date. Envoie-moi cet avis (ou la valeur actuelle) pour le corriger.</p><div style="max-width:560px;margin:10px 0"><label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:4px">Famille d'articles Canplast</label><select onchange="onCanplastGroupChange(this.value)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:9px">${cpOptions}</select></div>${cpAdminForm}<div class="dashboardCards" style="margin-top:12px">${canplastChangeTile('Depuis la hausse précédente',cpSincePrev)}${canplastChangeTile('Depuis le début du suivi',cpSinceFirst)}<div class="kpi"><small>Surrenchérissement actuel connu</small><b style="font-size:22px">${cpLast?cpLast.surchargePct.toFixed(1)+'%':'n/d'}</b><small class="muted">${cpLast?'au '+dateFR(cpLast.effectiveDate):''}</small></div></div><div class="chartCard" style="margin-top:12px"><h3>${cpLast?esc(cpGroups.find(g=>g.codes===cpCurrent).label):''} — historique</h3>${cpChart}</div>${cpTable}</div>`;
 }
 /* === fin patch v49 === */
 

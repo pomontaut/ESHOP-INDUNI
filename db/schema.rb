@@ -10,7 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_20_125424) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_20_130506) do
+  create_table "canplast_surcharges", force: :cascade do |t|
+    t.string "codes", null: false
+    t.datetime "created_at", null: false
+    t.date "effective_date", null: false
+    t.string "label", null: false
+    t.string "source"
+    t.decimal "surcharge_pct", precision: 6, scale: 2, null: false
+    t.datetime "updated_at", null: false
+    t.index ["codes", "effective_date"], name: "index_canplast_surcharges_on_codes_and_effective_date", unique: true
+  end
+
   create_table "chantiers", force: :cascade do |t|
     t.string "adresse"
     t.string "canton"
