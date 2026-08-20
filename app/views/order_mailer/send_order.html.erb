@@ -1,1 +1,10 @@
 <%= simple_format(h(@body)) %>
+
+<table role="presentation" style="margin:24px 0;">
+  <tr>
+    <td style="background:#176b28;border-radius:8px;">
+      <a href="<%= @reception_url %>" style="display:inline-block;padding:14px 24px;color:white;font-weight:bold;font-size:15px;text-decoration:none;">✅ J'ai bien reçu cette commande</a>
+    </td>
+  </tr>
+</table>
+<p style="color:#666;font-size:13px;">Un simple clic sur ce bouton confirme la réception de la commande auprès d'INDUNI &amp; Cie SA.</p>

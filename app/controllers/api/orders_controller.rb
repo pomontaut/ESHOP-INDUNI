@@ -22,6 +22,7 @@ class Api::OrdersController < ApplicationController
         status:          o.approval_status.presence || o.status,
         user_name:       o.user&.full_name,
         user_sector:     o.user&.sector,
+        receptionConfirmedAt: o.reception_confirmed_at&.strftime("%d.%m.%Y %H:%M"),
         items:           o.order_lines.map { |l|
           { article: l.product&.reference, designation: l.product&.name, qty: l.quantity, prix: l.unit_price.to_f, catalogPrix: l.catalog_price&.to_f }
         }

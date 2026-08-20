@@ -1,0 +1,11 @@
+<p>Bonjour <%= @user&.first_name %>,</p>
+
+<p><strong style="color:#176b28;"><%= @order.supplier&.name %></strong> a confirmé avoir bien reçu votre commande <strong><%= @order.number %></strong>.</p>
+
+<table style="border-collapse:collapse;width:100%;max-width:400px;margin-bottom:20px;">
+  <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Commande</td><td style="padding:8px;border:1px solid #ddd;"><%= @order.number %></td></tr>
+  <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Fournisseur</td><td style="padding:8px;border:1px solid #ddd;"><%= @order.supplier&.name %></td></tr>
+  <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Confirmé le</td><td style="padding:8px;border:1px solid #ddd;"><%= @order.reception_confirmed_at.strftime('%d.%m.%Y à %H:%M') %></td></tr>
+</table>
+
+<p style="color:#666;font-size:13px;">INDUNI E-Shop</p>

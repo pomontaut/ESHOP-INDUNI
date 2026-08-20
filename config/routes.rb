@@ -42,6 +42,9 @@ Rails.application.routes.draw do
   post   "approvals/:token/approve", to: "approvals#approve", as: :approve_approval
   post   "approvals/:token/refuse",  to: "approvals#refuse",  as: :refuse_approval
 
+  get  "commande/:token/confirmation", to: "order_receptions#show",    as: :order_reception
+  post "commande/:token/confirmation", to: "order_receptions#confirm", as: :confirm_order_reception
+
   get "setup/admin", to: "setup#admin"
 
   get "bon_de_commande", to: "generic_orders#show"

@@ -6,10 +6,12 @@ class Order < ApplicationRecord
   has_many :products, through: :order_lines
 
   before_create :generate_approval_token
+  before_create :generate_reception_token
 
   def pending_approval? = approval_status == "pending_approval"
   def approved?         = approval_status == "approved"
   def refused?          = approval_status == "refused"
+  def reception_confirmed? = reception_confirmed_at.present?
 
   def total
     order_lines.sum(&:subtotal)
@@ -19,6 +21,14 @@ class Order < ApplicationRecord
 
   def generate_approval_token
     self.approval_token = SecureRandom.urlsafe_base64(32)
+  end
+
+  # Separate from approval_token: this one is handed to the supplier (in the
+  # order e-mail) so they can confirm reception, while approval_token is only
+  # ever sent to the internal N+1 approver — sharing one token between the two
+  # would let a supplier reach the internal approve/refuse pages.
+  def generate_reception_token
+    self.reception_token = SecureRandom.urlsafe_base64(32)
   end
 
   before_create :set_number

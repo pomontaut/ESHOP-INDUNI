@@ -41,9 +41,15 @@
                            {}, class: "form-select" %>
             </div>
           </div>
-          <div class="mb-3">
-            <%= f.label :email, "Adresse e-mail", class: "form-label fw-semibold" %>
-            <%= f.email_field :email, class: "form-control", required: true %>
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <%= f.label :email, "Adresse e-mail", class: "form-label fw-semibold" %>
+              <%= f.email_field :email, class: "form-control", required: true %>
+            </div>
+            <div class="col-6">
+              <%= f.label :phone, "Téléphone mobile", class: "form-label fw-semibold" %>
+              <%= f.telephone_field :phone, class: "form-control", placeholder: "+41 79 000 00 00" %>
+            </div>
           </div>
           <div class="mb-0">
             <%= f.label :password, "Nouveau mot de passe", class: "form-label fw-semibold" %>

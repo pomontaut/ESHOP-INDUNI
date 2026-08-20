@@ -1,0 +1,5 @@
+Bonjour <%= @user&.first_name %>,
+
+<%= @order.supplier&.name %> a confirmé avoir bien reçu votre commande <%= @order.number %>.
+
+Confirmé le : <%= @order.reception_confirmed_at.strftime('%d.%m.%Y à %H:%M') %>

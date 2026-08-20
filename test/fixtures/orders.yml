@@ -6,6 +6,7 @@ one:
   status: MyString
   notes: MyText
   order_date: 2026-06-25
+  reception_token: fixture-reception-token-one
 
 two:
   number: MyString
@@ -13,3 +14,4 @@ two:
   status: MyString
   notes: MyText
   order_date: 2026-06-25
+  reception_token: fixture-reception-token-two

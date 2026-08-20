@@ -1,0 +1,36 @@
+<style>
+  body { background:#f6f5f3; font-family: Inter, Segoe UI, Arial, sans-serif; color:#10233e; }
+  .wrap { max-width: 640px; margin: 40px auto; padding: 0 20px 60px; }
+  .header { background:#0c1d34; border-radius:14px; padding:28px 32px; color:white; margin-bottom:24px; }
+  .header h1 { margin:0 0 4px; font-size:22px; }
+  .header p { margin:0; color:#93a2b8; font-size:14px; }
+  .card { background:white; border-radius:14px; box-shadow:0 4px 18px #0b1e3512; padding:28px 32px; text-align:center; }
+  .meta-item label { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:#697386; margin-bottom:3px; }
+  .meta-item span { font-size:15px; font-weight:700; }
+  .btn-confirm { background:#176b28; border:0; color:white; padding:16px 36px; border-radius:10px; font-size:17px; font-weight:900; cursor:pointer; }
+  .confirmed-badge { background:#f0fdf4; border:2px solid #86efac; color:#166534; border-radius:10px; padding:20px 24px; font-weight:700; font-size:16px; }
+</style>
+
+<div class="wrap">
+  <div class="header">
+    <h1>INDUNI E-Shop — Accusé de réception</h1>
+    <p>Commande <%= @order.number %> · <%= @order.supplier&.name %></p>
+  </div>
+
+  <div class="card">
+    <% if @order.reception_confirmed? %>
+      <div class="confirmed-badge">
+        ✅ Réception confirmée<br>
+        <span style="font-weight:400;font-size:13px">le <%= @order.reception_confirmed_at.strftime('%d.%m.%Y à %H:%M') %></span>
+      </div>
+    <% else %>
+      <p style="font-size:15px;margin:0 0 20px;">
+        Merci de confirmer que vous avez bien reçu la commande <b><%= @order.number %></b>
+        d'INDUNI &amp; Cie SA. Le rédacteur de la commande en sera immédiatement informé.
+      </p>
+      <%= form_with url: confirm_order_reception_path(@order.reception_token), method: :post do %>
+        <button type="submit" class="btn-confirm">✅ J'ai bien reçu cette commande</button>
+      <% end %>
+    <% end %>
+  </div>
+</div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_20_061744) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_20_075943) do
   create_table "chantiers", force: :cascade do |t|
     t.string "adresse"
     t.string "carte_interactive"
@@ -57,11 +57,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_061744) do
     t.text "notes"
     t.string "number"
     t.date "order_date"
+    t.datetime "reception_confirmed_at"
+    t.string "reception_token"
     t.string "status"
     t.integer "supplier_id", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id"
     t.index ["modifies_order_id"], name: "index_orders_on_modifies_order_id"
+    t.index ["reception_token"], name: "index_orders_on_reception_token", unique: true
     t.index ["supplier_id"], name: "index_orders_on_supplier_id"
     t.index ["user_id"], name: "index_orders_on_user_id"
   end
@@ -129,6 +132,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_061744) do
     t.boolean "must_change_password", default: false, null: false
     t.decimal "order_limit", precision: 10, scale: 2
     t.string "password_digest", null: false
+    t.string "phone"
     t.string "sector"
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_users_on_email", unique: true

@@ -4,6 +4,11 @@ class OrderMailer < ApplicationMailer
   def send_order(order, pdf_content = nil, to: nil, cc: nil, subject: nil, body: nil, read_receipt_to: nil)
     @order = order
     @body  = body.presence || DEFAULT_BODY
+    # A real read-receipt (below) is unreliable — Gmail ignores it outright,
+    # and Outlook lets the recipient decline it — so it can never be trusted
+    # as proof the order was seen. This link is: a plain click, from any mail
+    # client, that immediately confirms reception and notifies the author.
+    @reception_url = Rails.application.routes.url_helpers.order_reception_url(@order.reception_token, host: default_url_options[:host])
     if pdf_content
       attachments["commande_#{@order.number}.pdf"] = { mime_type: "application/pdf", content: pdf_content }
     end
@@ -59,5 +64,15 @@ class OrderMailer < ApplicationMailer
     @user  = order.user
     return unless @user&.email
     mail(to: @user.email, subject: "❌ Commande #{order.number} refusée — #{order.approval_comment&.truncate(60)}")
+  end
+
+  # Notifies the order's author the moment the supplier clicks the reception
+  # confirmation link — the practical substitute for an email read receipt,
+  # which most mail clients ignore or let the recipient decline.
+  def reception_confirmed(order)
+    @order = order
+    @user  = order.user
+    return unless @user&.email
+    mail(to: @user.email, subject: "✅ #{order.supplier&.name} a confirmé la réception de la commande #{order.number}")
   end
 end
