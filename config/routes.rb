@@ -21,6 +21,7 @@ Rails.application.routes.draw do
     end
     get   "nomenclature",     to: "nomenclature#index"
     patch "nomenclature/:id", to: "nomenclature#update"
+    resources :diesel_prices, only: [ :index, :create ]
     get :me, to: "sessions#me"
     post   "push_subscriptions", to: "push_subscriptions#create"
     delete "push_subscriptions", to: "push_subscriptions#destroy"

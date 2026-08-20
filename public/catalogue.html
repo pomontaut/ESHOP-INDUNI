@@ -2317,19 +2317,50 @@ function onMarketIndexChange(value){
   window._selectedMarketIndex=value;
   renderMarketIndexDetail(MARKET_INDICES,value);
 }
+function loadDieselPrices(){
+  return fetch('/api/diesel_prices').then(r=>r.json()).catch(()=>[]);
+}
 function renderMarketIndices(){
   const crumbs='<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Indicateurs de marché</div>';
-  app.innerHTML=crumbs+'<p class="muted">Chargement des indices KBOB…</p>';
-  loadMarketIndices().then(data=>{
+  app.innerHTML=crumbs+'<p class="muted">Chargement des indices…</p>';
+  Promise.all([loadMarketIndices(),loadDieselPrices()]).then(([data,diesel])=>{
     const materials=Object.keys(data.series);
     const current=(window._selectedMarketIndex && materials.includes(window._selectedMarketIndex)) ? window._selectedMarketIndex : materials[0];
     window._selectedMarketIndex=current;
-    renderMarketIndexDetail(data,current);
+    window._dieselPrices=diesel;
+    renderMarketIndexDetail(data,current,diesel);
   }).catch(()=>{
-    app.innerHTML=crumbs+'<p style="color:#b91c1c">Impossible de charger les indices KBOB.</p>';
+    app.innerHTML=crumbs+'<p style="color:#b91c1c">Impossible de charger les indices.</p>';
   });
 }
-function renderMarketIndexDetail(data,current){
+function dieselWeeklyChange(diesel,weeksBack){
+  if(!diesel||diesel.length<1+weeksBack) return null;
+  const last=diesel[diesel.length-1], ref=diesel[diesel.length-1-weeksBack];
+  return { last: last.price, ref: ref.price, deltaChf: last.price-ref.price, deltaPts: last.surchargePct-ref.surchargePct };
+}
+function dieselChangeTile(label,ch){
+  if(!ch) return `<div class="kpi"><small>${esc(label)}</small><b style="font-size:18px;color:#8994a3">n/d</b></div>`;
+  const up=ch.deltaChf>=0;
+  const color=up?'#b91c1c':'#176b28';
+  const arrow=up?'▲':'▼';
+  return `<div class="kpi"><small>${esc(label)}</small><b style="font-size:22px;color:${color}">${arrow} ${ch.deltaChf>=0?'+':''}${ch.deltaChf.toFixed(2)} CHF/l</b><small style="color:${color};font-weight:800">${ch.deltaPts>=0?'+':''}${ch.deltaPts.toFixed(1)} pt surcharge</small></div>`;
+}
+async function saveDieselPrice(){
+  const input=document.getElementById('dieselNewPrice');
+  const price=parseFloat(input.value);
+  if(!price||price<=0){alert('Indique un prix CHF/litre valide.');return}
+  try{
+    const resp=await fetch('/api/diesel_prices',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'price='+encodeURIComponent(price)});
+    const data=await resp.json();
+    if(!resp.ok||data.error) throw new Error(data.error||('HTTP '+resp.status));
+    window._dieselPrices=await loadDieselPrices();
+    renderMarketIndexDetail(MARKET_INDICES,window._selectedMarketIndex,window._dieselPrices);
+  }catch(e){
+    alert("Impossible d'enregistrer le prix : "+e.message);
+  }
+}
+function renderMarketIndexDetail(data,current,diesel){
+  diesel=diesel||window._dieselPrices||[];
   const materials=Object.keys(data.series);
   const options=materials.map(m=>`<option value="${esc(m)}"${m===current?' selected':''}>${esc(m)} (${esc(data.codes[m]||'')})</option>`).join('');
   const values=data.series[current];
@@ -2342,7 +2373,13 @@ function renderMarketIndexDetail(data,current){
   let lastIdx=values.length-1;
   while(lastIdx>=0 && values[lastIdx]==null) lastIdx--;
   const currentValue=lastIdx>=0?values[lastIdx]:null;
-  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Indicateurs de marché</div><div class="toolbar"><h2>📈 Indicateurs de marché — indices KBOB</h2><p class="muted">Indices des prix à la production (KBOB, publiés par trimestre). Une variation nulle sur 1 mois est normale si le mois choisi reste dans le même trimestre que le précédent relevé — les hausses (rouge) et baisses (vert) sont vues du point de vue d'un acheteur.</p></div><div style="max-width:560px;margin-bottom:16px"><label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:4px">Matériau / indice KBOB</label><select onchange="onMarketIndexChange(this.value)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:9px">${options}</select></div><div class="dashboardCards">${marketChangeTile('Évolution 1 mois',c1)}${marketChangeTile('Évolution 3 mois',c3)}${marketChangeTile('Évolution 1 an',c12)}<div class="kpi"><small>Indice actuel</small><b style="font-size:22px">${currentValue!=null?currentValue.toFixed(1):'n/d'}</b><small class="muted">${esc(data.codes[current]||'')}</small></div></div><div class="chartGrid"><div class="chartCard"><h3>${esc(current)} — 3 dernières années</h3>${svgLineChartV49(rDates,rValues)}</div></div>`;
+  const d1=dieselWeeklyChange(diesel,1);
+  const d4=dieselWeeklyChange(diesel,4);
+  const dYtd=diesel.length?{last:diesel[diesel.length-1].price,ref:diesel[0].price,deltaChf:diesel[diesel.length-1].price-diesel[0].price,deltaPts:diesel[diesel.length-1].surchargePct-diesel[0].surchargePct}:null;
+  const dieselLast=diesel.length?diesel[diesel.length-1]:null;
+  const dieselAdminForm=(window._userPerms&&window._userPerms.admin)?`<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label style="font-size:12.5px;font-weight:800">Prix de cette semaine (CHF/litre TVA incl.)</label><input id="dieselNewPrice" type="number" step="0.01" min="0" placeholder="ex. 2.19" style="width:110px;border:1px solid #ddd;border-radius:6px;padding:6px"><button class="miniBtn" onclick="saveDieselPrice()">Enregistrer</button></div>`:'';
+  const dieselChart=diesel.length?svgLineChartV49(diesel.slice(-26).map(d=>d.weekStart.slice(5)),diesel.slice(-26).map(d=>d.price)):'<p class="muted">Aucune donnée.</p>';
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Indicateurs de marché</div><div class="toolbar"><h2>📈 Indicateurs de marché — indices KBOB</h2><p class="muted">Indices des prix à la production (KBOB, publiés par trimestre). Une variation nulle sur 1 mois est normale si le mois choisi reste dans le même trimestre que le précédent relevé — les hausses (rouge) et baisses (vert) sont vues du point de vue d'un acheteur.</p></div><div style="max-width:560px;margin-bottom:16px"><label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:4px">Matériau / indice KBOB</label><select onchange="onMarketIndexChange(this.value)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:9px">${options}</select></div><div class="dashboardCards">${marketChangeTile('Évolution 1 mois',c1)}${marketChangeTile('Évolution 3 mois',c3)}${marketChangeTile('Évolution 1 an',c12)}<div class="kpi"><small>Indice actuel</small><b style="font-size:22px">${currentValue!=null?currentValue.toFixed(1):'n/d'}</b><small class="muted">${esc(data.codes[current]||'')}</small></div></div><div class="chartGrid"><div class="chartCard"><h3>${esc(current)} — 3 dernières années</h3>${svgLineChartV49(rDates,rValues)}</div></div><div class="analysisBlock" style="margin-top:18px"><h3>⛽ Carburant diesel — surcharge nationale ASTAG</h3><p class="muted">Prix moyen hebdomadaire du diesel à la pompe (CHF/litre TVA incl., source ASTAG/IRU). Surcharge calculée par rapport à la base ASTAG 0% = CHF 1.64/litre.${dieselAdminForm}</p><div class="dashboardCards">${dieselChangeTile('Évolution 1 semaine',d1)}${dieselChangeTile('Évolution 4 semaines',d4)}${dieselChangeTile('Depuis le 1er janvier 2026',dYtd)}<div class="kpi"><small>Prix actuel</small><b style="font-size:22px">${dieselLast?dieselLast.price.toFixed(2)+' CHF/l':'n/d'}</b><small class="muted">${dieselLast?'surcharge '+dieselLast.surchargePct.toFixed(1)+'%':''}</small></div></div><div class="chartCard" style="margin-top:12px"><h3>Prix diesel — 26 dernières semaines</h3>${dieselChart}</div></div>`;
 }
 /* === fin patch v49 === */
 

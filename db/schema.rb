@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_20_115232) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_20_125424) do
   create_table "chantiers", force: :cascade do |t|
     t.string "adresse"
     t.string "canton"
@@ -34,6 +34,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_115232) do
     t.index ["email_chef_equipe"], name: "index_chantiers_on_email_chef_equipe"
     t.index ["email_contremaitre"], name: "index_chantiers_on_email_contremaitre"
     t.index ["email_technicien"], name: "index_chantiers_on_email_technicien"
+  end
+
+  create_table "diesel_prices", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.decimal "price", precision: 6, scale: 3, null: false
+    t.datetime "updated_at", null: false
+    t.date "week_start", null: false
+    t.index ["week_start"], name: "index_diesel_prices_on_week_start", unique: true
   end
 
   create_table "order_lines", force: :cascade do |t|
