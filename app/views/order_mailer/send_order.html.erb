@@ -1,10 +1,19 @@
-<%= simple_format(h(@body)) %>
+<%
+  paragraphs = @body.to_s.split(/\n{2,}/)
+  body_before_button = paragraphs.first(2).join("\n\n")
+  body_after_button  = paragraphs.drop(2).join("\n\n")
+%>
+<%= simple_format(h(body_before_button)) %>
 
-<table role="presentation" style="margin:24px 0;">
+<table role="presentation" style="margin:20px 0;width:100%;max-width:520px;">
   <tr>
-    <td style="background:#176b28;border-radius:8px;">
-      <a href="<%= @reception_url %>" style="display:inline-block;padding:14px 24px;color:white;font-weight:bold;font-size:15px;text-decoration:none;">✅ J'ai bien reçu cette commande</a>
+    <td style="background:#176b28;border-radius:12px;">
+      <a href="<%= @reception_url %>" style="display:block;padding:22px 20px;color:white;font-weight:900;font-size:19px;line-height:1.3;text-decoration:none;text-align:center;">✅ CLIQUER ICI POUR ACCUSER RÉCEPTION DE NOTRE COMMANDE</a>
     </td>
   </tr>
 </table>
-<p style="color:#666;font-size:13px;">Un simple clic sur ce bouton confirme la réception de la commande auprès d'INDUNI &amp; Cie SA.</p>
+<p style="color:#666;font-size:13px;margin:0 0 20px;">Un simple clic sur ce bouton confirme la réception de la commande auprès d'INDUNI &amp; Cie SA.</p>
+
+<% if body_after_button.present? %>
+<%= simple_format(h(body_after_button)) %>
+<% end %>

@@ -67,9 +67,14 @@ class ResendDeliveryMethod
   # attached by OrderMailer#send_order in the actual Resend request — only
   # the html/text body ever reached the API, so suppliers never received the
   # bon de commande PDF via the real order-sending flow.
+  #
+  # Without an explicit content_type, Resend/the receiving mail client has to
+  # guess the MIME type — Outlook guesses wrong and appends ".txt" to the
+  # filename (visually "commande_ESHOP_23.pdf.txt"), even though the actual
+  # bytes are a real PDF. Forwarding the attachment's own mime_type fixes it.
   def attachments_payload(mail)
     return nil if mail.attachments.empty?
-    mail.attachments.map { |attachment| { filename: attachment.filename, content: Base64.strict_encode64(attachment.body.decoded) } }
+    mail.attachments.map { |attachment| { filename: attachment.filename, content: Base64.strict_encode64(attachment.body.decoded), content_type: attachment.mime_type } }
   end
 
   # A mail with an attachment is wrapped as multipart/mixed containing the

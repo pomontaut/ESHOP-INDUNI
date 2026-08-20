@@ -64,6 +64,9 @@ class ResendDeliveryMethodTest < ActiveSupport::TestCase
     attachment = payload[:attachments].first
     assert_equal "commande_#{orders(:one).number}.pdf", attachment[:filename]
     assert_equal "%PDF-1.4 fake pdf content", Base64.strict_decode64(attachment[:content])
+    # Without this, Outlook guesses the MIME type wrong and renames the
+    # attachment to "....pdf.txt" even though the bytes are a real PDF.
+    assert_equal "application/pdf", attachment[:content_type]
   end
 
   test "forwards Cc addresses to Resend" do

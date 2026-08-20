@@ -2602,7 +2602,7 @@ async function enablePushNotifications(){
     alert('✅ Alertes activées : vous serez notifié dès qu\'un fournisseur confirme la réception d\'une commande.');
   }catch(e){
     console.error('enablePushNotifications failed',e);
-    alert('Impossible d\'activer les alertes sur cet appareil.');
+    alert('Impossible d\'activer les alertes sur cet appareil.\n\nDétail technique : '+(e&&e.name?e.name+' — ':'')+(e&&e.message?e.message:String(e)));
   }
 }
 updatePushNotifButton();

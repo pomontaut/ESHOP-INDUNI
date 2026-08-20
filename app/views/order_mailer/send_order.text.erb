@@ -1,3 +1,12 @@
-<%= @body %>
+<%
+  paragraphs = @body.to_s.split(/\n{2,}/)
+  body_before_button = paragraphs.first(2).join("\n\n")
+  body_after_button  = paragraphs.drop(2).join("\n\n")
+%>
+<%= body_before_button %>
 
-Pour confirmer la réception de cette commande, cliquez ici : <%= @reception_url %>
+>>> CLIQUER ICI POUR ACCUSER RÉCEPTION DE NOTRE COMMANDE : <%= @reception_url %>
+
+<% if body_after_button.present? -%>
+<%= body_after_button %>
+<% end -%>
