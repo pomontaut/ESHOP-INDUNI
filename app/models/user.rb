@@ -1,6 +1,7 @@
 class User < ApplicationRecord
   has_secure_password
   serialize :allowed_suppliers, coder: JSON, type: Array
+  has_many :push_subscriptions, dependent: :destroy
 
   SECTORS = [
     "BAT GE", "BAT VD", "GC", "EG VS", "EG VD", "EG GE", "DEPOT",

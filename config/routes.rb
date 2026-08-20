@@ -21,6 +21,8 @@ Rails.application.routes.draw do
     get   "nomenclature",     to: "nomenclature#index"
     patch "nomenclature/:id", to: "nomenclature#update"
     get :me, to: "sessions#me"
+    post   "push_subscriptions", to: "push_subscriptions#create"
+    delete "push_subscriptions", to: "push_subscriptions#destroy"
   end
 
   namespace :admin do

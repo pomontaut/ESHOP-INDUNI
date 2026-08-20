@@ -17,6 +17,8 @@ class Api::SessionsController < ApplicationController
         can_view_dashboard:    current_user.effective_can_view_dashboard?,
         can_view_analysis:     current_user.effective_can_view_analysis?,
         can_view_nomenclature: current_user.effective_can_view_nomenclature?,
+        vapidPublicKey:    Rails.application.config.x.vapid_public_key,
+        pushSubscribed:    current_user.push_subscriptions.exists?,
         allowed_suppliers: current_user.allowed_suppliers,
         chantiers:         Chantier.visible_to(current_user).order(:nom).map { |c|
           {

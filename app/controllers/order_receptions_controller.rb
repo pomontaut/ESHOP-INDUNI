@@ -10,6 +10,12 @@ class OrderReceptionsController < ApplicationController
     unless @order.reception_confirmed?
       @order.update!(reception_confirmed_at: Time.current)
       OrderMailer.reception_confirmed(@order).deliver_now rescue nil
+      WebPushNotifier.notify(
+        @order.user,
+        title: "✅ Commande #{@order.number} reçue",
+        body: "#{@order.supplier&.name} a confirmé la réception.",
+        url: "/catalogue.html"
+      ) rescue nil
     end
     render :show
   end

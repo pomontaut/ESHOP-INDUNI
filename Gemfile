@@ -71,5 +71,10 @@ gem "wicked_pdf"
 gem "wkhtmltopdf-binary"
 gem "letter_opener_web", group: :development
 
+# Sends browser push notifications (no third-party account needed, unlike
+# SMS — uses the free/standard Web Push protocol with self-generated VAPID
+# keys) to alert an order's author the moment a supplier confirms reception.
+gem "webpush"
+
 # Official Anthropic SDK, used to extract structured line items from supplier quotes (devis)
 gem "anthropic"
