@@ -15,7 +15,8 @@ class User < ApplicationRecord
     { key: "MBT",        label: "MBT" },
     { key: "ALZO AG",    label: "ALZO AG" },
     { key: "Soreval",    label: "Soreval" },
-    { key: "BTest",      label: "BTest" }
+    { key: "BTest",      label: "BTest" },
+    { key: "LCBE",       label: "LCBE" }
   ].freeze
 
   validates :email, presence: true, uniqueness: { case_sensitive: false },

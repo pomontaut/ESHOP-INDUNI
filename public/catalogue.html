@@ -166,6 +166,7 @@ const HIAG_LOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAaYAAAB3CAIAAADHB
 const TRANSPORT_HGC=85, CANPLAST_TRANSPORT=150, CANPLAST_FRANCO=2000, CANPLAST_RPLP=0.022, CANPLAST_CRANE=80;
 const MBT_FRANCO=3000, MBT_TIER2_MIN=1500, MBT_TIER2=130, MBT_TIER1=70;
 const ALZO_TRANSPORT=12;
+const LCBE_TRANSPORT=145;
 
 /* ============================================================
    ZONES DE LIVRAISON SOREVAL — calculées par temps de trajet routier
@@ -331,6 +332,7 @@ function transportDetailsInduni(sub,supplier,weightOverride){
     const discount=-(sub*rate);
     return {transport:discount,rplp:0,crane:0,prep:0,totalTransport:discount,total:sub+discount,label:'Remise de volume BTest',rate:rate};
   }
+  if(supplier==='LCBE') return {transport:LCBE_TRANSPORT,rplp:0,crane:0,prep:0,totalTransport:LCBE_TRANSPORT,total:sub+LCBE_TRANSPORT,label:'Forfait déplacement LCBE'};
   return {transport:0,rplp:0,crane:0,prep:0,totalTransport:0,total:sub,label:'Transport'};
 }
 function transportHtmlInduni(sub,supplier){
@@ -351,6 +353,7 @@ function transportHtmlInduni(sub,supplier){
     return `<div class="sum"><span>Transport Soreval — Zone ${t.zone.zone} (${t.essieu4?'4 essieux':'5 essieux'}/malaxeur)</span><b>${fmt(t.totalTransport)}</b></div>`;
   }
   if(supplier==='BTest') return `<div class="sum"><span>Remise de volume BTest${t.rate?` (${Math.round(t.rate*100)}%)`:''}</span><b>${fmt(t.totalTransport)}</b></div>`;
+  if(supplier==='LCBE') return `<div class="sum"><span>Forfait déplacement LCBE</span><b>${fmt(t.totalTransport)}</b></div>`;
   return `<div class="sum"><span>Transport</span><b>${fmt(t.totalTransport)}</b></div>`;
 }
 const fmt=n=>'CHF '+Number(n||0).toLocaleString('fr-CH',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -374,7 +377,8 @@ const MBT_LOGO='/images/categories/mbt.png';
 const ALZO_LOGO='/images/categories/alzo.png';
 const SOREVAL_LOGO='/images/categories/soreval.png';
 const BTEST_LOGO='/images/categories/btest.png';
-function catalogLogoInduni(c){return c==='HGC'?HGC_LOGO:(c==='Canplast'?CAN_LOGO:(c==='Leuba HIAG'?HIAG_LOGO:(c==='CreaBeton'?CREABETON_LOGO:(c==='MBT'?MBT_LOGO:(c==='ALZO AG'?ALZO_LOGO:(c==='Soreval'?SOREVAL_LOGO:(c==='BTest'?BTEST_LOGO:INDUNI_LOGO)))))))}
+const LCBE_LOGO='/images/categories/lcbe.png';
+function catalogLogoInduni(c){return c==='HGC'?HGC_LOGO:(c==='Canplast'?CAN_LOGO:(c==='Leuba HIAG'?HIAG_LOGO:(c==='CreaBeton'?CREABETON_LOGO:(c==='MBT'?MBT_LOGO:(c==='ALZO AG'?ALZO_LOGO:(c==='Soreval'?SOREVAL_LOGO:(c==='BTest'?BTEST_LOGO:(c==='LCBE'?LCBE_LOGO:INDUNI_LOGO))))))))}
 const SUPPLIER_INFO={
   'HGC':{email:'yannick.mace@hgc.ch',phone:'0041 22 343 85 50'},
   'Canplast':{address:'Route de Sollens 2B',postal_code:'1029',city:'Villars-Ste-Croix',email:'commandes@canplast.ch',phone:'0041 21 637 37 77'},
@@ -383,7 +387,8 @@ const SUPPLIER_INFO={
   'MBT':{email:'didier.hossmann@mbt-bautechnik.com'},
   'ALZO AG':{address:'12 Unterleh',postal_code:'6300',city:'Zug',email:'info@alzo.ch',phone:'041 500 50 16'},
   'Soreval':{address:'10, Route de la Maison Carrée',postal_code:'1242',city:'Satigny',email:'l.sogno@soreval.ch',phone:'+41 22 341 15 71'},
-  'BTest':{}
+  'BTest':{},
+  'LCBE':{address:"Route de l'Industrie 43B",postal_code:'1615',city:'Bossonnens',email:'info@lcbe.ch',phone:'021 947 47 58'}
 };
 function chooseCatalog(c){const p=window._userPerms;if(p&&p.allowed_suppliers&&p.allowed_suppliers.length>0&&!p.allowed_suppliers.includes(c)){return;}
 
@@ -426,7 +431,7 @@ function renderFunnelWidget(lockedCatalog,lockedFamille){
   const sousItems=funnelSel.sous?famItems.filter(p=>p.sousFamille===funnelSel.sous):[];
   const sousSous=funnelSel.sous?funnelOptions(sousItems,'sousSousFamille').filter(s=>s!=='__DIRECT__'):[];
   const showSous2=funnelSel.sous&&sousSous.length>1;
-  const catalogOptions=['HGC','Canplast','Leuba HIAG','CreaBeton','MBT','ALZO AG','Soreval','BTest'].filter(funnelCanSee);
+  const catalogOptions=['HGC','Canplast','Leuba HIAG','CreaBeton','MBT','ALZO AG','Soreval','BTest','LCBE'].filter(funnelCanSee);
   const leafItems=funnelSel.sous2?sousItems.filter(p=>p.sousSousFamille===funnelSel.sous2):(showSous2?[]:sousItems);
   const isTuyau=funnelSel.sous&&isTuyauContextInduni(funnelSel.sous,funnelSel.sous2)&&leafItems.length>0;
   const diamOptions=isTuyau?[...new Set(leafItems.map(p=>extractDiamInduni(p.designation)).filter(d=>d!=null))].sort((a,b)=>a-b):[];
@@ -478,7 +483,7 @@ function goFunnel(cat,fam){
   render();
 }
 function render(){const q=document.getElementById('searchBox').value.trim().toLowerCase(); if(q){return renderSearch(q)} if(state.view==='home')return renderHome(); if(state.view==='catalog')return renderCatalog(); if(state.view==='family')return renderFamily(); if(state.view==='subfamily')return renderSubFamily(); if(state.view==='level4')return renderLevel4(); if(state.view==='products')return renderProducts(); if(state.view==='dashboard')return renderDashboard(); if(state.view==='analysis')return renderAnalysis();}
-function renderHome(){const h=PRODUCTS.filter(p=>p.catalog==='HGC').length, c=PRODUCTS.filter(p=>p.catalog==='Canplast').length, l=PRODUCTS.filter(p=>p.catalog==='Leuba HIAG').length, cb=PRODUCTS.filter(p=>p.catalog==='CreaBeton').length, mbt=PRODUCTS.filter(p=>p.catalog==='MBT').length, alz=PRODUCTS.filter(p=>p.catalog==='ALZO AG').length, srv=PRODUCTS.filter(p=>p.catalog==='Soreval').length, bt=PRODUCTS.filter(p=>p.catalog==='BTest').length;
+function renderHome(){const h=PRODUCTS.filter(p=>p.catalog==='HGC').length, c=PRODUCTS.filter(p=>p.catalog==='Canplast').length, l=PRODUCTS.filter(p=>p.catalog==='Leuba HIAG').length, cb=PRODUCTS.filter(p=>p.catalog==='CreaBeton').length, mbt=PRODUCTS.filter(p=>p.catalog==='MBT').length, alz=PRODUCTS.filter(p=>p.catalog==='ALZO AG').length, srv=PRODUCTS.filter(p=>p.catalog==='Soreval').length, bt=PRODUCTS.filter(p=>p.catalog==='BTest').length, lcbe=PRODUCTS.filter(p=>p.catalog==='LCBE').length;
 const allowed=window._userPerms&&window._userPerms.allowed_suppliers;
 function canSee(key){return !allowed||allowed.length===0||allowed.includes(key);}
 const covers=[
@@ -491,6 +496,7 @@ const covers=[
   canSee('ALZO AG')?`<button class="cover" onclick="chooseCatalog('ALZO AG')"><div class="coverTop"><img src="${ALZO_LOGO}" alt="ALZO AG"></div><div class="coverText"><b>E-shop ALZO AG</b><p class="muted">${alz} articles · étancheurs de passage Saturn S</p></div></button>`:'',
   canSee('Soreval')?`<button class="cover" onclick="chooseCatalog('Soreval')"><div class="coverTop"><img src="${SOREVAL_LOGO}" alt="Soreval"></div><div class="coverText"><b>E-shop Soreval</b><p class="muted">${srv} articles · granulats, béton recyclé & béton classé</p></div></button>`:'',
   canSee('BTest')?`<button class="cover" onclick="chooseCatalog('BTest')"><div class="coverTop"><img src="${BTEST_LOGO}" alt="BTest"></div><div class="coverText"><b>E-shop BTest</b><p class="muted">${bt} prestations · essais laboratoire béton</p></div></button>`:'',
+  canSee('LCBE')?`<button class="cover" onclick="chooseCatalog('LCBE')"><div class="coverTop"><img src="${LCBE_LOGO}" alt="LCBE"></div><div class="coverText"><b>E-shop LCBE</b><p class="muted">${lcbe} prestations · essais béton frais chantier (région lausannoise)</p></div></button>`:'',
   renderFunnelWidget(null)
 ].join('');
 app.innerHTML=`<section class="hero"><div><h1>Catalogues Achats Induni</h1><p class="muted" style="font-size:18px">Cliquez sur un logo pour accéder à l'e-shop correspondant.</p><div class="coverGrid threeCovers">${covers}</div></div></section>`}
@@ -1456,7 +1462,7 @@ function updateCartWeightInduni(){
   document.getElementById('weightLabel').innerHTML=`Poids total (indicatif)${missing?` · <span style="color:#b45309">${missing} article(s) sans poids connu</span>`:''}`;
   document.getElementById('weightTotal').innerHTML=`${totalWeight.toLocaleString('fr-CH')} kg <span style="font-size:11px;color:${pct>=100?'#b91c1c':'#546273'}">(${pct}% d'un camion ${TRUCK_CAPACITY_KG_INDUNI/1000}t)</span>`;
 }
-function updateCart(){document.getElementById('cartCount').textContent=cart.length?`(${cart.length})`:''; const box=document.getElementById('cartItems'); const supplier=cartSupplier(); box.innerHTML=cart.length?`<div style="padding:10px 12px;margin-bottom:8px;border-radius:10px;background:#eef5ff;color:#0b4f9c;font-weight:900">Panier fournisseur : ${esc(supplier)}</div>`+cart.map((i,k)=>`<div class="cartRow"><div class="thumb" style="${photoUrl(i)?`background-image:url('${photoUrl(i)}')`:`background-color:${tileColor(i.famille)}`}">${photoUrl(i)?'':`<span class="thumbGlyph">${esc(i.icone||'📦')}</span>`}</div><div><b>${esc(i.designation)}</b><div class="muted">${esc(i.article)} · ${esc(i.unite)}</div><div class="qty"><button onclick="qty(${k},-1)">−</button><input type="number" min="0" step="any" value="${i.qty}" onchange="setQty(${k},this.value)" style="width:56px;text-align:center;border:1px solid #ddd;border-radius:6px;height:28px"><span class="muted" style="font-size:12px">${esc(i.unite)}</span><button onclick="qty(${k},1)">+</button></div></div><div style="text-align:right"><b>${fmt(i.prix*i.qty)}</b><button onclick="removeItem(${k})" style="margin-top:8px;border:0;background:white;color:#999;font-size:20px">×</button></div></div>`).join('')+cartPrefaBetonPaletteNoteHtml()+cartComparatifTriggerHtml():'<p class="muted">Panier vide.</p>'; const sub=cart.reduce((s,i)=>s+i.prix*i.qty,0); document.getElementById('subTotal').textContent=fmt(sub); updateCartWeightInduni(); const td=transportDetailsInduni(sub,supplier); const rplpLine=document.getElementById('rplpLine'); if(supplier==='Canplast'){rplpLine.style.display='';document.getElementById('rplpTotal').textContent=fmt(td.rplp);}else{rplpLine.style.display='none';} document.getElementById('transportLineLabel').textContent=supplier==='HGC'?'Transport HGC fixe':(supplier==='Canplast'?'Livraison Canplast':(supplier==='Leuba HIAG'?'Leuba HIAG franco':(supplier==='MBT'?'Livraison MBT':(supplier==='CreaBeton'?'Transport CreaBeton':(supplier==='ALZO AG'?'Transport ALZO AG':(supplier==='Soreval'?'Transport Soreval':(supplier==='BTest'?'Remise de volume BTest':'Transport'))))))); document.getElementById('transportTotal').textContent=fmt((supplier==='Canplast'||supplier==='CreaBeton')?(td.transport+td.crane):td.totalTransport); document.getElementById('grandTotal').textContent=fmt(sub+td.totalTransport);; toggleCanplastOptions();toggleCanplastZoneBlock();toggleSorevalZoneBlock();toggleSupplierFields();toggleBillingMerchant();updateRequiredSupplierFields();}
+function updateCart(){document.getElementById('cartCount').textContent=cart.length?`(${cart.length})`:''; const box=document.getElementById('cartItems'); const supplier=cartSupplier(); box.innerHTML=cart.length?`<div style="padding:10px 12px;margin-bottom:8px;border-radius:10px;background:#eef5ff;color:#0b4f9c;font-weight:900">Panier fournisseur : ${esc(supplier)}</div>`+cart.map((i,k)=>`<div class="cartRow"><div class="thumb" style="${photoUrl(i)?`background-image:url('${photoUrl(i)}')`:`background-color:${tileColor(i.famille)}`}">${photoUrl(i)?'':`<span class="thumbGlyph">${esc(i.icone||'📦')}</span>`}</div><div><b>${esc(i.designation)}</b><div class="muted">${esc(i.article)} · ${esc(i.unite)}</div><div class="qty"><button onclick="qty(${k},-1)">−</button><input type="number" min="0" step="any" value="${i.qty}" onchange="setQty(${k},this.value)" style="width:56px;text-align:center;border:1px solid #ddd;border-radius:6px;height:28px"><span class="muted" style="font-size:12px">${esc(i.unite)}</span><button onclick="qty(${k},1)">+</button></div></div><div style="text-align:right"><b>${fmt(i.prix*i.qty)}</b><button onclick="removeItem(${k})" style="margin-top:8px;border:0;background:white;color:#999;font-size:20px">×</button></div></div>`).join('')+cartPrefaBetonPaletteNoteHtml()+cartComparatifTriggerHtml():'<p class="muted">Panier vide.</p>'; const sub=cart.reduce((s,i)=>s+i.prix*i.qty,0); document.getElementById('subTotal').textContent=fmt(sub); updateCartWeightInduni(); const td=transportDetailsInduni(sub,supplier); const rplpLine=document.getElementById('rplpLine'); if(supplier==='Canplast'){rplpLine.style.display='';document.getElementById('rplpTotal').textContent=fmt(td.rplp);}else{rplpLine.style.display='none';} document.getElementById('transportLineLabel').textContent=supplier==='HGC'?'Transport HGC fixe':(supplier==='Canplast'?'Livraison Canplast':(supplier==='Leuba HIAG'?'Leuba HIAG franco':(supplier==='MBT'?'Livraison MBT':(supplier==='CreaBeton'?'Transport CreaBeton':(supplier==='ALZO AG'?'Transport ALZO AG':(supplier==='Soreval'?'Transport Soreval':(supplier==='BTest'?'Remise de volume BTest':(supplier==='LCBE'?'Forfait déplacement LCBE':'Transport')))))))); document.getElementById('transportTotal').textContent=fmt((supplier==='Canplast'||supplier==='CreaBeton')?(td.transport+td.crane):td.totalTransport); document.getElementById('grandTotal').textContent=fmt(sub+td.totalTransport);; toggleCanplastOptions();toggleCanplastZoneBlock();toggleSorevalZoneBlock();toggleSupplierFields();toggleBillingMerchant();updateRequiredSupplierFields();}
 const PREFA_BETON_PALETTE_SKIP_SOUS_INDUNI=new Set(['Outillage béton']);
 function cartPrefaBetonPaletteNoteHtml(){
   const hasPrefa=cart.some(i=>i.famille==='Préfa-béton'&&!PREFA_BETON_PALETTE_SKIP_SOUS_INDUNI.has(i.sousFamille));

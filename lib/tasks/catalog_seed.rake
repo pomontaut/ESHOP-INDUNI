@@ -43,7 +43,11 @@ namespace :catalog do
       },
       # Coordonnées de commande non communiquées dans l'accord tarifaire fourni :
       # à compléter par un admin (fiche fournisseur) avant le premier envoi réel.
-      "BTest" => {}
+      "BTest" => {},
+      "LCBE" => {
+        email: "info@lcbe.ch", phone: "021 947 47 58",
+        address: "Route de l'Industrie 43B", postal_code: "1615", city: "Bossonnens", country_code: "CH"
+      }
     }.freeze
 
     Supplier.where(name: [ "Sika", "Alzo" ]).find_each do |supplier|
