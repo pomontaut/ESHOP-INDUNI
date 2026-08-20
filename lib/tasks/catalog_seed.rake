@@ -40,7 +40,10 @@ namespace :catalog do
       "Soreval" => {
         email: "l.sogno@soreval.ch", phone: "+41 22 341 15 71",
         address: "10, Route de la Maison Carrée", postal_code: "1242", city: "Satigny", country_code: "CH"
-      }
+      },
+      # Coordonnées de commande non communiquées dans l'accord tarifaire fourni :
+      # à compléter par un admin (fiche fournisseur) avant le premier envoi réel.
+      "BTest" => {}
     }.freeze
 
     Supplier.where(name: [ "Sika", "Alzo" ]).find_each do |supplier|
