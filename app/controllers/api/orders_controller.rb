@@ -7,6 +7,20 @@ class Api::OrdersController < ApplicationController
     render json: { number: Order.next_number }
   end
 
+  # Manual fallback for the reception accusé — the automated e-mail button
+  # depends on the fournisseur actually receiving and trusting an e-mail sent
+  # from a generic, unverified sender address (see indunieshop.ch domain
+  # verification), which isn't reliable enough on its own. This lets whoever
+  # created the order mark it received themselves (phone call, an ordinary
+  # e-mail reply, etc.) — no dependency on the fournisseur clicking anything.
+  def confirm_reception
+    order = current_user&.admin? ? Order.find(params[:id]) : Order.find_by!(id: params[:id], user: current_user)
+    order.update!(reception_confirmed_at: Time.current) unless order.reception_confirmed?
+    render json: { success: true, receptionConfirmedAt: order.reception_confirmed_at.strftime("%d.%m.%Y %H:%M") }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Commande introuvable" }, status: :not_found
+  end
+
   def index
     orders = current_user&.admin? ? Order.all : Order.where(user: current_user)
     orders = orders.includes(:supplier, :order_lines, :user).order(created_at: :desc).limit(100)

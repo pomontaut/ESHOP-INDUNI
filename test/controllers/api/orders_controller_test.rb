@@ -123,4 +123,48 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_match(/Article ajouté/, body)
     assert_match(/qté 1 → 3/, body)
   end
+
+  test "confirm_reception lets the order's author mark it received manually" do
+    order = orders(:one)
+    order.update!(user: users(:one))
+    assert_nil order.reception_confirmed_at
+
+    patch confirm_reception_api_order_url(order)
+    assert_response :success
+
+    order.reload
+    assert order.reception_confirmed_at.present?
+  end
+
+  test "confirm_reception is idempotent — it never resets an already-confirmed timestamp" do
+    order = orders(:one)
+    order.update!(user: users(:one), reception_confirmed_at: 2.days.ago)
+    original_timestamp = order.reception_confirmed_at
+
+    patch confirm_reception_api_order_url(order)
+    assert_response :success
+
+    order.reload
+    assert_in_delta original_timestamp, order.reception_confirmed_at, 1.second
+  end
+
+  test "confirm_reception refuses to confirm another user's order for a non-admin" do
+    delete logout_url
+    post login_url, params: { email: users(:two).email, password: "password123" }
+    order = orders(:one)
+    order.update!(user: users(:one))
+
+    patch confirm_reception_api_order_url(order)
+    assert_response :not_found
+    assert_nil order.reload.reception_confirmed_at
+  end
+
+  test "confirm_reception lets an admin confirm any order, not just their own" do
+    order = orders(:two)
+    order.update!(user: users(:two))
+
+    patch confirm_reception_api_order_url(order)
+    assert_response :success
+    assert order.reload.reception_confirmed_at.present?
+  end
 end
