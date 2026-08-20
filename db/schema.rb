@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_20_095827) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_20_115232) do
   create_table "chantiers", force: :cascade do |t|
     t.string "adresse"
     t.string "canton"
@@ -54,12 +54,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_095827) do
     t.string "approval_token"
     t.string "approver_email"
     t.datetime "created_at", null: false
+    t.datetime "email_sent_at"
     t.integer "modifies_order_id"
     t.text "notes"
     t.string "number"
     t.date "order_date"
     t.datetime "reception_confirmed_at"
     t.string "reception_token"
+    t.text "sent_body"
+    t.string "sent_cc"
+    t.string "sent_subject"
+    t.string "sent_to"
     t.string "status"
     t.integer "supplier_id", null: false
     t.datetime "updated_at", null: false

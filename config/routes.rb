@@ -13,7 +13,7 @@ Rails.application.routes.draw do
   namespace :api do
     resources :orders, only: [ :create, :index ] do
       collection { post :preview_pdf; get :next_number }
-      member { patch :confirm_reception }
+      member { patch :confirm_reception; post :resend }
     end
     resources :products, only: [ :index ]
     resources :devis_imports, only: [ :create ] do

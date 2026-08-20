@@ -37,6 +37,7 @@ class Api::OrdersController < ApplicationController
         user_name:       o.user&.full_name,
         user_sector:     o.user&.sector,
         receptionConfirmedAt: o.reception_confirmed_at&.strftime("%d.%m.%Y %H:%M"),
+        emailSent:       o.email_sent_at.present?,
         items:           o.order_lines.map { |l|
           { article: l.product&.reference, designation: l.product&.name, qty: l.quantity, prix: l.unit_price.to_f, catalogPrix: l.catalog_price&.to_f }
         }
@@ -141,8 +142,14 @@ class Api::OrdersController < ApplicationController
       cc = cc_addresses.uniq.join(", ").presence
       subject = params[:subject].to_s.strip.presence
       body    = params[:body].to_s.strip.presence
+      # Persisted so a failed send can be retried later (see #resend) with the
+      # exact same recipients/message, instead of falling back to generic
+      # defaults — and so the order is never silently mistaken for "sent"
+      # (see email_sent_at below) if the mailer call raises.
+      order.update!(sent_to: to, sent_cc: cc, sent_subject: subject, sent_body: body)
       pdf_content = render_order_pdf(order)
       OrderMailer.send_order(order, pdf_content, to: to, cc: cc, subject: subject, body: body, read_receipt_to: current_user&.email).deliver_now
+      order.update!(email_sent_at: Time.current)
       render json: {
         success:        true,
         needs_approval: false,
@@ -152,6 +159,28 @@ class Api::OrdersController < ApplicationController
         supplier_name:  supplier.name
       }, status: :ok
     end
+  rescue => e
+    # The order (and its lines) is already committed at this point even if
+    # the e-mail itself failed to send — email_sent_at staying blank is what
+    # lets the dashboard offer a "Renvoyer" action instead of the order
+    # silently looking identical to one that was actually sent.
+    render json: { error: e.message, order_number: order&.number }, status: :unprocessable_entity
+  end
+
+  # Retries sending a previously-created order whose initial e-mail failed —
+  # reuses the exact recipients/subject/body from the original attempt.
+  def resend
+    order = current_user&.admin? ? Order.find(params[:id]) : Order.find_by!(id: params[:id], user: current_user)
+    pdf_content = render_order_pdf(order)
+    OrderMailer.send_order(
+      order, pdf_content,
+      to: order.sent_to, cc: order.sent_cc, subject: order.sent_subject, body: order.sent_body,
+      read_receipt_to: order.user&.email
+    ).deliver_now
+    order.update!(email_sent_at: Time.current)
+    render json: { success: true, order_number: order.number }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Commande introuvable" }, status: :not_found
   rescue => e
     render json: { error: e.message }, status: :unprocessable_entity
   end

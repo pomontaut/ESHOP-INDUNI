@@ -167,4 +167,66 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert order.reload.reception_confirmed_at.present?
   end
+
+  test "create marks email_sent_at once the mail actually goes out" do
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+    }
+    assert_response :success
+    order = Order.order(:id).last
+    assert order.email_sent_at.present?
+  end
+
+  test "create keeps the order but leaves email_sent_at blank when the mailer raises" do
+    original = OrderMailer.method(:send_order)
+    OrderMailer.define_singleton_method(:send_order) { |*, **| raise "Resend API error: 422 simulated failure" }
+
+    begin
+      post api_orders_url, params: {
+        chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+        items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+      }
+    ensure
+      OrderMailer.define_singleton_method(:send_order, original)
+    end
+
+    assert_response :unprocessable_entity
+    body = JSON.parse(response.body)
+    assert body["order_number"].present?, "the response should still report which order was created despite the failure"
+
+    order = Order.find_by(number: body["order_number"])
+    assert order, "the order (and its lines) must survive even though the e-mail failed"
+    assert_nil order.email_sent_at
+  end
+
+  test "resend retries with the exact recipients from the original attempt and marks it sent" do
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      to: "fournisseur@example.ch", cc: "copie@induni.ch",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+    }
+    order = Order.order(:id).last
+    order.update!(email_sent_at: nil) # simulate the original send having failed
+    ActionMailer::Base.deliveries.clear
+
+    post resend_api_order_url(order)
+    assert_response :success
+
+    order.reload
+    assert order.email_sent_at.present?
+    mail = ActionMailer::Base.deliveries.last
+    assert_equal [ "fournisseur@example.ch" ], mail.to
+    assert_includes mail.cc, "copie@induni.ch"
+  end
+
+  test "resend refuses to retry another user's order for a non-admin" do
+    order = orders(:one)
+    order.update!(user: users(:one), sent_to: "x@example.ch")
+    delete logout_url
+    post login_url, params: { email: users(:two).email, password: "password123" }
+
+    post resend_api_order_url(order)
+    assert_response :not_found
+  end
 end
