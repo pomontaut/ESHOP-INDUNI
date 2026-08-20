@@ -13,7 +13,8 @@ class User < ApplicationRecord
     { key: "Leuba HIAG", label: "Leuba HIAG SA" },
     { key: "CreaBeton",  label: "CreaBeton" },
     { key: "MBT",        label: "MBT" },
-    { key: "ALZO AG",    label: "ALZO AG" }
+    { key: "ALZO AG",    label: "ALZO AG" },
+    { key: "Soreval",    label: "Soreval" }
   ].freeze
 
   validates :email, presence: true, uniqueness: { case_sensitive: false },

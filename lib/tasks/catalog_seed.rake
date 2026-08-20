@@ -36,6 +36,11 @@ namespace :catalog do
       "ALZO AG" => {
         email: "info@alzo.ch", phone: "041 500 50 16", fax: "041 500 50 17",
         address: "12 Unterleh", postal_code: "6300", city: "Zug", country_code: "CH"
+      },
+      # Adresse de commande e-mail non communiquée dans les documents fournis :
+      # à compléter par un admin (fiche fournisseur) avant le premier envoi réel.
+      "Soreval" => {
+        address: "Route de la Maison Carrée 10", postal_code: "1242", city: "Satigny", country_code: "CH"
       }
     }.freeze
 
