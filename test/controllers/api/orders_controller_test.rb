@@ -22,7 +22,7 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
   test "preview_pdf requires authentication" do
     delete logout_url
     post preview_pdf_api_orders_url, params: { html: "<html></html>" }
-    assert_redirected_to login_path
+    assert_response :unauthorized
   end
 
   test "next_number previews the number the next order will get" do

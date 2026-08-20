@@ -12,6 +12,10 @@ class Admin::UsersController < ApplicationController
 
   def create
     @user = User.new(user_params)
+    if grants_admin? && !valid_admin_code?
+      @user.errors.add(:base, "Code de confirmation administrateur invalide ou manquant.")
+      return render :new, status: :unprocessable_entity
+    end
     temporary_password = params.dig(:user, :password).to_s
     if @user.save
       begin
@@ -31,6 +35,11 @@ class Admin::UsersController < ApplicationController
   def update
     attrs = user_params
     attrs.delete(:password) if attrs[:password].blank?
+    promoting_to_admin = ActiveModel::Type::Boolean.new.cast(attrs[:admin]) && !@user.admin?
+    if promoting_to_admin && !valid_admin_code?
+      @user.errors.add(:base, "Code de confirmation administrateur invalide ou manquant.")
+      return render :edit, status: :unprocessable_entity
+    end
     if @user.update(attrs)
       redirect_to admin_users_path, notice: "Droits de #{@user.full_name} mis à jour."
     else
@@ -60,6 +69,22 @@ class Admin::UsersController < ApplicationController
 
   def set_user
     @user = User.find(params[:id])
+  end
+
+  # Un utilisateur ne peut jamais devenir administrateur par lui-même : la
+  # promotion passe forcément par un administrateur existant, ET par ce code
+  # (ADMIN_PROMOTION_CODE), pour empêcher qu'une session admin compromise —
+  # ou manipulée via une IA/un script — ne suffise seule à créer un nouvel
+  # accès administrateur. Si aucun code n'est configuré côté serveur, la
+  # promotion reste bloquée plutôt que d'être silencieusement autorisée.
+  def valid_admin_code?
+    expected_code = ENV["ADMIN_PROMOTION_CODE"].presence
+    return false unless expected_code
+    ActiveSupport::SecurityUtils.secure_compare(params[:admin_confirmation_code].to_s, expected_code)
+  end
+
+  def grants_admin?
+    ActiveModel::Type::Boolean.new.cast(user_params[:admin])
   end
 
   def require_admin

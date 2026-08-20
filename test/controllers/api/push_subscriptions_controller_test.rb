@@ -34,6 +34,6 @@ class Api::PushSubscriptionsControllerTest < ActionDispatch::IntegrationTest
   test "requires authentication" do
     delete logout_url
     post api_push_subscriptions_url, params: { endpoint: "https://push.example.com/abc", keys: { p256dh: "a", auth: "b" } }
-    assert_redirected_to login_path
+    assert_response :unauthorized
   end
 end

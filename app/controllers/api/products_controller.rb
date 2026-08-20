@@ -1,8 +1,14 @@
 class Api::ProductsController < ApplicationController
-  skip_before_action :require_login
-
+  # Le catalogue complet (prix, fournisseurs) ne doit jamais être accessible
+  # sans connexion, et un utilisateur ne doit voir que les fournisseurs que
+  # son secteur/canton et ses éventuelles restrictions manuelles autorisent
+  # (voir User#effective_visible_suppliers et /admin/contrats).
   def index
-    products = Product.includes(:supplier).where.not(famille: nil).order(:id)
+    visible = current_user.effective_visible_suppliers
+    products = Product.joins(:supplier).includes(:supplier)
+      .where.not(famille: nil)
+      .where(suppliers: { name: visible })
+      .order(:id)
     render json: products.map { |p|
       {
         catalog:          p.supplier&.name,

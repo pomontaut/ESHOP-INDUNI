@@ -4,7 +4,16 @@ class ApplicationController < ActionController::Base
   private
 
   def require_login
-    unless current_user
+    return if current_user
+
+    # Les routes /api/* sont appelées en fetch() par catalogue.html, qui
+    # n'envoie pas forcément un en-tête Accept: application/json — se fier
+    # au chemin plutôt qu'au format négocié évite de rediriger un appel API
+    # vers la page de login HTML (que le fetch() interpréterait à tort comme
+    # une réponse JSON invalide plutôt qu'un vrai refus d'accès).
+    if request.path.start_with?("/api/")
+      render json: { error: "Authentification requise" }, status: :unauthorized
+    else
       redirect_to login_path, alert: "Veuillez vous connecter pour accéder à cette page."
     end
   end
