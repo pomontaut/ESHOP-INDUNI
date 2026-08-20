@@ -2266,55 +2266,34 @@ function showMarketIndices(){
 }
 // Petit graphique en ligne SVG (aucune lib externe) — même esprit que
 // svgBarsV49/svgPieV49 : pas de dépendance, juste du SVG généré à la main.
-function svgLineChartV49(dates,values){
-  const w=680,h=230,padL=46,padR=14,padT=16,padB=26;
+// Graphique en ligne unifié (KBOB / diesel ASTAG / Canplast) avec, au choix :
+// axe secondaire en % (dualAxisBase), étiquettes de valeur permanentes sur
+// chaque point (showLabels) et un <title> natif sur chaque point pour avoir
+// la valeur exacte au survol (aucune lib externe nécessaire).
+function svgTrendChartV52(dates,values,opts){
+  opts=opts||{};
+  const dualAxisBase=opts.dualAxisBase;
+  const suffix=opts.suffix||'';
+  const decimals=opts.decimals!=null?opts.decimals:1;
+  const showLabels=!!opts.showLabels;
+  const w=680,h=opts.height||(dualAxisBase!=null?260:230),padL=46,padR=dualAxisBase!=null?48:14,padT=showLabels?28:18,padB=26;
   const nums=values.filter(v=>v!=null);
   if(!nums.length) return `<svg class="svgChart" viewBox="0 0 ${w} ${h}" role="img"><text x="20" y="50" fill="#697386">Aucune donnée</text></svg>`;
-  const min=Math.min(...nums), max=Math.max(...nums);
+  const min=Math.min(...nums,...(dualAxisBase!=null?[dualAxisBase]:[])), max=Math.max(...nums,...(dualAxisBase!=null?[dualAxisBase]:[]));
   const span=(max-min)||1;
-  const lo=min-span*0.1, hi=max+span*0.1;
+  const lo=min-span*0.14, hi=max+span*0.14;
   const n=values.length;
   const px=i=>padL+(n<=1?0:(w-padL-padR)*i/(n-1));
   const py=v=>padT+(h-padT-padB)*(1-(v-lo)/((hi-lo)||1));
-  let d='',started=false,lastDot=null;
+  const fmtV=v=>v.toFixed(decimals)+suffix;
+  let d='',started=false;
+  const dots=[];
   values.forEach((v,i)=>{
     if(v==null) return;
     const cx=px(i), cy=py(v);
     d+=(started?'L':'M')+cx.toFixed(1)+' '+cy.toFixed(1)+' ';
     started=true;
-    lastDot=[cx,cy];
-  });
-  const rising=nums.length>1 && nums[nums.length-1]>=nums[0];
-  const stroke=rising?'#b91c1c':'#176b28';
-  const step=Math.max(1,Math.round(n/6));
-  let axisLabels='';
-  for(let i=0;i<n;i+=step){
-    axisLabels+=`<text x="${px(i).toFixed(1)}" y="${h-8}" font-size="10" fill="#8994a3" text-anchor="middle">${esc(dates[i])}</text>`;
-  }
-  return `<svg class="svgChart" viewBox="0 0 ${w} ${h}" role="img"><text x="${padL}" y="${padT}" font-size="10" fill="#8994a3">${hi.toFixed(1)}</text><text x="${padL}" y="${h-padB}" font-size="10" fill="#8994a3">${lo.toFixed(1)}</text><path d="${d}" fill="none" stroke="${stroke}" stroke-width="2.5"></path>${lastDot?`<circle cx="${lastDot[0].toFixed(1)}" cy="${lastDot[1].toFixed(1)}" r="4" fill="${stroke}"></circle>`:''}${axisLabels}</svg>`;
-}
-// Variante du graphique en ligne avec un second axe à droite en % de
-// surrenchérissement par rapport à `base` (même principe que le tableau
-// ASTAG où l'échelle CHF/litre à gauche est mise en regard de l'échelle
-// de surcharge à droite), plus une ligne de référence rouge en pointillé
-// au niveau de `base` (= 0%).
-function svgDieselChartV49(dates,values,base){
-  const w=680,h=260,padL=46,padR=48,padT=18,padB=26;
-  const nums=values.filter(v=>v!=null);
-  if(!nums.length) return `<svg class="svgChart" viewBox="0 0 ${w} ${h}" role="img"><text x="20" y="50" fill="#697386">Aucune donnée</text></svg>`;
-  const min=Math.min(...nums,base), max=Math.max(...nums,base);
-  const span=(max-min)||1;
-  const lo=min-span*0.12, hi=max+span*0.12;
-  const n=values.length;
-  const px=i=>padL+(n<=1?0:(w-padL-padR)*i/(n-1));
-  const py=v=>padT+(h-padT-padB)*(1-(v-lo)/((hi-lo)||1));
-  let d='',started=false,lastDot=null;
-  values.forEach((v,i)=>{
-    if(v==null) return;
-    const cx=px(i), cy=py(v);
-    d+=(started?'L':'M')+cx.toFixed(1)+' '+cy.toFixed(1)+' ';
-    started=true;
-    lastDot=[cx,cy];
+    dots.push([cx,cy,v,dates[i]]);
   });
   const rising=nums.length>1 && nums[nums.length-1]>=nums[0];
   const stroke=rising?'#b91c1c':'#176b28';
@@ -2323,17 +2302,32 @@ function svgDieselChartV49(dates,values,base){
   for(let i=0;i<n;i+=step){
     axisLabels+=`<text x="${px(i).toFixed(1)}" y="${h-8}" font-size="10" fill="#8994a3" text-anchor="middle">${esc(dates[i])}</text>`;
   }
-  const gridN=5;
-  let grid='';
-  for(let g=0;g<=gridN;g++){
-    const v=lo+(hi-lo)*g/gridN;
-    const y=py(v);
-    const pct=(v-base)/base*100;
-    grid+=`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-padR}" y2="${y.toFixed(1)}" stroke="#eef1f5" stroke-width="1"></line><text x="${padL-4}" y="${(y+3).toFixed(1)}" font-size="10" fill="#8994a3" text-anchor="end">${v.toFixed(2)}</text><text x="${w-padR+6}" y="${(y+3).toFixed(1)}" font-size="10" fill="#0b4f9c" text-anchor="start">${pct>=0?'+':''}${pct.toFixed(0)}%</text>`;
+  let grid='',baseLine='';
+  if(dualAxisBase!=null){
+    const gridN=5;
+    for(let g=0;g<=gridN;g++){
+      const v=lo+(hi-lo)*g/gridN;
+      const y=py(v);
+      const pct=(v-dualAxisBase)/dualAxisBase*100;
+      grid+=`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-padR}" y2="${y.toFixed(1)}" stroke="#eef1f5" stroke-width="1"></line><text x="${padL-4}" y="${(y+3).toFixed(1)}" font-size="10" fill="#8994a3" text-anchor="end">${v.toFixed(2)}</text><text x="${w-padR+6}" y="${(y+3).toFixed(1)}" font-size="10" fill="#0b4f9c" text-anchor="start">${pct>=0?'+':''}${pct.toFixed(0)}%</text>`;
+    }
+    const baseY=py(dualAxisBase);
+    if(dualAxisBase>=lo&&dualAxisBase<=hi){
+      baseLine=`<line x1="${padL}" y1="${baseY.toFixed(1)}" x2="${w-padR}" y2="${baseY.toFixed(1)}" stroke="#b91c1c" stroke-width="1.5" stroke-dasharray="4,3"></line>`;
+    }
+  } else {
+    grid=`<text x="${padL}" y="${padT-6}" font-size="10" fill="#8994a3">${fmtV(hi)}</text><text x="${padL}" y="${h-padB}" font-size="10" fill="#8994a3">${fmtV(lo)}</text>`;
   }
-  const baseY=py(base);
-  const baseLine=(base>=lo&&base<=hi)?`<line x1="${padL}" y1="${baseY.toFixed(1)}" x2="${w-padR}" y2="${baseY.toFixed(1)}" stroke="#b91c1c" stroke-width="1.5" stroke-dasharray="4,3"></line>`:'';
-  return `<svg class="svgChart" viewBox="0 0 ${w} ${h}" role="img">${grid}${baseLine}<path d="${d}" fill="none" stroke="${stroke}" stroke-width="2.5"></path>${lastDot?`<circle cx="${lastDot[0].toFixed(1)}" cy="${lastDot[1].toFixed(1)}" r="4" fill="${stroke}"></circle>`:''}${axisLabels}<text x="${padL}" y="12" font-size="9" fill="#8994a3">CHF/l</text><text x="${w-padR}" y="12" font-size="9" fill="#0b4f9c" text-anchor="end">% surcharge</text></svg>`;
+  // Un cercle transparent plus grand (r=9) porte le <title> pour une zone de
+  // survol confortable ; le petit cercle plein (r=3.5) reste l'habillage visuel.
+  const pointCircles=dots.map(([cx,cy,v,dt])=>
+    `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="9" fill="transparent"><title>${esc(dt)} : ${esc(fmtV(v))}</title></circle><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3.5" fill="${stroke}" style="pointer-events:none"></circle>`
+  ).join('');
+  const valueLabels=showLabels?dots.map(([cx,cy,v])=>
+    `<text x="${cx.toFixed(1)}" y="${(cy-10).toFixed(1)}" font-size="10.5" font-weight="800" fill="${stroke}" text-anchor="middle">${esc(fmtV(v))}</text>`
+  ).join(''):'';
+  const axisCaptions=dualAxisBase!=null?`<text x="${padL}" y="12" font-size="9" fill="#8994a3">${esc(opts.leftCaption||'')}</text><text x="${w-padR}" y="12" font-size="9" fill="#0b4f9c" text-anchor="end">${esc(opts.rightCaption||'')}</text>`:'';
+  return `<svg class="svgChart" viewBox="0 0 ${w} ${h}" role="img">${grid}${baseLine}<path d="${d}" fill="none" stroke="${stroke}" stroke-width="2.5"></path>${pointCircles}${valueLabels}${axisLabels}${axisCaptions}</svg>`;
 }
 // Compare la dernière valeur connue à celle d'il y a `monthsBack` mois — en
 // sautant les trous éventuels (séries démarrant plus tard que 2002).
@@ -2365,19 +2359,100 @@ function loadDieselPrices(){
 function loadCanplastSurcharges(){
   return fetch('/api/canplast_surcharges').then(r=>r.json()).catch(()=>[]);
 }
+let BRENT_PRICES=null;
+function loadBrentPrices(){
+  if(BRENT_PRICES) return Promise.resolve(BRENT_PRICES);
+  return fetch('/brent_prices.json').then(r=>r.json()).then(d=>{BRENT_PRICES=d;return d}).catch(()=>({dates:[],values:[]}));
+}
 function renderMarketIndices(){
   const crumbs='<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Indicateurs de marché</div>';
   app.innerHTML=crumbs+'<p class="muted">Chargement des indices…</p>';
-  Promise.all([loadMarketIndices(),loadDieselPrices(),loadCanplastSurcharges()]).then(([data,diesel,canplast])=>{
+  Promise.all([loadMarketIndices(),loadDieselPrices(),loadCanplastSurcharges(),loadBrentPrices()]).then(([data,diesel,canplast,brent])=>{
     const materials=Object.keys(data.series);
     const current=(window._selectedMarketIndex && materials.includes(window._selectedMarketIndex)) ? window._selectedMarketIndex : materials[0];
     window._selectedMarketIndex=current;
     window._dieselPrices=diesel;
     window._canplastSurcharges=canplast;
-    renderMarketIndexDetail(data,current,diesel,canplast);
+    window._brentPrices=brent;
+    renderMarketIndexDetail(data,current,diesel,canplast,brent);
   }).catch(()=>{
     app.innerHTML=crumbs+'<p style="color:#b91c1c">Impossible de charger les indices.</p>';
   });
+}
+// Générateur générique des boutons d'intervalle + réinitialiser, réutilisé
+// par les graphiques diesel et Brent.
+function rangeButtonsHtml(current,setterName,resetterName){
+  return RANGE_OPTIONS.map(n=>{
+    const active=current===n;
+    const label=n===0?'Tout':n+' sem.';
+    return `<button class="miniBtn" style="${active?'background:#0b4f9c;color:white':'background:#eef2f7;color:#10233e'}" onclick="${setterName}(${n})">${label}</button>`;
+  }).join(' ')+` <button class="miniBtn gray" onclick="${resetterName}()">↺ Réinitialiser</button>`;
+}
+function seriesChangeAt(values,weeksBack){
+  const n=values.length;
+  let lastIdx=n-1; while(lastIdx>=0 && values[lastIdx]==null) lastIdx--;
+  if(lastIdx<0) return null;
+  let refIdx=lastIdx-weeksBack; while(refIdx>=0 && values[refIdx]==null) refIdx--;
+  if(refIdx<0) return null;
+  const last=values[lastIdx], ref=values[refIdx];
+  return { last, ref, deltaAbs:last-ref, deltaPct: ref?(last-ref)/ref*100:null };
+}
+function genericChangeTile(label,ch,unit){
+  if(!ch||ch.deltaPct==null) return `<div class="kpi"><small>${esc(label)}</small><b style="font-size:18px;color:#8994a3">n/d</b></div>`;
+  const up=ch.deltaAbs>=0;
+  const color=up?'#b91c1c':'#176b28';
+  const arrow=up?'▲':'▼';
+  return `<div class="kpi"><small>${esc(label)}</small><b style="font-size:22px;color:${color}">${arrow} ${ch.deltaAbs>=0?'+':''}${ch.deltaAbs.toFixed(2)}${unit}</b><small style="color:${color};font-weight:800">${ch.deltaPct>=0?'+':''}${ch.deltaPct.toFixed(1)}%</small></div>`;
+}
+function setBrentRange(n){
+  window._brentRange=n;
+  renderMarketIndexDetail(MARKET_INDICES,window._selectedMarketIndex,window._dieselPrices,window._canplastSurcharges,window._brentPrices);
+}
+function resetBrentRange(){ setBrentRange(DEFAULT_RANGE); }
+function pearsonCorrelation(xs,ys){
+  const n=xs.length;
+  if(n<2) return null;
+  const mx=xs.reduce((a,b)=>a+b,0)/n, my=ys.reduce((a,b)=>a+b,0)/n;
+  let cov=0,sx=0,sy=0;
+  for(let i=0;i<n;i++){ cov+=(xs[i]-mx)*(ys[i]-my); sx+=(xs[i]-mx)**2; sy+=(ys[i]-my)**2; }
+  if(!sx||!sy) return null;
+  return cov/Math.sqrt(sx*sy);
+}
+// Aligne deux séries hebdomadaires (dates ISO) sur leurs dates communes.
+function alignByDate(datesA,valuesA,datesB,valuesB){
+  const mapB={}; datesB.forEach((d,i)=>{ if(valuesB[i]!=null) mapB[d]=valuesB[i]; });
+  const dates=[],a=[],b=[];
+  datesA.forEach((d,i)=>{ if(mapB[d]!=null && valuesA[i]!=null){dates.push(d);a.push(valuesA[i]);b.push(mapB[d]);} });
+  return {dates,a,b};
+}
+// Graphique à deux lignes superposées (mêmes axes, valeurs déjà ramenées à
+// la même base) pour comparer visuellement deux séries — diesel ASTAG vs
+// pétrole Brent — sans dupliquer toute la logique de svgTrendChartV52.
+function svgDualLineChartV52(dates,seriesA,seriesB,opts){
+  opts=opts||{};
+  const w=680,h=260,padL=40,padR=14,padT=30,padB=26;
+  const all=[...seriesA,...seriesB].filter(v=>v!=null);
+  if(!all.length) return `<svg class="svgChart" viewBox="0 0 ${w} ${h}" role="img"><text x="20" y="50" fill="#697386">Aucune donnée</text></svg>`;
+  const min=Math.min(...all), max=Math.max(...all);
+  const span=(max-min)||1;
+  const lo=min-span*0.1, hi=max+span*0.1;
+  const n=dates.length;
+  const px=i=>padL+(n<=1?0:(w-padL-padR)*i/(n-1));
+  const py=v=>padT+(h-padT-padB)*(1-(v-lo)/((hi-lo)||1));
+  function build(series){
+    let d='',started=false; const dots=[];
+    series.forEach((v,i)=>{ if(v==null) return; const cx=px(i),cy=py(v); d+=(started?'L':'M')+cx.toFixed(1)+' '+cy.toFixed(1)+' '; started=true; dots.push([cx,cy,v]); });
+    return {d,dots};
+  }
+  const A=build(seriesA), B=build(seriesB);
+  const colorA=opts.colorA||'#0b4f9c', colorB=opts.colorB||'#f1642a';
+  const step=Math.max(1,Math.round(n/7));
+  let axisLabels='';
+  for(let i=0;i<n;i+=step) axisLabels+=`<text x="${px(i).toFixed(1)}" y="${h-8}" font-size="10" fill="#8994a3" text-anchor="middle">${esc(dates[i])}</text>`;
+  let yTicks='';
+  for(let g=0;g<=4;g++){ const v=lo+(hi-lo)*g/4; yTicks+=`<text x="${padL-4}" y="${(py(v)+3).toFixed(1)}" font-size="10" fill="#8994a3" text-anchor="end">${v.toFixed(0)}</text>`; }
+  const mkDots=(dots,color,label)=>dots.map(([cx,cy,v])=>`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="8" fill="transparent"><title>${esc(label)} : ${v.toFixed(1)}</title></circle><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3" fill="${color}" style="pointer-events:none"></circle>`).join('');
+  return `<svg class="svgChart" viewBox="0 0 ${w} ${h}" role="img">${yTicks}<path d="${A.d}" fill="none" stroke="${colorA}" stroke-width="2.5"></path><path d="${B.d}" fill="none" stroke="${colorB}" stroke-width="2.5" stroke-dasharray="5,3"></path>${mkDots(A.dots,colorA,opts.labelA||'A')}${mkDots(B.dots,colorB,opts.labelB||'B')}${axisLabels}<line x1="${padL}" y1="16" x2="${padL+14}" y2="16" stroke="${colorA}" stroke-width="3"></line><text x="${padL+18}" y="19" font-size="10" fill="#10233e">${esc(opts.labelA||'A')}</text><line x1="${padL+150}" y1="16" x2="${padL+164}" y2="16" stroke="${colorB}" stroke-width="3" stroke-dasharray="5,3"></line><text x="${padL+168}" y="19" font-size="10" fill="#10233e">${esc(opts.labelB||'B')}</text></svg>`;
 }
 function canplastGroups(canplast){
   const seen=new Set(),out=[];
@@ -2430,13 +2505,13 @@ function dieselChangeTile(label,ch){
   const arrow=up?'▲':'▼';
   return `<div class="kpi"><small>${esc(label)}</small><b style="font-size:22px;color:${color}">${arrow} ${ch.deltaChf>=0?'+':''}${ch.deltaChf.toFixed(2)} CHF/l</b><small style="color:${color};font-weight:800">${ch.deltaPts>=0?'+':''}${ch.deltaPts.toFixed(1)} pt surcharge</small></div>`;
 }
-const DIESEL_RANGE_OPTIONS=[8,13,26,52,0];
-const DIESEL_DEFAULT_RANGE=26;
+const RANGE_OPTIONS=[8,13,26,52,0];
+const DEFAULT_RANGE=26;
 function setDieselRange(n){
   window._dieselRange=n;
   renderMarketIndexDetail(MARKET_INDICES,window._selectedMarketIndex,window._dieselPrices,window._canplastSurcharges);
 }
-function resetDieselRange(){ setDieselRange(DIESEL_DEFAULT_RANGE); }
+function resetDieselRange(){ setDieselRange(DEFAULT_RANGE); }
 async function saveDieselPrice(){
   const input=document.getElementById('dieselNewPrice');
   const price=parseFloat(input.value);
@@ -2451,7 +2526,7 @@ async function saveDieselPrice(){
     alert("Impossible d'enregistrer le prix : "+e.message);
   }
 }
-function renderMarketIndexDetail(data,current,diesel,canplast){
+function renderMarketIndexDetail(data,current,diesel,canplast,brent){
   diesel=diesel||window._dieselPrices||[];
   canplast=canplast||window._canplastSurcharges||[];
   const materials=Object.keys(data.series);
@@ -2471,15 +2546,44 @@ function renderMarketIndexDetail(data,current,diesel,canplast){
   const dYtd=diesel.length?{last:diesel[diesel.length-1].price,ref:diesel[0].price,deltaChf:diesel[diesel.length-1].price-diesel[0].price,deltaPts:diesel[diesel.length-1].surchargePct-diesel[0].surchargePct}:null;
   const dieselLast=diesel.length?diesel[diesel.length-1]:null;
   const dieselAdminForm=(window._userPerms&&window._userPerms.admin)?`<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label style="font-size:12.5px;font-weight:800">Prix de cette semaine (CHF/litre TVA incl.)</label><input id="dieselNewPrice" type="number" step="0.01" min="0" placeholder="ex. 2.19" style="width:110px;border:1px solid #ddd;border-radius:6px;padding:6px"><button class="miniBtn" onclick="saveDieselPrice()">Enregistrer</button></div>`:'';
-  const dieselRange=(window._dieselRange!=null)?window._dieselRange:DIESEL_DEFAULT_RANGE;
+  const dieselRange=(window._dieselRange!=null)?window._dieselRange:DEFAULT_RANGE;
   const dieselSlice=dieselRange>0?diesel.slice(-dieselRange):diesel;
-  const dieselChart=dieselSlice.length?svgDieselChartV49(dieselSlice.map(d=>d.weekStart.slice(5)),dieselSlice.map(d=>d.price),1.64):'<p class="muted">Aucune donnée.</p>';
+  const dieselChart=dieselSlice.length?svgTrendChartV52(dieselSlice.map(d=>d.weekStart.slice(5)),dieselSlice.map(d=>d.price),{dualAxisBase:1.64,decimals:2,leftCaption:'CHF/l',rightCaption:'% surcharge'}):'<p class="muted">Aucune donnée.</p>';
   const dieselRangeLabel=dieselRange>0?(dieselRange+' dernières semaines'):'depuis le début du suivi';
-  const dieselRangeButtons=DIESEL_RANGE_OPTIONS.map(n=>{
-    const active=dieselRange===n;
-    const label=n===0?'Tout':n+' sem.';
-    return `<button class="miniBtn" style="${active?'background:#0b4f9c;color:white':'background:#eef2f7;color:#10233e'}" onclick="setDieselRange(${n})">${label}</button>`;
-  }).join(' ')+` <button class="miniBtn gray" onclick="resetDieselRange()">↺ Réinitialiser</button>`;
+  const dieselRangeButtons=rangeButtonsHtml(dieselRange,'setDieselRange','resetDieselRange');
+
+  brent=brent||window._brentPrices||{dates:[],values:[]};
+  const brentRange=(window._brentRange!=null)?window._brentRange:DEFAULT_RANGE;
+  const brentDatesAll=brent.dates||[], brentValuesAll=brent.values||[];
+  const brentSliceDates=brentRange>0?brentDatesAll.slice(-brentRange):brentDatesAll;
+  const brentSliceValues=brentRange>0?brentValuesAll.slice(-brentRange):brentValuesAll;
+  const brentChart=brentSliceValues.length?svgTrendChartV52(brentSliceDates,brentSliceValues,{suffix:' $',decimals:1}):'<p class="muted">Aucune donnée.</p>';
+  const brentRangeLabel=brentRange>0?(brentRange+' dernières semaines'):'depuis 2016';
+  const brentRangeButtons=rangeButtonsHtml(brentRange,'setBrentRange','resetBrentRange');
+  const bWeek=seriesChangeAt(brentValuesAll,1);
+  const bMonth=seriesChangeAt(brentValuesAll,4);
+  const bYear=seriesChangeAt(brentValuesAll,52);
+  let brentLastIdx=brentValuesAll.length-1; while(brentLastIdx>=0&&brentValuesAll[brentLastIdx]==null) brentLastIdx--;
+  const brentCurrent=brentLastIdx>=0?brentValuesAll[brentLastIdx]:null;
+
+  // Corrélation diesel ASTAG (CHF/l) vs pétrole Brent (USD), sur les
+  // semaines communes aux deux séries — répond à "si l'ASTAG augmente de
+  // 10%, le pétrole augmente-t-il de 10% ?".
+  const dieselDatesForCorr=diesel.map(d=>d.weekStart), dieselValuesForCorr=diesel.map(d=>d.price);
+  const aligned=alignByDate(dieselDatesForCorr,dieselValuesForCorr,brentDatesAll,brentValuesAll);
+  const corrLevels=pearsonCorrelation(aligned.a,aligned.b);
+  let corrPct=null;
+  if(aligned.a.length>2){
+    const pa=[],pb=[];
+    for(let i=1;i<aligned.a.length;i++){ pa.push((aligned.a[i]-aligned.a[i-1])/aligned.a[i-1]*100); pb.push((aligned.b[i]-aligned.b[i-1])/aligned.b[i-1]*100); }
+    corrPct=pearsonCorrelation(pa,pb);
+  }
+  const rebase=arr=>{ const first=arr.find(v=>v!=null); return arr.map(v=>v==null||!first?null:v/first*100); };
+  const corrChart=aligned.dates.length?svgDualLineChartV52(aligned.dates.map(d=>dateFR(d)),rebase(aligned.a),rebase(aligned.b),{labelA:'Diesel ASTAG',labelB:'Brent',colorA:'#0b4f9c',colorB:'#f1642a'}):'<p class="muted">Aucune donnée commune.</p>';
+  const corrInterpretation=corrLevels==null?'Pas assez de données communes pour calculer une corrélation.':
+    (corrLevels>=0.7?'Corrélation forte : le diesel suit d\'assez près le pétrole Brent.':
+     corrLevels>=0.4?'Corrélation modérée : le diesel suit partiellement le Brent — d\'autres facteurs (raffinage, taxes, EUR/CHF) pèsent aussi.':
+     'Corrélation faible : le prix du diesel ne suit pas vraiment le Brent à court terme — ne pas assumer qu\'une hausse du Brent de X% se traduit par une hausse de X% du diesel.');
 
   const cpGroups=canplastGroups(canplast);
   const cpCurrent=(window._selectedCanplastGroup && cpGroups.some(g=>g.codes===window._selectedCanplastGroup)) ? window._selectedCanplastGroup : (cpGroups[0]&&cpGroups[0].codes);
@@ -2491,11 +2595,11 @@ function renderMarketIndexDetail(data,current,diesel,canplast){
   const cpPrev=cpTimeline.length>1?cpTimeline[cpTimeline.length-2]:null;
   const cpSincePrev=cpPrev?{deltaPts:cpLast.surchargePct-cpPrev.surchargePct,fromLabel:'depuis le '+dateFR(cpPrev.effectiveDate)}:null;
   const cpSinceFirst=(cpFirst&&cpLast&&cpFirst!==cpLast)?{deltaPts:cpLast.surchargePct-cpFirst.surchargePct,fromLabel:'depuis le '+dateFR(cpFirst.effectiveDate)}:null;
-  const cpChart=cpTimeline.length?svgLineChartV49(cpTimeline.map(r=>dateFR(r.effectiveDate)),cpTimeline.map(r=>r.surchargePct)):'<p class="muted">Aucune donnée.</p>';
+  const cpChart=cpTimeline.length?svgTrendChartV52(cpTimeline.map(r=>dateFR(r.effectiveDate)),cpTimeline.map(r=>r.surchargePct),{suffix:'%',decimals:1,showLabels:true}):'<p class="muted">Aucune donnée.</p>';
   const cpAdminForm=(window._userPerms&&window._userPerms.admin)?`<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label style="font-size:12.5px;font-weight:800">Nouvelle date d'effet</label><input id="canplastNewDate" type="date" style="border:1px solid #ddd;border-radius:6px;padding:6px"><label style="font-size:12.5px;font-weight:800">Surrenchérissement %</label><input id="canplastNewPct" type="number" step="0.1" min="0" placeholder="ex. 65" style="width:90px;border:1px solid #ddd;border-radius:6px;padding:6px"><button class="miniBtn" onclick="saveCanplastSurcharge()">Enregistrer pour ce groupe</button></div>`:'';
   const cpTable=cpTimeline.length?`<table class="dashTable" style="margin-top:10px"><thead><tr><th>Date d'effet</th><th>Surrenchérissement</th><th>Source</th></tr></thead><tbody>${cpTimeline.map(r=>`<tr><td>${dateFR(r.effectiveDate)}</td><td><b>${r.surchargePct.toFixed(1)}%</b></td><td class="muted">${esc(r.source||'')}</td></tr>`).join('')}</tbody></table>`:'';
 
-  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Indicateurs de marché</div><div class="toolbar"><h2>📈 Indicateurs de marché — indices KBOB</h2><p class="muted">Indices des prix à la production (KBOB, publiés par trimestre). Une variation nulle sur 1 mois est normale si le mois choisi reste dans le même trimestre que le précédent relevé — les hausses (rouge) et baisses (vert) sont vues du point de vue d'un acheteur.</p></div><div style="max-width:560px;margin-bottom:16px"><label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:4px">Matériau / indice KBOB</label><select onchange="onMarketIndexChange(this.value)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:9px">${options}</select></div><div class="dashboardCards">${marketChangeTile('Évolution 1 mois',c1)}${marketChangeTile('Évolution 3 mois',c3)}${marketChangeTile('Évolution 1 an',c12)}<div class="kpi"><small>Indice actuel</small><b style="font-size:22px">${currentValue!=null?currentValue.toFixed(1):'n/d'}</b><small class="muted">${esc(data.codes[current]||'')}</small></div></div><div class="chartGrid"><div class="chartCard"><h3>${esc(current)} — 3 dernières années</h3>${svgLineChartV49(rDates,rValues)}</div></div><div class="analysisBlock" style="margin-top:18px"><h3>⛽ Carburant diesel — surcharge nationale ASTAG</h3><p class="muted">Prix moyen hebdomadaire du diesel à la pompe (CHF/litre TVA incl., source ASTAG/IRU). Surcharge calculée par rapport à la base ASTAG 0% = CHF 1.64/litre.${dieselAdminForm}</p><div class="dashboardCards">${dieselChangeTile('Évolution 1 semaine',d1)}${dieselChangeTile('Évolution 4 semaines',d4)}${dieselChangeTile('Depuis le 1er janvier 2026',dYtd)}<div class="kpi"><small>Prix actuel</small><b style="font-size:22px">${dieselLast?dieselLast.price.toFixed(2)+' CHF/l':'n/d'}</b><small class="muted">${dieselLast?'surcharge '+dieselLast.surchargePct.toFixed(1)+'%':''}</small></div></div><div class="chartCard" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">Prix diesel — ${dieselRangeLabel}</h3><div style="display:flex;gap:6px;flex-wrap:wrap">${dieselRangeButtons}</div></div><p class="muted" style="margin:6px 0 10px">Échelle CHF/litre à gauche, surcharge % (base CHF 1.64) à droite — ligne rouge en pointillé = base 0%.</p>${dieselChart}</div></div><div class="analysisBlock" style="margin-top:18px"><h3>🧱 Canplast — surrenchérissement par famille d'articles</h3><p class="muted">Suivi des avis de hausse (et baisse) Canplast successifs, par groupe d'articles PVC/PE/PP. ⚠️ Une baisse a été annoncée le 15.06.2026 (Baisses-15.06.26.pdf) mais sa valeur n'a pas pu être extraite des documents fournis — la dernière valeur ci-dessous peut donc ne plus être à jour depuis cette date. Envoie-moi cet avis (ou la valeur actuelle) pour le corriger.</p><div style="max-width:560px;margin:10px 0"><label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:4px">Famille d'articles Canplast</label><select onchange="onCanplastGroupChange(this.value)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:9px">${cpOptions}</select></div>${cpAdminForm}<div class="dashboardCards" style="margin-top:12px">${canplastChangeTile('Depuis la hausse précédente',cpSincePrev)}${canplastChangeTile('Depuis le début du suivi',cpSinceFirst)}<div class="kpi"><small>Surrenchérissement actuel connu</small><b style="font-size:22px">${cpLast?cpLast.surchargePct.toFixed(1)+'%':'n/d'}</b><small class="muted">${cpLast?'au '+dateFR(cpLast.effectiveDate):''}</small></div></div><div class="chartCard" style="margin-top:12px"><h3>${cpLast?esc(cpGroups.find(g=>g.codes===cpCurrent).label):''} — historique</h3>${cpChart}</div>${cpTable}</div>`;
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Indicateurs de marché</div><div class="toolbar"><h2>📈 Indicateurs de marché — indices KBOB</h2><p class="muted">Indices des prix à la production (KBOB, publiés par trimestre). Une variation nulle sur 1 mois est normale si le mois choisi reste dans le même trimestre que le précédent relevé — les hausses (rouge) et baisses (vert) sont vues du point de vue d'un acheteur.</p></div><div style="max-width:560px;margin-bottom:16px"><label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:4px">Matériau / indice KBOB</label><select onchange="onMarketIndexChange(this.value)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:9px">${options}</select></div><div class="dashboardCards">${marketChangeTile('Évolution 1 mois',c1)}${marketChangeTile('Évolution 3 mois',c3)}${marketChangeTile('Évolution 1 an',c12)}<div class="kpi"><small>Indice actuel</small><b style="font-size:22px">${currentValue!=null?currentValue.toFixed(1):'n/d'}</b><small class="muted">${esc(data.codes[current]||'')}</small></div></div><div class="chartGrid"><div class="chartCard"><h3>${esc(current)} — 3 dernières années</h3>${svgTrendChartV52(rDates,rValues,{decimals:1})}</div></div><div class="analysisBlock" style="margin-top:18px"><h3>⛽ Carburant diesel — surcharge nationale ASTAG</h3><p class="muted">Prix moyen hebdomadaire du diesel à la pompe (CHF/litre TVA incl., source ASTAG/IRU). Surcharge calculée par rapport à la base ASTAG 0% = CHF 1.64/litre.${dieselAdminForm}</p><div class="dashboardCards">${dieselChangeTile('Évolution 1 semaine',d1)}${dieselChangeTile('Évolution 4 semaines',d4)}${dieselChangeTile('Depuis le 1er janvier 2026',dYtd)}<div class="kpi"><small>Prix actuel</small><b style="font-size:22px">${dieselLast?dieselLast.price.toFixed(2)+' CHF/l':'n/d'}</b><small class="muted">${dieselLast?'surcharge '+dieselLast.surchargePct.toFixed(1)+'%':''}</small></div></div><div class="chartCard" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">Prix diesel — ${dieselRangeLabel}</h3><div style="display:flex;gap:6px;flex-wrap:wrap">${dieselRangeButtons}</div></div><p class="muted" style="margin:6px 0 10px">Échelle CHF/litre à gauche, surcharge % (base CHF 1.64) à droite — ligne rouge en pointillé = base 0%.</p>${dieselChart}</div></div><div class="analysisBlock" style="margin-top:18px"><h3>🧱 Canplast — surrenchérissement par famille d'articles</h3><p class="muted">Suivi des avis de hausse (et baisse) Canplast successifs, par groupe d'articles PVC/PE/PP. ⚠️ Une baisse a été annoncée le 15.06.2026 (Baisses-15.06.26.pdf) mais sa valeur n'a pas pu être extraite des documents fournis — la dernière valeur ci-dessous peut donc ne plus être à jour depuis cette date. Envoie-moi cet avis (ou la valeur actuelle) pour le corriger.</p><div style="max-width:560px;margin:10px 0"><label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:4px">Famille d'articles Canplast</label><select onchange="onCanplastGroupChange(this.value)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:9px">${cpOptions}</select></div>${cpAdminForm}<div class="dashboardCards" style="margin-top:12px">${canplastChangeTile('Depuis la hausse précédente',cpSincePrev)}${canplastChangeTile('Depuis le début du suivi',cpSinceFirst)}<div class="kpi"><small>Surrenchérissement actuel connu</small><b style="font-size:22px">${cpLast?cpLast.surchargePct.toFixed(1)+'%':'n/d'}</b><small class="muted">${cpLast?'au '+dateFR(cpLast.effectiveDate):''}</small></div></div><div class="chartCard" style="margin-top:12px"><h3>${cpLast?esc(cpGroups.find(g=>g.codes===cpCurrent).label):''} — historique</h3>${cpChart}</div>${cpTable}</div><div class="analysisBlock" style="margin-top:18px"><h3>🛢️ Pétrole brut (Brent)</h3><p class="muted">Cours hebdomadaire du Brent (clôture du dernier jour de bourse de la semaine, USD/baril).</p><div class="dashboardCards">${genericChangeTile('Évolution 1 semaine',bWeek,' $')}${genericChangeTile('Évolution 4 semaines',bMonth,' $')}${genericChangeTile('Évolution 1 an',bYear,' $')}<div class="kpi"><small>Cours actuel</small><b style="font-size:22px">${brentCurrent!=null?brentCurrent.toFixed(1)+' $':'n/d'}</b><small class="muted">USD/baril</small></div></div><div class="chartCard" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">Brent — ${brentRangeLabel}</h3><div style="display:flex;gap:6px;flex-wrap:wrap">${brentRangeButtons}</div></div>${brentChart}</div></div><div class="analysisBlock" style="margin-top:18px"><h3>🔗 Corrélation diesel ASTAG / pétrole Brent</h3><p class="muted">Les deux séries sont ramenées à la même base 100 à leur première semaine commune, pour comparer leurs évolutions relatives — répond à « si l'ASTAG augmente de 10%, le pétrole augmente-t-il de 10% ? ».</p><div class="dashboardCards"><div class="kpi"><small>Corrélation (niveaux)</small><b style="font-size:22px">${corrLevels!=null?corrLevels.toFixed(2):'n/d'}</b><small class="muted">1 = parfaite, 0 = aucune</small></div><div class="kpi"><small>Corrélation (variations hebdo. %)</small><b style="font-size:22px">${corrPct!=null?corrPct.toFixed(2):'n/d'}</b><small class="muted">semaine à semaine</small></div></div><p style="margin-top:10px;font-weight:700">${esc(corrInterpretation)}</p><div class="chartCard" style="margin-top:12px"><h3>Évolution comparée (base 100)</h3>${corrChart}</div></div>`;
 }
 /* === fin patch v49 === */
 
