@@ -36,7 +36,10 @@
               <% end %>
             </td>
             <td class="py-3 small text-muted"><%= chantier.adresse.presence || "—" %></td>
-            <td class="py-3 small"><%= [ chantier.npa, chantier.ville ].select(&:present?).join(" ").presence || "—" %></td>
+            <td class="py-3 small">
+              <%= [ chantier.npa, chantier.ville ].select(&:present?).join(" ").presence || "—" %>
+              <% if chantier.canton.present? %><br><span class="text-muted"><%= chantier.canton %></span><% end %>
+            </td>
             <td class="py-3 small">
               <%= chantier.contremaitre.presence || "—" %>
               <% if chantier.email_contremaitre.present? %>

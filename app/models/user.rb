@@ -54,4 +54,16 @@ class User < ApplicationRecord
     return User::SUPPLIERS.map { |s| s[:key] } if admin?
     super || []
   end
+
+  # Combines the manual per-user override above (allowed_suppliers) with the
+  # per-supplier "quels secteurs voient ce contrat" rules configured in
+  # /admin/fournisseurs — kept as a separate method (not folded into
+  # allowed_suppliers) so the admin user-edit checkboxes keep reflecting the
+  # raw manual override, not this computed result.
+  def effective_visible_suppliers
+    return Supplier.pluck(:name) if admin?
+    sector_allowed = Supplier.all.select { |s| s.visible_for_sector?(sector) }.map(&:name)
+    manual = allowed_suppliers
+    manual.empty? ? sector_allowed : (sector_allowed & manual)
+  end
 end

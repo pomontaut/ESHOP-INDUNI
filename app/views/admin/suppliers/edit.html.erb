@@ -1,0 +1,95 @@
+<div class="row justify-content-center">
+  <div class="col-md-9 col-lg-8">
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <%= link_to admin_suppliers_path, class: "btn btn-outline-secondary btn-sm" do %>← Retour<% end %>
+      <h1 class="mb-0 fs-3">Paramétrage — <%= @supplier.name %></h1>
+    </div>
+
+    <%= form_with model: [ :admin, @supplier ] do |f| %>
+      <% if @supplier.errors.any? %>
+        <div class="alert alert-danger">
+          <ul class="mb-0">
+            <% @supplier.errors.full_messages.each do |msg| %>
+              <li><%= msg %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <%# ── Visibilité par canton ── %>
+      <div class="card shadow-sm mb-3">
+        <div class="card-header fw-bold" style="background:#0c1d34;color:white;">🗺 Visibilité du contrat par canton</div>
+        <div class="card-body p-4">
+          <div class="form-check mb-3">
+            <input type="checkbox" name="supplier[all_cantons]" value="1" class="form-check-input" id="all_cantons"
+                   <%= (@supplier.visible_cantons || []).empty? ? "checked" : "" %>
+                   onchange="document.getElementById('cantonCheckboxes').style.display=this.checked?'none':'flex'">
+            <label class="form-check-label fw-semibold" for="all_cantons">Contrat valable sur tous les cantons</label>
+          </div>
+          <div id="cantonCheckboxes" class="row g-2" style="<%= (@supplier.visible_cantons || []).empty? ? 'display:none' : '' %>">
+            <% Supplier::CANTONS.each do |canton| %>
+              <div class="col-4">
+                <div class="form-check">
+                  <input type="checkbox" name="supplier[visible_cantons][]" value="<%= canton %>" class="form-check-input" id="canton_<%= canton %>"
+                         <%= (@supplier.visible_cantons || []).include?(canton) ? "checked" : "" %>>
+                  <label class="form-check-label" for="canton_<%= canton %>"><%= canton %></label>
+                </div>
+              </div>
+            <% end %>
+          </div>
+          <input type="hidden" name="supplier[visible_cantons][]" value="">
+        </div>
+      </div>
+
+      <%# ── Visibilité par entité ── %>
+      <div class="card shadow-sm mb-3">
+        <div class="card-header fw-bold" style="background:#0c1d34;color:white;">🏢 Visibilité par entité Induni</div>
+        <div class="card-body p-4">
+          <div class="form-check mb-3">
+            <input type="checkbox" name="supplier[all_sectors]" value="1" class="form-check-input" id="all_sectors"
+                   <%= (@supplier.visible_sectors || []).empty? ? "checked" : "" %>
+                   onchange="document.getElementById('sectorCheckboxes').style.display=this.checked?'none':'flex'">
+            <label class="form-check-label fw-semibold" for="all_sectors">Visible pour toutes les entités</label>
+          </div>
+          <div id="sectorCheckboxes" class="row g-2" style="<%= (@supplier.visible_sectors || []).empty? ? 'display:none' : '' %>">
+            <% Supplier::SECTORS.each do |sector| %>
+              <div class="col-4">
+                <div class="form-check">
+                  <input type="checkbox" name="supplier[visible_sectors][]" value="<%= sector %>" class="form-check-input" id="sector_<%= sector.parameterize %>"
+                         <%= (@supplier.visible_sectors || []).include?(sector) ? "checked" : "" %>>
+                  <label class="form-check-label" for="sector_<%= sector.parameterize %>"><%= sector %></label>
+                </div>
+              </div>
+            <% end %>
+          </div>
+          <input type="hidden" name="supplier[visible_sectors][]" value="">
+        </div>
+      </div>
+
+      <%# ── E-mail d'envoi de commande ── %>
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-bold" style="background:#0c1d34;color:white;">✉️ E-mail d'envoi de commande</div>
+        <div class="card-body p-4">
+          <div class="mb-3">
+            <%= f.label :email, "E-mail par défaut (tous cantons)", class: "form-label fw-semibold" %>
+            <%= f.email_field :email, class: "form-control" %>
+          </div>
+          <p class="text-muted small mb-2">Laisser vide sauf si ce fournisseur a une adresse différente selon le canton :</p>
+          <div class="row g-3">
+            <% Supplier::CANTONS.each do |canton| %>
+              <div class="col-6">
+                <%= f.label "email_#{canton.downcase}", "E-mail spécifique #{canton}", class: "form-label fw-semibold" %>
+                <%= f.email_field "email_#{canton.downcase}", class: "form-control" %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 mb-5">
+        <%= f.submit "Enregistrer les modifications", class: "btn btn-primary px-4" %>
+        <%= link_to "Annuler", admin_suppliers_path, class: "btn btn-outline-secondary" %>
+      </div>
+    <% end %>
+  </div>
+</div>

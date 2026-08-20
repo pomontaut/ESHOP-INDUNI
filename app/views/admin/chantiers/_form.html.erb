@@ -22,13 +22,19 @@
         <%= f.text_field :adresse, class: "form-control", placeholder: "Rue, numéro" %>
       </div>
       <div class="row g-3 mb-3">
-        <div class="col-4">
+        <div class="col-3">
           <%= f.label :npa, "NPA", class: "form-label fw-semibold" %>
           <%= f.text_field :npa, class: "form-control" %>
         </div>
-        <div class="col-8">
+        <div class="col-5">
           <%= f.label :ville, "Ville", class: "form-label fw-semibold" %>
           <%= f.text_field :ville, class: "form-control" %>
+        </div>
+        <div class="col-4">
+          <%= f.label :canton, "Canton", class: "form-label fw-semibold" %>
+          <%= f.select :canton, [ [ "— Choisir —", "" ] ] + Supplier::CANTONS.map { |c| [ c, c ] },
+                       {}, class: "form-select" %>
+          <div class="form-text">Détermine l'e-mail de commande utilisé pour les fournisseurs à tarifs régionaux.</div>
         </div>
       </div>
       <div class="mb-3">

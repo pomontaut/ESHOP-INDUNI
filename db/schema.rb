@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_20_084136) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_20_095827) do
   create_table "chantiers", force: :cascade do |t|
     t.string "adresse"
+    t.string "canton"
     t.string "carte_interactive"
     t.string "chef_equipe"
     t.boolean "consortium", default: false, null: false
@@ -111,6 +112,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_084136) do
     t.string "country_code"
     t.datetime "created_at", null: false
     t.string "email"
+    t.string "email_fribourg"
+    t.string "email_geneve"
+    t.string "email_jura"
+    t.string "email_valais"
+    t.string "email_vaud"
     t.string "fax"
     t.string "ide_number"
     t.boolean "inactive", default: false
@@ -120,6 +126,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_084136) do
     t.string "postal_code"
     t.string "supplier_number"
     t.datetime "updated_at", null: false
+    t.text "visible_cantons"
+    t.text "visible_sectors"
   end
 
   create_table "users", force: :cascade do |t|

@@ -31,6 +31,7 @@ Rails.application.routes.draw do
       member { post :resend_welcome }
     end
     resources :chantiers, only: [ :index, :new, :create, :edit, :update, :destroy ]
+    resources :suppliers, only: [ :index, :edit, :update ]
   end
 
   get    "login",           to: "sessions#new",           as: :login

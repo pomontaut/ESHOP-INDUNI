@@ -19,7 +19,14 @@ class Api::SessionsController < ApplicationController
         can_view_nomenclature: current_user.effective_can_view_nomenclature?,
         vapidPublicKey:    Rails.application.config.x.vapid_public_key,
         pushSubscribed:    current_user.push_subscriptions.exists?,
-        allowed_suppliers: current_user.allowed_suppliers,
+        supplierEmailsByCanton: Supplier.all.each_with_object({}) { |s, h|
+          per_canton = Supplier::CANTONS.each_with_object({}) { |c, ch|
+            email = s.public_send("email_#{c.downcase}")
+            ch[c] = email if email.present?
+          }
+          h[s.name] = per_canton if per_canton.any?
+        },
+        allowed_suppliers: current_user.effective_visible_suppliers,
         chantiers:         Chantier.visible_to(current_user).order(:nom).map { |c|
           {
             nom:         c.nom,
@@ -29,7 +36,8 @@ class Api::SessionsController < ApplicationController
             contact:     c.contremaitre,
             telephone:   c.natel_contremaitre,
             emailTechnicien: c.email_technicien,
-            consortium:  c.consortium
+            consortium:  c.consortium,
+            canton:      c.canton
           }
         }
       }

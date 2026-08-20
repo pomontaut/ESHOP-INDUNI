@@ -52,7 +52,7 @@ class Admin::ChantiersController < ApplicationController
 
   def chantier_params
     params.require(:chantier).permit(
-      :nom, :adresse, :npa, :ville, :contraintes_acces, :carte_interactive, :consortium,
+      :nom, :adresse, :npa, :ville, :canton, :contraintes_acces, :carte_interactive, :consortium,
       :technicien, :natel_technicien, :email_technicien,
       :contremaitre, :natel_contremaitre, :email_contremaitre,
       :chef_equipe, :natel_chef_equipe, :email_chef_equipe

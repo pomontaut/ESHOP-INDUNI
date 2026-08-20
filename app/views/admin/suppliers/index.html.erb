@@ -1,0 +1,47 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="mb-1">Paramétrage fournisseurs</h1>
+    <p class="text-muted mb-0">Visibilité des contrats par canton et par entité, e-mail de commande par canton.</p>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead style="background:#0c1d34;color:white;">
+        <tr>
+          <th class="py-3 ps-3">Fournisseur</th>
+          <th class="py-3">Cantons</th>
+          <th class="py-3">Entités</th>
+          <th class="py-3">E-mail par défaut</th>
+          <th class="py-3 text-center pe-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @suppliers.each do |supplier| %>
+          <tr>
+            <td class="py-3 ps-3 fw-semibold"><%= supplier.name %></td>
+            <td class="py-3 small">
+              <% if (supplier.visible_cantons || []).empty? %>
+                <span class="text-muted">Tous les cantons</span>
+              <% else %>
+                <%= supplier.visible_cantons.join(", ") %>
+              <% end %>
+            </td>
+            <td class="py-3 small">
+              <% if (supplier.visible_sectors || []).empty? %>
+                <span class="text-muted">Toutes les entités</span>
+              <% else %>
+                <%= supplier.visible_sectors.join(", ") %>
+              <% end %>
+            </td>
+            <td class="py-3 small"><%= supplier.email.presence || "—" %></td>
+            <td class="py-3 text-center pe-3">
+              <%= link_to "✏ Paramétrer", edit_admin_supplier_path(supplier), class: "btn btn-outline-primary btn-sm" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
