@@ -37,10 +37,9 @@ namespace :catalog do
         email: "info@alzo.ch", phone: "041 500 50 16", fax: "041 500 50 17",
         address: "12 Unterleh", postal_code: "6300", city: "Zug", country_code: "CH"
       },
-      # Adresse de commande e-mail non communiquée dans les documents fournis :
-      # à compléter par un admin (fiche fournisseur) avant le premier envoi réel.
       "Soreval" => {
-        address: "Route de la Maison Carrée 10", postal_code: "1242", city: "Satigny", country_code: "CH"
+        email: "l.sogno@soreval.ch", phone: "+41 22 341 15 71",
+        address: "10, Route de la Maison Carrée", postal_code: "1242", city: "Satigny", country_code: "CH"
       }
     }.freeze
 
@@ -63,6 +62,14 @@ namespace :catalog do
     # pour ne jamais écraser une adresse modifiée depuis l'admin.
     Supplier.where(name: "CreaBeton", email: "info@creabeton.ch")
             .update_all(email: "commandes@creabeton.ch")
+
+    # Correction ponctuelle : l'adresse de commande Soreval n'était pas connue
+    # au moment de la création du fournisseur (seedé sans e-mail). On ne la
+    # complète que si elle est encore vide, pour ne jamais écraser une
+    # modification faite depuis l'admin.
+    Supplier.where(name: "Soreval", email: [ nil, "" ])
+            .update_all(email: "l.sogno@soreval.ch", phone: "+41 22 341 15 71",
+                         address: "10, Route de la Maison Carrée", postal_code: "1242", city: "Satigny", country_code: "CH")
 
     catalog_path = Rails.root.join("db/seed_data/catalog_products.json")
     if File.exist?(catalog_path)
