@@ -41,6 +41,9 @@ class User < ApplicationRecord
   def effective_can_read?          = admin? || can_read?
   def effective_can_import_quote?  = admin? || can_import_quote?
   def effective_can_generic_order? = admin? || can_generic_order?
+  def effective_can_view_dashboard?    = admin? || can_view_dashboard?
+  def effective_can_view_analysis?     = admin? || can_view_analysis?
+  def effective_can_view_nomenclature? = admin? || can_view_nomenclature?
 
   def allowed_suppliers
     return User::SUPPLIERS.map { |s| s[:key] } if admin?

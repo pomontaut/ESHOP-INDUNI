@@ -14,6 +14,9 @@ class Api::SessionsController < ApplicationController
         can_modify_orders: current_user.effective_can_modify_orders?,
         can_import_quote:  current_user.effective_can_import_quote?,
         can_generic_order: current_user.effective_can_generic_order?,
+        can_view_dashboard:    current_user.effective_can_view_dashboard?,
+        can_view_analysis:     current_user.effective_can_view_analysis?,
+        can_view_nomenclature: current_user.effective_can_view_nomenclature?,
         allowed_suppliers: current_user.allowed_suppliers,
         chantiers:         Chantier.visible_to(current_user).order(:nom).map { |c|
           {
