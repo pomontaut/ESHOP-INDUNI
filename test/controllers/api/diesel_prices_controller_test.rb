@@ -16,7 +16,7 @@ class Api::DieselPricesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     body = JSON.parse(response.body)
     assert_equal [ "2026-08-10", "2026-08-17" ], body.map { |r| r["weekStart"] }
-    assert_in_delta 33.54, body.last["surchargePct"], 0.1
+    assert_in_delta 6.61, body.last["surchargePct"], 0.1
   end
 
   test "create refuses a non-admin" do

@@ -2275,6 +2275,20 @@ function showIntelligenceBuying(){
 // axe secondaire en % (dualAxisBase), étiquettes de valeur permanentes sur
 // chaque point (showLabels) et un <title> natif sur chaque point pour avoir
 // la valeur exacte au survol (aucune lib externe nécessaire).
+// Barème officiel ASTAG (mêmes points que app/models/diesel_price.rb#SURCHARGE_SCALE) —
+// pas une formule linéaire simple : le palier 0%→±1% ne vaut que la moitié
+// du pas des paliers suivants (+0.045 CHF au lieu de +0.09 CHF).
+const ASTAG_SURCHARGE_SCALE=[[1.235,-5],[1.325,-4],[1.415,-3],[1.505,-2],[1.595,-1],[1.64,0],[1.685,1],[1.775,2],[1.865,3],[1.955,4],[2.045,5],[2.135,6],[2.225,7],[2.315,8],[2.405,9]];
+function astagSurchargePct(chf){
+  const t=ASTAG_SURCHARGE_SCALE;
+  let x0,y0,x1,y1;
+  if(chf<=t[0][0]){ [x0,y0]=t[0]; [x1,y1]=t[1]; }
+  else if(chf>=t[t.length-1][0]){ [x0,y0]=t[t.length-2]; [x1,y1]=t[t.length-1]; }
+  else {
+    for(let i=0;i<t.length-1;i++){ if(chf>=t[i][0]&&chf<=t[i+1][0]){ [x0,y0]=t[i]; [x1,y1]=t[i+1]; break; } }
+  }
+  return y0+(chf-x0)/(x1-x0)*(y1-y0);
+}
 function svgTrendChartV52(dates,values,opts){
   opts=opts||{};
   const dualAxisBase=opts.dualAxisBase;
@@ -2337,7 +2351,7 @@ function svgTrendChartV52(dates,values,opts){
     for(let g=0;g<=gridN;g++){
       const v=lo+(hi-lo)*g/gridN;
       const y=py(v);
-      const pct=(v-dualAxisBase)/dualAxisBase*100;
+      const pct=astagSurchargePct(v);
       grid+=`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-padR}" y2="${y.toFixed(1)}" stroke="#eef1f5" stroke-width="1"></line><text x="${padL-4}" y="${(y+3).toFixed(1)}" font-size="10" fill="#8994a3" text-anchor="end">${v.toFixed(2)}</text><text x="${w-padR+6}" y="${(y+3).toFixed(1)}" font-size="10" fill="#0b4f9c" text-anchor="start">${pct>=0?'+':''}${pct.toFixed(0)}%</text>`;
     }
     const baseY=py(dualAxisBase);
