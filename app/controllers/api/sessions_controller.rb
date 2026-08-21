@@ -16,6 +16,8 @@ class Api::SessionsController < ApplicationController
         can_generic_order: current_user.effective_can_generic_order?,
         can_view_dashboard:    current_user.effective_can_view_dashboard?,
         can_view_analysis:     current_user.effective_can_view_analysis?,
+        can_view_market_indices:      current_user.effective_can_view_market_indices?,
+        can_view_intelligence_buying: current_user.effective_can_view_intelligence_buying?,
         can_view_nomenclature: current_user.effective_can_view_nomenclature?,
         vapidPublicKey:    Rails.application.config.x.vapid_public_key,
         pushSubscribed:    current_user.push_subscriptions.exists?,

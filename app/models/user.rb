@@ -48,6 +48,8 @@ class User < ApplicationRecord
   def effective_can_generic_order? = admin? || can_generic_order?
   def effective_can_view_dashboard?    = admin? || can_view_dashboard?
   def effective_can_view_analysis?     = admin? || can_view_analysis?
+  def effective_can_view_market_indices?       = admin? || can_view_analysis? || can_view_market_indices?
+  def effective_can_view_intelligence_buying?  = admin? || can_view_analysis? || can_view_intelligence_buying?
   def effective_can_view_nomenclature? = admin? || can_view_nomenclature?
 
   def allowed_suppliers

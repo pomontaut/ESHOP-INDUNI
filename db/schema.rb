@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_21_071607) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_21_145745) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -166,6 +166,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_21_071607) do
     t.boolean "can_read", default: true, null: false
     t.boolean "can_view_analysis", default: false, null: false
     t.boolean "can_view_dashboard", default: false, null: false
+    t.boolean "can_view_intelligence_buying", default: false, null: false
+    t.boolean "can_view_market_indices", default: false, null: false
     t.boolean "can_view_nomenclature", default: false, null: false
     t.datetime "created_at", null: false
     t.string "email", null: false

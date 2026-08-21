@@ -99,7 +99,8 @@ class Admin::UsersController < ApplicationController
       :admin, :must_change_password,
       :can_read, :can_create_orders, :can_modify_orders, :can_create_users,
       :can_import_quote, :can_generic_order,
-      :can_view_dashboard, :can_view_analysis, :can_view_nomenclature,
+      :can_view_dashboard, :can_view_analysis, :can_view_market_indices, :can_view_intelligence_buying,
+      :can_view_nomenclature,
       :order_limit, :approver_email,
       allowed_suppliers: []
     )
