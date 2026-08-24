@@ -90,6 +90,17 @@ namespace :catalog do
             .update_all(email: "l.sogno@soreval.ch", phone: "+41 22 341 15 71",
                          address: "10, Route de la Maison Carrée", postal_code: "1242", city: "Satigny", country_code: "CH")
 
+    # Correction critique : un fournisseur "Sika" a pu être auto-créé sans
+    # confidential_pricing (ex. via Api::OrdersController#create's
+    # find_or_create_by!, si une commande a été passée avant que ce seed ne
+    # tourne) — dans ce cas `new_record?` est déjà faux ci-dessus et
+    # confidential_pricing reste à son défaut `false` pour toujours, ce qui a
+    # fait fuiter le prix net Sika sur de vrais bons de commande. Contrairement
+    # aux corrections d'adresse ci-dessus, aucune valeur "false" n'est ici une
+    # personnalisation admin légitime à préserver : Sika doit toujours être
+    # confidentiel.
+    Supplier.where(name: "Sika", confidential_pricing: false).update_all(confidential_pricing: true)
+
     catalog_path = Rails.root.join("db/seed_data/catalog_products.json")
     if File.exist?(catalog_path)
       supplier_ids = Supplier.where(name: required_suppliers.keys).pluck(:name, :id).to_h

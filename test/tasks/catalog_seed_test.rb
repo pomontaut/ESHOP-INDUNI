@@ -57,6 +57,22 @@ class CatalogSeedTaskTest < ActiveSupport::TestCase
     Product.where(reference: "TEST-ORDERED-999").delete_all
   end
 
+  test "catalog:seed corrects a Sika supplier auto-created without confidential_pricing" do
+    # Reproduces the real production leak: Api::OrdersController#create's
+    # find_or_create_by! can auto-vivify a bare "Sika" supplier (no
+    # confidential_pricing) before this seed ever runs — after which the
+    # required_suppliers loop's `if supplier.new_record?` guard permanently
+    # skips it, since it already exists. Real Sika bons de commande went out
+    # with the net price shown in clear because of exactly this.
+    Supplier.where(name: "Sika").delete_all
+    Supplier.create!(name: "Sika", confidential_pricing: false)
+
+    run_seed
+
+    assert Supplier.find_by!(name: "Sika").confidential_pricing?,
+      "an already-existing Sika supplier must be corrected to confidential_pricing: true, not left as-is"
+  end
+
   private
 
   def run_seed
