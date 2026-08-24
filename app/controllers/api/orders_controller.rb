@@ -101,10 +101,19 @@ class Api::OrdersController < ApplicationController
       confidential_prices ? confidential_prices[item[:article].to_s].to_f : item[:prix].to_f
     }
 
-    # Calculate total to check against user's order limit
+    # Calculate total to check against the user's personal order limit and
+    # the supplier's own Achats validation threshold (set in /admin/contrats
+    # — e.g. "toute commande HGC de plus de CHF 10'000 passe par Achats"),
+    # whichever is lower fires the approval step first.
     total = items.sum { |item| resolved_price.call(item) * item[:qty].to_i }
     limit = current_user&.order_limit
-    needs_approval = limit.present? && total > limit.to_f
+    needs_approval = (limit.present? && total > limit.to_f) ||
+                     (supplier.approval_threshold.present? && total > supplier.approval_threshold.to_f)
+    # A supplier-level threshold can require approval even for a user with no
+    # personal N+1 configured — fall back to an admin so the request never
+    # silently has nowhere to go.
+    approver_email = current_user&.approver_email.presence
+    approver_email ||= User.where(admin: true).order(:id).pick(:email) if needs_approval
 
     approval_status = needs_approval ? "pending_approval" : "approved"
     order_status    = needs_approval ? "pending_approval" : "sent"
@@ -116,7 +125,7 @@ class Api::OrdersController < ApplicationController
       user:            current_user,
       status:          order_status,
       approval_status: approval_status,
-      approver_email:  current_user&.approver_email,
+      approver_email:  approver_email,
       order_date:      Date.today,
       notes:           "Chantier: #{chantier} | Délai souhaité: #{delai}",
       modifies_order:  modifies_order
@@ -150,7 +159,7 @@ class Api::OrdersController < ApplicationController
         needs_approval:   true,
         order_id:         order.id,
         order_number:     order.number,
-        message:          "Commande #{order.number} enregistrée. Votre commande dépasse votre plafond de #{number_with_commas(limit)} CHF — une demande d'approbation a été envoyée à #{current_user.approver_email}."
+        message:          "Commande #{order.number} enregistrée. #{approval_reason_message(limit, supplier, total)} — une demande d'approbation a été envoyée à #{approver_email}."
       }, status: :ok
     else
       # Send the order directly to the supplier, with the bon de commande PDF
@@ -222,6 +231,19 @@ class Api::OrdersController < ApplicationController
   end
 
   private
+
+  # Explains which threshold triggered the approval step — the user's
+  # personal order_limit, the supplier's own Achats validation threshold, or
+  # both — so the confirmation message stays accurate regardless of which
+  # one(s) fired.
+  def approval_reason_message(limit, supplier, total)
+    reasons = []
+    reasons << "dépasse votre plafond de #{number_with_commas(limit)} CHF" if limit.present? && total > limit.to_f
+    if supplier.approval_threshold.present? && total > supplier.approval_threshold.to_f
+      reasons << "dépasse le seuil de validation Achats de #{number_with_commas(supplier.approval_threshold)} CHF pour #{supplier.name}"
+    end
+    "Votre commande " + reasons.join(" et ")
+  end
 
   # Compares the new order's items against the order it modifies, so the
   # admin notification can show exactly what changed rather than just the

@@ -14,6 +14,7 @@
           <th class="py-3">Cantons</th>
           <th class="py-3">Entités</th>
           <th class="py-3">E-mail par défaut</th>
+          <th class="py-3">Seuil validation Achats</th>
           <th class="py-3 text-center pe-3">Actions</th>
         </tr>
       </thead>
@@ -36,6 +37,13 @@
               <% end %>
             </td>
             <td class="py-3 small"><%= supplier.email.presence || "—" %></td>
+            <td class="py-3 small">
+              <% if supplier.approval_threshold.present? %>
+                dès <%= number_with_delimiter(supplier.approval_threshold.to_i) %> CHF
+              <% else %>
+                <span class="text-muted">Aucun</span>
+              <% end %>
+            </td>
             <td class="py-3 text-center pe-3">
               <%= link_to "✏ Paramétrer", edit_admin_supplier_path(supplier), class: "btn btn-outline-primary btn-sm" %>
             </td>

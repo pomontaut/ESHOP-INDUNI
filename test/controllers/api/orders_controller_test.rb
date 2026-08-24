@@ -264,6 +264,38 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1200.0, row["items"].first["prix"]
   end
 
+  test "create requires approval when the order exceeds the supplier's own threshold, even with no personal order_limit" do
+    supplier = Supplier.create!(name: "HGC", approval_threshold: 10_000) unless Supplier.exists?(name: "HGC")
+    Supplier.find_by(name: "HGC").update!(approval_threshold: 10_000)
+    assert_nil users(:one).order_limit
+    assert_nil users(:one).approver_email
+
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 15_000 } ]
+    }
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body["needs_approval"]
+    assert_match(/seuil de validation Achats/, body["message"])
+
+    order = Order.find(body["order_id"])
+    assert_equal "pending_approval", order.approval_status
+    assert order.approver_email.present?, "should fall back to an admin's e-mail when the user has none configured"
+  end
+
+  test "create does not require approval below the supplier's threshold" do
+    Supplier.find_or_create_by!(name: "HGC") { |s| s.approval_threshold = 10_000 }.update!(approval_threshold: 10_000)
+
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 500 } ]
+    }
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_not body["needs_approval"]
+  end
+
   test "resend retries with the exact recipients from the original attempt and marks it sent" do
     post api_orders_url, params: {
       chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",

@@ -86,6 +86,18 @@
         </div>
       </div>
 
+      <%# ── Seuil de validation Achats ── %>
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-bold" style="background:#0c1d34;color:white;">💰 Seuil de validation Achats</div>
+        <div class="card-body p-4">
+          <p class="text-muted small mb-2">Au-delà de ce montant (CHF, hors transport), toute commande passée sur ce fournisseur nécessite une validation Achats, quel que soit le plafond personnel de l'utilisateur qui commande. Laisser vide pour ne pas imposer de seuil spécifique à ce fournisseur.</p>
+          <div class="mb-3" style="max-width:260px">
+            <%= f.label :approval_threshold, "Seuil (CHF)", class: "form-label fw-semibold" %>
+            <%= f.number_field :approval_threshold, step: "0.01", min: 0, class: "form-control", placeholder: "ex. 10000" %>
+          </div>
+        </div>
+      </div>
+
       <div class="d-flex gap-2 mb-5">
         <%= f.submit "Enregistrer les modifications", class: "btn btn-primary px-4" %>
         <%= link_to "Annuler", admin_suppliers_path, class: "btn btn-outline-secondary" %>
