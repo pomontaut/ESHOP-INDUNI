@@ -24,22 +24,35 @@ class Api::OrdersController < ApplicationController
   def index
     orders = current_user&.admin? ? Order.all : Order.where(user: current_user)
     orders = orders.includes(:supplier, :order_lines, :user).order(created_at: :desc).limit(100)
+    # Prix net confidentiel (fournisseur sous accord de confidentialité, ex.
+    # Sika) : seule l'Analyse achat (accès restreint aux Achats) doit voir le
+    # vrai montant. On le masque ici pour quiconque n'a pas ce droit, pour
+    # que ni le Dashboard (accessible aux exploitants) ni l'onglet réseau du
+    # navigateur ne puissent jamais l'exposer — `confidential` reste vrai
+    # même pour un utilisateur autorisé, pour que le Dashboard (qui, lui,
+    # doit toujours le masquer, indépendamment des droits du visiteur) sache
+    # l'afficher comme tel.
+    can_see_confidential = current_user&.admin? || current_user&.effective_can_view_analysis?
     render json: orders.map { |o|
       chantier = o.notes.to_s.match(/Chantier:\s*([^|]+)/)&.captures&.first&.strip || "—"
+      confidential = o.supplier&.confidential_pricing?
+      masked = confidential && !can_see_confidential
       {
         id:              o.id,
         no:              o.number,
         date:            o.order_date&.strftime("%d.%m.%Y") || o.created_at.strftime("%d.%m.%Y"),
         supplier:        o.supplier&.name,
         chantier:        chantier,
-        total:           o.total.to_f.round(2),
+        total:           masked ? 0 : o.total.to_f.round(2),
+        confidential:    confidential,
         status:          o.approval_status.presence || o.status,
         user_name:       o.user&.full_name,
         user_sector:     o.user&.sector,
         receptionConfirmedAt: o.reception_confirmed_at&.strftime("%d.%m.%Y %H:%M"),
         emailSent:       o.email_sent_at.present?,
         items:           o.order_lines.map { |l|
-          { article: l.product&.reference, designation: l.product&.name, qty: l.quantity, prix: l.unit_price.to_f, catalogPrix: l.catalog_price&.to_f }
+          { article: l.product&.reference, designation: l.product&.name, qty: l.quantity,
+            prix: masked ? 0 : l.unit_price.to_f, catalogPrix: masked ? nil : l.catalog_price&.to_f }
         }
       }
     }
@@ -75,8 +88,21 @@ class Api::OrdersController < ApplicationController
       s.email = "commandes@#{supplier_name.downcase.gsub(/[^a-z0-9]/, '')}.ch"
     end
 
+    # Prix net confidentiel (ex. Sika) : le client ne l'a jamais vu (masqué
+    # dès Api::ProductsController#index), donc item[:prix] vaut 0 — on
+    # reconstitue le vrai prix depuis le catalogue pour le plafond
+    # d'approbation et pour les lignes de commande elles-mêmes, plutôt que de
+    # faire confiance à ce que le client a soumis.
+    confidential_prices = if supplier.confidential_pricing?
+      Product.where(supplier: supplier, reference: items.map { |item| item[:article].to_s })
+             .pluck(:reference, :unit_price).to_h
+    end
+    resolved_price = ->(item) {
+      confidential_prices ? confidential_prices[item[:article].to_s].to_f : item[:prix].to_f
+    }
+
     # Calculate total to check against user's order limit
-    total = items.sum { |item| item[:prix].to_f * item[:qty].to_i }
+    total = items.sum { |item| resolved_price.call(item) * item[:qty].to_i }
     limit = current_user&.order_limit
     needs_approval = limit.present? && total > limit.to_f
 
@@ -105,7 +131,7 @@ class Api::OrdersController < ApplicationController
       order.order_lines.create!(
         product:      product,
         quantity:     item[:qty].to_i,
-        unit_price:   item[:prix].to_f,
+        unit_price:   resolved_price.call(item),
         catalog_price: item[:catalogPrix].presence && item[:catalogPrix].to_f
       )
     end

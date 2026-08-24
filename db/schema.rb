@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_21_145745) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_24_072706) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -133,6 +133,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_21_145745) do
   create_table "suppliers", force: :cascade do |t|
     t.text "address"
     t.string "city"
+    t.boolean "confidential_pricing", default: false, null: false
     t.string "country_code"
     t.datetime "created_at", null: false
     t.string "email"

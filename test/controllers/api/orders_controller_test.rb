@@ -218,6 +218,52 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_nil order.email_sent_at
   end
 
+  test "create ignores the client-submitted price for a confidential supplier and stores the real catalog price" do
+    confidential_supplier = Supplier.create!(name: "Fournisseur confidentiel", confidential_pricing: true, email: "commandes@fournisseur-conf.ch")
+    Product.create!(supplier: confidential_supplier, reference: "ART-CONF", name: "Article confidentiel", famille: "Adjuvants", unit_price: 1200.0)
+
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "Fournisseur confidentiel",
+      # The client never saw the real price (masked to 0 by Api::ProductsController#index)
+      # and submits 0, as it always would for a confidential product.
+      items: [ { article: "ART-CONF", designation: "Article confidentiel", qty: 2, prix: 0 } ]
+    }
+    assert_response :success
+
+    line = Order.order(:id).last.order_lines.sole
+    assert_equal 1200.0, line.unit_price.to_f
+  end
+
+  test "index exposes the real total/prices only to a user with analysis rights, and always flags the order as confidential" do
+    confidential_supplier = Supplier.create!(name: "Fournisseur confidentiel", confidential_pricing: true)
+    product = Product.create!(supplier: confidential_supplier, reference: "ART-CONF", name: "Article confidentiel", famille: "Adjuvants", unit_price: 1200.0)
+    order = Order.create!(supplier: confidential_supplier, user: users(:two), order_date: Date.current, notes: "Chantier: X")
+    order.order_lines.create!(product: product, quantity: 2, unit_price: 1200.0)
+
+    delete logout_url
+    basic = users(:two)
+    basic.update!(admin: false, can_view_analysis: false)
+    post login_url, params: { email: basic.email, password: "password123" }
+
+    get api_orders_url
+    assert_response :success
+    row = JSON.parse(response.body).find { |o| o["id"] == order.id }
+    assert_equal true, row["confidential"]
+    assert_equal 0.0, row["total"]
+    assert_equal 0.0, row["items"].first["prix"]
+
+    delete logout_url
+    basic.update!(can_view_analysis: true)
+    post login_url, params: { email: basic.email, password: "password123" }
+
+    get api_orders_url
+    assert_response :success
+    row = JSON.parse(response.body).find { |o| o["id"] == order.id }
+    assert_equal true, row["confidential"]
+    assert_equal 2400.0, row["total"]
+    assert_equal 1200.0, row["items"].first["prix"]
+  end
+
   test "resend retries with the exact recipients from the original attempt and marks it sent" do
     post api_orders_url, params: {
       chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",

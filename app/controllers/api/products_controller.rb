@@ -10,12 +10,18 @@ class Api::ProductsController < ApplicationController
       .where(suppliers: { name: visible })
       .order(:id)
     render json: products.map { |p|
+      confidential = p.supplier&.confidential_pricing?
       {
         catalog:          p.supplier&.name,
         article:          p.reference,
         designation:      p.name,
         descriptif:       p.descriptif,
-        prix:             p.unit_price.to_f,
+        # Prix net confidentiel (ex. accord fournisseur marqué CONFIDENTIAL) :
+        # jamais envoyé au navigateur en dehors de l'Analyse achat, où il est
+        # reconstitué côté serveur à partir des commandes réellement passées
+        # (voir Api::OrdersController#index et #create) — pas depuis ce endpoint.
+        prix:             confidential ? 0 : p.unit_price.to_f,
+        confidential:     confidential,
         unite:            p.unite,
         famille:          p.famille,
         sousFamille:      p.sous_famille,

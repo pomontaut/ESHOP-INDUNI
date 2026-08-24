@@ -22,4 +22,19 @@ class Api::ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_includes catalogs, "Fournisseur ouvert"
     assert_not_includes catalogs, "Fournisseur restreint"
   end
+
+  test "index masks the price of products from a supplier under confidential pricing" do
+    confidential_supplier = Supplier.create!(name: "Fournisseur confidentiel", confidential_pricing: true)
+    Product.create!(supplier: confidential_supplier, reference: "ART-CONF", name: "Article confidentiel", famille: "Adjuvants", unit_price: 1200.0)
+
+    user = users(:two)
+    user.update!(admin: false, allowed_suppliers: [])
+    post login_url, params: { email: user.email, password: "password123" }
+
+    get api_products_url
+    assert_response :success
+    product = JSON.parse(response.body).find { |p| p["article"] == "ART-CONF" }
+    assert_equal true, product["confidential"]
+    assert_equal 0.0, product["prix"]
+  end
 end

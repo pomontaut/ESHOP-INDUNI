@@ -47,10 +47,22 @@ namespace :catalog do
       "LCBE" => {
         email: "info@lcbe.ch", phone: "021 947 47 58",
         address: "Route de l'Industrie 43B", postal_code: "1615", city: "Bossonnens", country_code: "CH"
+      },
+      # Conditions 2026 (offre 00453640 du 05.12.2025), prix nets confidentiels
+      # (chaque page de l'offre est marquée CONFIDENTIAL) : voir
+      # Supplier#confidential_pricing, qui masque ces prix partout sauf dans
+      # l'Analyse achat.
+      "Sika" => {
+        email: "brugger.patrick@ch.sika.com", phone: "+41 79 847 23 85",
+        address: "Tüffenwies 16", postal_code: "8048", city: "Zürich", country_code: "CH",
+        ide_number: "CHE-116.323.165", payment_condition: "30 jours net",
+        confidential_pricing: true
       }
     }.freeze
 
-    Supplier.where(name: [ "Sika", "Alzo" ]).find_each do |supplier|
+    # "Alzo" (mauvaise casse/nom, remplacé par "ALZO AG") a été seedé par
+    # erreur : on le supprime à chaque boot pour ne jamais le laisser réapparaître.
+    Supplier.where(name: "Alzo").find_each do |supplier|
       supplier.products.delete_all
       supplier.destroy
     end
