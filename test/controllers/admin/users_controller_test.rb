@@ -22,6 +22,26 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_not user.can_view_nomenclature?
   end
 
+  test "update strips the hidden blank fallback from allowed_suppliers when no catalog checkbox is checked" do
+    # The "Accès catalogues fournisseurs" checkboxes all share a trailing
+    # hidden input (value: "") so an all-unchecked submission still sends
+    # the allowed_suppliers param at all. Saved as-is, that blank string
+    # made the array non-empty and silently emptied every catalog for the
+    # user (see User#effective_visible_suppliers) — exactly what a real
+    # admin hit when creating a user without touching that section.
+    user = users(:two)
+
+    patch admin_user_url(user), params: {
+      user: {
+        first_name: user.first_name, last_name: user.last_name, email: user.email,
+        allowed_suppliers: [ "" ]
+      }
+    }
+
+    assert_redirected_to admin_users_path
+    assert_equal [], user.reload.allowed_suppliers
+  end
+
   test "update refuses to promote a user to admin without the confirmation code" do
     ENV["ADMIN_PROMOTION_CODE"] = "secret-code"
     user = users(:two)

@@ -17,7 +17,8 @@ class User < ApplicationRecord
     { key: "ALZO AG",    label: "ALZO AG" },
     { key: "Soreval",    label: "Soreval" },
     { key: "BTest",      label: "BTest" },
-    { key: "LCBE",       label: "LCBE" }
+    { key: "LCBE",       label: "LCBE" },
+    { key: "Sika",       label: "Sika" }
   ].freeze
 
   validates :email, presence: true, uniqueness: { case_sensitive: false },
@@ -65,7 +66,13 @@ class User < ApplicationRecord
   def effective_visible_suppliers
     return Supplier.pluck(:name) if admin?
     sector_allowed = Supplier.all.select { |s| s.visible_for_sector?(sector) }.map(&:name)
-    manual = allowed_suppliers
+    # allowed_suppliers can hold a stray blank entry — the admin form always
+    # submits a hidden "" fallback alongside the checkboxes so an
+    # all-unchecked submission still sends the param, and older code paths
+    # saved that blank straight through. A blank-only array must still mean
+    # "no manual restriction", not "restricted to nothing" (which silently
+    # emptied every catalog for the affected user).
+    manual = allowed_suppliers.reject(&:blank?)
     manual.empty? ? sector_allowed : (sector_allowed & manual)
   end
 end

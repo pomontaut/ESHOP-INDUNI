@@ -37,4 +37,16 @@ class UserTest < ActiveSupport::TestCase
     assert_not result.include?(restricted.name)
     assert result.include?(allowed.name)
   end
+
+  test "effective_visible_suppliers treats a blank-only allowed_suppliers as no manual restriction" do
+    # The admin form's hidden "" fallback (so an all-unchecked submission
+    # still sends the param) used to be saved verbatim as allowed_suppliers:
+    # [""] — a non-empty array with no real entries, which intersected to
+    # nothing and emptied every catalog for the user. A real report from
+    # production: "ces catalogues sont vides" for every single supplier.
+    user = users(:two)
+    user.update!(allowed_suppliers: [ "" ])
+
+    assert_equal Supplier.pluck(:name).sort, user.effective_visible_suppliers.sort
+  end
 end

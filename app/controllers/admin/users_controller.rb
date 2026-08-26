@@ -94,7 +94,7 @@ class Admin::UsersController < ApplicationController
   end
 
   def user_params
-    params.require(:user).permit(
+    permitted = params.require(:user).permit(
       :email, :password, :first_name, :last_name, :job_function, :sector, :phone,
       :admin, :must_change_password,
       :can_read, :can_create_orders, :can_modify_orders, :can_create_users,
@@ -104,5 +104,12 @@ class Admin::UsersController < ApplicationController
       :order_limit, :approver_email,
       allowed_suppliers: []
     )
+    # The form always submits a hidden "" alongside the checkboxes so an
+    # all-unchecked submission still sends the param — strip it, or an admin
+    # leaving every catalog box unchecked (meaning "no manual restriction")
+    # would instead save allowed_suppliers: [""], which User#effective_visible_suppliers
+    # would previously treat as "restricted to nothing" — every catalog empty.
+    permitted[:allowed_suppliers] = permitted[:allowed_suppliers].reject(&:blank?) if permitted.key?(:allowed_suppliers)
+    permitted
   end
 end
