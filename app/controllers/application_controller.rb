@@ -1,7 +1,17 @@
 class ApplicationController < ActionController::Base
   before_action :require_login
+  before_action :prevent_api_caching
 
   private
+
+  # Ces réponses JSON ne portent aucun en-tête de cache explicite : sans ça,
+  # certains navigateurs (constaté sur Edge, pas sur Firefox, pour la même
+  # session) peuvent servir une réponse mise en cache localement — un
+  # catalogue ou des droits obsolètes qui ne se corrigent jamais tout seuls,
+  # même après un rechargement complet de la page.
+  def prevent_api_caching
+    response.headers["Cache-Control"] = "no-store" if request.path.start_with?("/api/")
+  end
 
   def require_login
     return if current_user

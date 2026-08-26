@@ -37,4 +37,15 @@ class Api::ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_equal true, product["confidential"]
     assert_equal 0.0, product["prix"]
   end
+
+  test "index responds with Cache-Control: no-store so no browser ever serves a stale catalog" do
+    # Confirmed on production: the same account, same data, could show an
+    # empty or outdated catalog on one browser but not another — some
+    # engines apply their own heuristic caching to a JSON GET response that
+    # carries no explicit cache header, and never re-fetch it even after a
+    # full page reload.
+    post login_url, params: { email: users(:one).email, password: "password123" }
+    get api_products_url
+    assert_equal "no-store", response.headers["Cache-Control"]
+  end
 end
