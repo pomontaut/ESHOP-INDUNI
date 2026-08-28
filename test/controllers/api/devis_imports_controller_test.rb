@@ -49,6 +49,87 @@ class Api::DevisImportsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 12.5, item["prix"], "must still use the e-shop price, not the devis price"
   end
 
+  test "warns when a cheaper known equivalent exists elsewhere in the catalog" do
+    fake_lines = [
+      { reference: "NEW-UNMATCHED", designation: "Tuyau PVC test", quantity: 1, unit: "M", unit_price: 25.0, is_variant: false }
+    ]
+
+    with_stubbed_extraction(fake_lines) do
+      post api_devis_imports_url, params: { supplier: "HGC", file: fixture_file_upload(".keep", "application/pdf") }
+    end
+
+    item = JSON.parse(response.body)["items"].first
+    equivalent = item["equivalent"]
+    assert equivalent
+    assert_equal "HGC", equivalent["catalog"]
+    assert_equal "REF-123", equivalent["article"]
+    assert_equal 12.5, equivalent["prix"]
+    assert item["equivalentCheaper"]
+  end
+
+  test "does not flag equivalentCheaper when the devis price already beats the known equivalent" do
+    fake_lines = [
+      { reference: "NEW-UNMATCHED-2", designation: "Tuyau PVC test", quantity: 1, unit: "M", unit_price: 5.0, is_variant: false }
+    ]
+
+    with_stubbed_extraction(fake_lines) do
+      post api_devis_imports_url, params: { supplier: "HGC", file: fixture_file_upload(".keep", "application/pdf") }
+    end
+
+    item = JSON.parse(response.body)["items"].first
+    assert item["equivalent"]
+    assert_not item["equivalentCheaper"]
+  end
+
+  test "does not surface an equivalent for a dissimilar designation" do
+    fake_lines = [
+      { reference: "SOMETHING-ELSE", designation: "Grille métallique 40x40", quantity: 2, unit: "PCE", unit_price: 10.0, is_variant: false }
+    ]
+
+    with_stubbed_extraction(fake_lines) do
+      post api_devis_imports_url, params: { supplier: "HGC", file: fixture_file_upload(".keep", "application/pdf") }
+    end
+
+    item = JSON.parse(response.body)["items"].first
+    assert_nil item["equivalent"]
+  end
+
+  test "surfaces a cheaper cross-supplier equivalent even when the reference matches the quoting supplier" do
+    cheaper_supplier = Supplier.create!(name: "Canplast")
+    Product.create!(supplier: cheaper_supplier, reference: "CP-1", name: "Tuyau PVC test", unit_price: 6.0, unite: "M", famille: "Test")
+
+    fake_lines = [
+      { reference: "REF-123", designation: "Tuyau PVC test (devis)", quantity: 1, unit: "M", unit_price: 12.5, is_variant: false }
+    ]
+    with_stubbed_extraction(fake_lines) do
+      post api_devis_imports_url, params: { supplier: "HGC", file: fixture_file_upload(".keep", "application/pdf") }
+    end
+
+    item = JSON.parse(response.body)["items"].first
+    assert item["matched"]
+    equivalent = item["equivalent"]
+    assert equivalent
+    assert_equal "Canplast", equivalent["catalog"]
+    assert_equal 6.0, equivalent["prix"]
+    assert item["equivalentCheaper"]
+  end
+
+  test "never surfaces a confidential-pricing supplier as an equivalent" do
+    @product.destroy
+    confidential_supplier = Supplier.create!(name: "Sika", confidential_pricing: true)
+    Product.create!(supplier: confidential_supplier, reference: "SIKA-1", name: "Tuyau PVC test", unit_price: 3.0, unite: "M", famille: "Test")
+
+    fake_lines = [
+      { reference: "UNKNOWN-REF", designation: "Tuyau PVC test", quantity: 1, unit: "M", unit_price: 25.0, is_variant: false }
+    ]
+    with_stubbed_extraction(fake_lines) do
+      post api_devis_imports_url, params: { supplier: "HGC", file: fixture_file_upload(".keep", "application/pdf") }
+    end
+
+    item = JSON.parse(response.body)["items"].first
+    assert_nil item["equivalent"]
+  end
+
   test "builds a generic article for an unmatched reference" do
     fake_lines = [
       { reference: "UNKNOWN-99", designation: "Article inconnu", quantity: 3, unit: "PCE", unit_price: 4.2, is_variant: false }

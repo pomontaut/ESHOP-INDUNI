@@ -103,6 +103,7 @@ class Api::DevisImportsController < ApplicationController
     quantity  = line[:quantity].to_f
     devis_price = line[:unit_price].presence && line[:unit_price].to_f
     product = reference.present? ? Product.where(supplier: supplier).where("upper(reference) = ?", reference.upcase).first : nil
+    equivalent = equivalent_finder.find(line[:designation], exclude: product)
 
     if product
       {
@@ -122,7 +123,7 @@ class Api::DevisImportsController < ApplicationController
         qty: quantity,
         devisPrix: devis_price,
         cheaperAtSupplier: devis_price.present? && devis_price > 0 && devis_price < product.unit_price.to_f
-      }
+      }.merge(equivalent_fields(equivalent, devis_price))
     else
       {
         matched: false,
@@ -142,7 +143,30 @@ class Api::DevisImportsController < ApplicationController
         cheaperAtSupplier: false,
         suggestedFamille: line[:suggested_famille],
         suggestedSousFamille: line[:suggested_sous_famille]
-      }
+      }.merge(equivalent_fields(equivalent, devis_price))
     end
+  end
+
+  # Recherche, pour CHAQUE ligne de devis (référencée ou générique), un
+  # article équivalent déjà connu ailleurs dans nos catalogues (n'importe
+  # quel fournisseur) par similarité de désignation — pour avertir l'acheteur
+  # si on a déjà moins cher ailleurs avant qu'il accepte le prix du devis.
+  def equivalent_finder
+    @equivalent_finder ||= EquivalentProductFinder.new
+  end
+
+  def equivalent_fields(equivalent, devis_price)
+    return { equivalent: nil, equivalentCheaper: false } unless equivalent
+
+    {
+      equivalent: {
+        catalog: equivalent.supplier.name,
+        article: equivalent.reference,
+        designation: equivalent.name,
+        prix: equivalent.unit_price.to_f,
+        unite: equivalent.unite
+      },
+      equivalentCheaper: devis_price.present? && devis_price > 0 && equivalent.unit_price.to_f < devis_price
+    }
   end
 end

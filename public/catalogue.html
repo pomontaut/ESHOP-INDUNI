@@ -1707,6 +1707,17 @@ function renderDevisResults(){
     const eshopNote=hasRefPrice
       ?`<div style="margin-top:4px;font-size:12px;color:#555">Article référencé e-shop — prix e-shop (référence) : <b>${fmt(it.prix)}</b>. Le prix du devis ne peut pas dépasser ce montant.</div><div data-devis-pricewarn="${k}" style="display:none;margin-top:2px;font-size:12px;color:#b91c1c;font-weight:bold">⚠ Prix plafonné au prix e-shop (${fmt(it.prix)}).</div>`
       :'';
+    let equivNote='';
+    if(it.equivalent){
+      const ev=it.equivalent;
+      if(it.devisPrix!=null){
+        equivNote=it.equivalentCheaper
+          ?`<div style="margin-top:4px;font-size:12px;color:#b91c1c">⚠ Équivalent moins cher trouvé au catalogue — <b>${esc(ev.catalog)}</b> : ${esc(ev.designation)} à <b>${fmt(ev.prix)}</b>/${esc(ev.unite)} (devis : ${fmt(it.devisPrix)})</div>`
+          :`<div style="margin-top:4px;font-size:12px;color:#15803d">✓ Ce devis est déjà moins cher (ou égal) que l'équivalent connu au catalogue — <b>${esc(ev.catalog)}</b> : ${esc(ev.designation)} à ${fmt(ev.prix)}/${esc(ev.unite)}</div>`;
+      } else {
+        equivNote=`<div style="margin-top:4px;font-size:12px;color:#555">Équivalent trouvé au catalogue — <b>${esc(ev.catalog)}</b> : ${esc(ev.designation)} à <b>${fmt(ev.prix)}</b>/${esc(ev.unite)}</div>`;
+      }
+    }
     const maxAttr=hasRefPrice?` max="${Number(it.prix)}"`:'';
     const priceCell=`<input type="number" step="0.01" min="0"${maxAttr} placeholder="0.00" value="${it.devisPrix!=null?Number(it.devisPrix).toFixed(2):(it.prix!=null?Number(it.prix).toFixed(2):'')}" data-devis-price="${k}" oninput="clampDevisPrice(${k})" style="width:90px;border:1px solid #ddd;border-radius:6px;padding:6px">`;
     let catalogRow='';
@@ -1729,7 +1740,7 @@ function renderDevisResults(){
         ${contratCadreNote}
       </div>`;
     }
-    return `<tr><td><input type="checkbox" data-devis-check="${k}" checked></td><td><b>${esc(it.article)}</b></td><td>${esc(it.designation)}<div>${badges.join(' ')}</div>${eshopNote}${catalogRow}</td><td>${it.qty} ${esc(it.unite)}</td><td>${priceCell}</td></tr>`;
+    return `<tr><td><input type="checkbox" data-devis-check="${k}" checked></td><td><b>${esc(it.article)}</b></td><td>${esc(it.designation)}<div>${badges.join(' ')}</div>${eshopNote}${equivNote}${catalogRow}</td><td>${it.qty} ${esc(it.unite)}</td><td>${priceCell}</td></tr>`;
   }).join('');
   results.innerHTML=`<div class="sub2Note">${devisResultItems.length} ligne(s) détectée(s). Décoche celles à exclure. Le prix repris pour la commande est celui du devis — modifie-le si besoin.</div><table class="dashTable"><thead><tr><th></th><th>Référence</th><th>Désignation</th><th>Qté</th><th>Prix devis (repris pour la commande)</th></tr></thead><tbody>${rows}</tbody></table><div class="actions" style="margin-top:14px"><button type="button" class="primary" onclick="addDevisItemsToCart()">+ Ajouter la sélection au panier</button></div>`;
 }
