@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_02_071930) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_02_081800) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -73,12 +73,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_071930) do
     t.string "approval_status", default: "approved"
     t.string "approval_token"
     t.string "approver_email"
+    t.string "conducteur_travaux"
+    t.string "contact"
     t.datetime "created_at", null: false
+    t.text "delivery_address"
     t.datetime "email_sent_at"
     t.integer "modifies_order_id"
     t.text "notes"
     t.string "number"
     t.date "order_date"
+    t.string "phone"
     t.datetime "reception_confirmed_at"
     t.string "reception_token"
     t.text "sent_body"

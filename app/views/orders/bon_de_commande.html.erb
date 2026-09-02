@@ -7,9 +7,19 @@
   chantier_val   = chantier_match ? chantier_match[1].strip : '—'
   delai_val      = delai_match    ? delai_match[1].strip    : '—'
   fmt = ->(n) { i, d = ('%.2f' % n.to_f).split('.'); "#{i.reverse.gsub(/(\d{3})(?=\d)/, '\\1' + "'").reverse}.#{d}" rescue n.to_s }
+  chantier_record = Chantier.find_by(nom: chantier_val)
   # Chantier en consortium : gabarit sans notre logo ni nos CGA (pas de
   # visibilité sur le partenaire), le bloc CLIENT affiche juste "CONSORTIUM".
-  is_consortium  = Chantier.find_by(nom: chantier_val)&.consortium? || false
+  is_consortium  = chantier_record&.consortium? || false
+  # Nom de la personne Induni ayant passé la commande (le compte connecté au
+  # moment de l'envoi, sauf saisie manuelle différente dans le formulaire) et
+  # coordonnées du contact sur site pour la livraison — ces deux informations
+  # n'étaient auparavant jamais reportées sur le document (toujours "Pierre-
+  # Olivier MONTAUT" en dur, quel que soit qui commande / livre réellement).
+  conducteur_travaux = @order.conducteur_travaux.presence || @order.user&.full_name.presence || "—"
+  conducteur_email   = @order.user&.email
+  contact_livraison  = @order.contact.presence || "—"
+  delivery_address_html = (@order.delivery_address.presence || "INDUNI & Cie SA\nAvenue des Grandes-Communes 6\n1213 Petit-Lancy").gsub("\n", "<br>")
   # Prix nets confidentiels (ex. Sika, accord-cadre marqué CONFIDENTIAL) :
   # ne doivent jamais apparaître sur le bon de commande, y compris celui
   # envoyé au fournisseur lui-même — conformément à l'accord-cadre, seul le
@@ -56,11 +66,12 @@ td:not(:first-child){text-align:right}
   <div class="hcol">
     <div class="htitle">CLIENT</div>
     <div class="cname"><%= is_consortium ? 'CONSORTIUM' : 'INDUNI &amp; CIE SA'.html_safe %></div>
-    <div class="ir"><span class="il">Contact :</span> Pierre-Olivier MONTAUT</div>
+    <div class="ir"><span class="il">Conducteur de travaux :</span> <%= conducteur_travaux %><%= conducteur_email.present? ? " — #{conducteur_email}" : "" %></div>
     <div class="ir"><span class="il">Chantier :</span> <%= chantier_val %></div>
     <div class="ir"><span class="il">Délai livraison :</span> <%= delai_val %></div>
     <div class="ir"><span class="il">Adresse de livraison :</span></div>
-    <div class="ir" style="padding-left:10px">INDUNI &amp; Cie SA<br>Avenue des Grandes-Communes 6<br>1213 Petit-Lancy</div>
+    <div class="ir" style="padding-left:10px"><%= delivery_address_html.html_safe %></div>
+    <div class="ir"><span class="il">Contact pour la livraison :</span> <%= contact_livraison %><%= @order.phone.present? ? " — #{@order.phone}" : "" %></div>
   </div>
   <div class="hcol">
     <div class="htitle">FOURNISSEUR</div>
@@ -123,8 +134,8 @@ td:not(:first-child){text-align:right}
 <div class="infos">
   <h3>Informations complémentaires sur le chantier</h3>
   <div class="ig">
-    <span>Contremaître :</span><span>—</span>
-    <span>Technicien :</span><span>Pierre-Olivier Montaut — pomontaut@induni.ch</span>
+    <span>Contremaître :</span><span><%= chantier_record&.contremaitre.presence || contact_livraison %></span>
+    <span>Technicien :</span><span><%= chantier_record&.technicien.presence || "—" %></span>
   </div>
 </div>
 
@@ -137,7 +148,7 @@ td:not(:first-child){text-align:right}
 </div>
 
 <div class="sigrow">
-  <div class="sigbox">Pierre-Olivier Montaut</div>
+  <div class="sigbox"><%= conducteur_travaux %></div>
   <div class="sigbox">&nbsp;</div>
 </div>
 

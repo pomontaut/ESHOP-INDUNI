@@ -77,10 +77,14 @@ class Api::OrdersController < ApplicationController
   end
 
   def create
-    chantier      = params[:chantier].to_s.strip
-    delai         = params[:delai].to_s.strip
-    supplier_name = params[:supplier].to_s.strip
-    items         = params[:items] || []
+    chantier           = params[:chantier].to_s.strip
+    delai              = params[:delai].to_s.strip
+    supplier_name      = params[:supplier].to_s.strip
+    items              = params[:items] || []
+    contact            = params[:contact].to_s.strip.presence
+    phone              = params[:phone].to_s.strip.presence
+    delivery_address   = params[:adresse].to_s.strip.presence
+    conducteur_travaux = params[:conducteur].to_s.strip.presence
 
     return render json: { error: "Panier vide" }, status: :unprocessable_entity if items.blank?
 
@@ -121,14 +125,18 @@ class Api::OrdersController < ApplicationController
     modifies_order = Order.find_by(id: params[:modifies_order_id]) if params[:modifies_order_id].present?
 
     order = Order.create!(
-      supplier:        supplier,
-      user:            current_user,
-      status:          order_status,
-      approval_status: approval_status,
-      approver_email:  approver_email,
-      order_date:      Date.today,
-      notes:           "Chantier: #{chantier} | Délai souhaité: #{delai}",
-      modifies_order:  modifies_order
+      supplier:           supplier,
+      user:               current_user,
+      status:             order_status,
+      approval_status:    approval_status,
+      approver_email:     approver_email,
+      order_date:         Date.today,
+      notes:              "Chantier: #{chantier} | Délai souhaité: #{delai}",
+      modifies_order:     modifies_order,
+      contact:            contact,
+      phone:              phone,
+      delivery_address:   delivery_address,
+      conducteur_travaux: conducteur_travaux
     )
 
     items.each do |item|
