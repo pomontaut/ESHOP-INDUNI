@@ -11,6 +11,13 @@ class User < ApplicationRecord
 
   CHANTIER_ACCESS_SCOPES = [ "own", "secteur" ].freeze
 
+  JOB_FUNCTIONS = [
+    "ACHETEUR", "DIRECTEUR TRAVAUX", "DIRECTEUR SERVICE", "CONDUCTEUR DE TRAVAUX",
+    "CONTREMAITRE", "CHEF D'EQUIPE", "TECHNICIEN", "CHEF DE SECTEUR",
+    "FONCTION SUPPORT", "DEPOT/GESTION MATERIEL",
+    "RESPONSABLE DEPOT GESTION DE MATERIEL", "DIRECTEUR DEPOT GESTION DE MATERIEL"
+  ].freeze
+
   SUPPLIERS = [
     { key: "HGC",        label: "HGC" },
     { key: "Canplast",   label: "Canplast" },

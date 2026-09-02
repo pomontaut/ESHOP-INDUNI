@@ -33,7 +33,12 @@
           <div class="row g-3 mb-3">
             <div class="col-6">
               <%= f.label :job_function, "Fonction / Métier", class: "form-label fw-semibold" %>
-              <%= f.text_field :job_function, class: "form-control" %>
+              <% job_function_options = User::JOB_FUNCTIONS.map { |j| [ j, j ] } %>
+              <% if @user.job_function.present? && !User::JOB_FUNCTIONS.include?(@user.job_function) %>
+                <% job_function_options = [ [ @user.job_function, @user.job_function ] ] + job_function_options %>
+              <% end %>
+              <%= f.select :job_function, [ [ "— Choisir —", "" ] ] + job_function_options,
+                           {}, class: "form-select" %>
             </div>
             <div class="col-6">
               <%= f.label :sector, "Secteur / Service", class: "form-label fw-semibold" %>
