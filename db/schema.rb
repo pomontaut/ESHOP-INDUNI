@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_02_081800) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_02_125407) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -27,14 +27,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_081800) do
     t.string "canton"
     t.string "carte_interactive"
     t.string "chef_equipe"
+    t.string "conducteur_travaux"
     t.boolean "consortium", default: false, null: false
     t.text "contraintes_acces"
     t.string "contremaitre"
     t.datetime "created_at", null: false
     t.string "email_chef_equipe"
+    t.string "email_conducteur_travaux"
     t.string "email_contremaitre"
     t.string "email_technicien"
     t.string "natel_chef_equipe"
+    t.string "natel_conducteur_travaux"
     t.string "natel_contremaitre"
     t.string "natel_technicien"
     t.string "nom", null: false
@@ -44,6 +47,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_081800) do
     t.datetime "updated_at", null: false
     t.string "ville"
     t.index ["email_chef_equipe"], name: "index_chantiers_on_email_chef_equipe"
+    t.index ["email_conducteur_travaux"], name: "index_chantiers_on_email_conducteur_travaux"
     t.index ["email_contremaitre"], name: "index_chantiers_on_email_contremaitre"
     t.index ["email_technicien"], name: "index_chantiers_on_email_technicien"
   end

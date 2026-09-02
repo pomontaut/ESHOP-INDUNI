@@ -19,4 +19,14 @@ class Admin::ChantiersControllerTest < ActionDispatch::IntegrationTest
 
     assert_equal "BAT GE", chantier.reload.secteur
   end
+
+  test "create persists the conducteur de travaux" do
+    post admin_chantiers_url, params: {
+      chantier: { nom: "Nouveau chantier", conducteur_travaux: "Jean Dupont", email_conducteur_travaux: "jdupont@induni.ch" }
+    }
+
+    chantier = Chantier.find_by!(nom: "Nouveau chantier")
+    assert_equal "Jean Dupont", chantier.conducteur_travaux
+    assert_equal "jdupont@induni.ch", chantier.email_conducteur_travaux
+  end
 end

@@ -62,7 +62,22 @@
   <div class="card shadow-sm mb-3">
     <div class="card-header fw-bold" style="background:#0c1d34;color:white;">👷 Équipe du chantier</div>
     <div class="card-body p-4">
-      <p class="text-muted small">Ces adresses e-mail déterminent quels comptes voient ce chantier dans leur bon de commande.</p>
+      <p class="text-muted small">Ces adresses e-mail déterminent quels comptes voient ce chantier dans leur bon de commande. L'e-mail du conducteur de travaux est aussi utilisé comme approbateur N+1 : pour les commandes de plus de CHF 5'000, et par défaut pour les profils Contremaître/Chef d'équipe de ce chantier (voir Admin &gt; Fournisseurs pour le seuil par catalogue).</p>
+
+      <div class="row g-3 mb-3">
+        <div class="col-4">
+          <%= f.label :conducteur_travaux, "Conducteur de travaux", class: "form-label fw-semibold" %>
+          <%= f.text_field :conducteur_travaux, class: "form-control" %>
+        </div>
+        <div class="col-4">
+          <%= f.label :natel_conducteur_travaux, "Natel", class: "form-label fw-semibold" %>
+          <%= f.text_field :natel_conducteur_travaux, class: "form-control" %>
+        </div>
+        <div class="col-4">
+          <%= f.label :email_conducteur_travaux, "E-mail", class: "form-label fw-semibold" %>
+          <%= f.email_field :email_conducteur_travaux, class: "form-control" %>
+        </div>
+      </div>
 
       <div class="row g-3 mb-3">
         <div class="col-4">

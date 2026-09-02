@@ -21,6 +21,7 @@
           <th class="py-3 ps-3">Nom du chantier</th>
           <th class="py-3">Adresse</th>
           <th class="py-3">NPA / Ville</th>
+          <th class="py-3">Conducteur de travaux</th>
           <th class="py-3">Contremaître</th>
           <th class="py-3">Chef d'équipe</th>
           <th class="py-3 text-center pe-3">Actions</th>
@@ -40,6 +41,12 @@
               <%= [ chantier.npa, chantier.ville ].select(&:present?).join(" ").presence || "—" %>
               <% if chantier.canton.present? %><br><span class="text-muted"><%= chantier.canton %></span><% end %>
               <% if chantier.secteur.present? %><br><span class="badge bg-secondary" style="font-size:10px;"><%= chantier.secteur %></span><% end %>
+            </td>
+            <td class="py-3 small">
+              <%= chantier.conducteur_travaux.presence || "—" %>
+              <% if chantier.email_conducteur_travaux.present? %>
+                <br><span class="text-muted"><%= chantier.email_conducteur_travaux %></span>
+              <% end %>
             </td>
             <td class="py-3 small">
               <%= chantier.contremaitre.presence || "—" %>

@@ -1,6 +1,16 @@
 class Api::OrdersController < ApplicationController
   skip_before_action :verify_authenticity_token
 
+  # Toute commande dépassant ce montant nécessite la validation du conducteur
+  # de travaux du chantier concerné, quels que soient le plafond personnel de
+  # l'utilisateur ou le seuil propre au fournisseur.
+  GLOBAL_APPROVAL_THRESHOLD = 5000
+
+  # Profils dont le N+1 par défaut est le conducteur de travaux du chantier
+  # de la commande, plutôt que leur approbateur personnel habituel (voir
+  # User::JOB_FUNCTIONS).
+  SITE_LEAD_JOB_FUNCTIONS = [ "CONTREMAITRE", "CHEF D'EQUIPE" ].freeze
+
   # Lets the client show/pre-fill the real order number in the "Vérifier et
   # envoyer" step before the order actually exists. See Order.next_number.
   def next_number
@@ -105,19 +115,38 @@ class Api::OrdersController < ApplicationController
       confidential_prices ? confidential_prices[item[:article].to_s].to_f : item[:prix].to_f
     }
 
-    # Calculate total to check against the user's personal order limit and
-    # the supplier's own Achats validation threshold (set in /admin/contrats
-    # — e.g. "toute commande HGC de plus de CHF 10'000 passe par Achats"),
-    # whichever is lower fires the approval step first.
+    # Trois règles d'approbation indépendantes, chacune avec son propre
+    # approbateur — la plus spécifique l'emporte quand plusieurs sont
+    # dépassées à la fois :
+    #  1. Seuil propre au fournisseur (contrat catalogue, /admin/fournisseurs)
+    #     -> l'acheteur responsable de ce catalogue (Supplier#responsable_achat).
+    #  2. Seuil général de CHF 5'000 -> le conducteur de travaux du chantier.
+    #  3. Plafond personnel de l'utilisateur -> son approbateur N+1 habituel,
+    #     sauf pour un profil Contremaître/Chef d'équipe, dont le N+1 est
+    #     toujours le conducteur de travaux du chantier de la commande.
     total = items.sum { |item| resolved_price.call(item) * item[:qty].to_i }
     limit = current_user&.order_limit
-    needs_approval = (limit.present? && total > limit.to_f) ||
-                     (supplier.approval_threshold.present? && total > supplier.approval_threshold.to_f)
-    # A supplier-level threshold can require approval even for a user with no
-    # personal N+1 configured — fall back to an admin so the request never
-    # silently has nowhere to go.
-    approver_email = current_user&.approver_email.presence
-    approver_email ||= User.where(admin: true).order(:id).pick(:email) if needs_approval
+    chantier_record = Chantier.find_by(nom: chantier)
+    chantier_conducteur_email = chantier_record&.email_conducteur_travaux.presence
+
+    supplier_threshold_exceeded = supplier.approval_threshold.present? && total > supplier.approval_threshold.to_f
+    global_threshold_exceeded   = total > GLOBAL_APPROVAL_THRESHOLD
+    personal_limit_exceeded     = limit.present? && total > limit.to_f
+    needs_approval = supplier_threshold_exceeded || global_threshold_exceeded || personal_limit_exceeded
+
+    fallback_admin_email = -> { User.where(admin: true).order(:id).pick(:email) }
+    approver_email =
+      if supplier_threshold_exceeded
+        resolved_buyer_email(supplier.responsable_achat) || fallback_admin_email.call
+      elsif global_threshold_exceeded
+        chantier_conducteur_email || fallback_admin_email.call
+      elsif personal_limit_exceeded
+        if SITE_LEAD_JOB_FUNCTIONS.include?(current_user&.job_function)
+          chantier_conducteur_email || current_user&.approver_email.presence || fallback_admin_email.call
+        else
+          current_user&.approver_email.presence || fallback_admin_email.call
+        end
+      end
 
     approval_status = needs_approval ? "pending_approval" : "approved"
     order_status    = needs_approval ? "pending_approval" : "sent"
@@ -238,19 +267,83 @@ class Api::OrdersController < ApplicationController
     render json: { error: e.message }, status: :unprocessable_entity
   end
 
+  # Commandes actuellement en attente de LA validation de l'utilisateur
+  # connecté (il est l'approbateur résolu — voir #create) — alimente l'onglet
+  # dédié "Validation de commande" du SPA, plutôt que de compter uniquement
+  # sur les liens Approuver/Refuser envoyés par e-mail.
+  def pending_approvals
+    return render json: [] unless current_user&.email
+    orders = Order.where(approver_email: current_user.email, approval_status: "pending_approval")
+                  .includes(:supplier, :user).order(created_at: :desc)
+    can_see_confidential = current_user.admin? || current_user.effective_can_view_analysis?
+    render json: orders.map { |o|
+      chantier = o.notes.to_s.match(/Chantier:\s*([^|]+)/)&.captures&.first&.strip || "—"
+      confidential = o.supplier&.confidential_pricing?
+      masked = confidential && !can_see_confidential
+      {
+        id:             o.id,
+        no:             o.number,
+        date:           o.order_date&.strftime("%d.%m.%Y") || o.created_at.strftime("%d.%m.%Y"),
+        supplier:       o.supplier&.name,
+        chantier:       chantier,
+        total:          masked ? 0 : o.total.to_f.round(2),
+        confidential:   confidential,
+        requester:      o.user&.full_name,
+        requesterEmail: o.user&.email
+      }
+    }
+  end
+
+  def approve
+    order = Order.find(params[:id])
+    return render json: { error: "Vous n'êtes pas l'approbateur de cette commande." }, status: :forbidden unless authorized_approver?(order)
+    if order.pending_approval?
+      order.update!(approval_status: "approved", status: "approved")
+      OrderMailer.approval_approved(order).deliver_now rescue nil
+    end
+    render json: { success: true }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Commande introuvable" }, status: :not_found
+  end
+
+  def refuse
+    order = Order.find(params[:id])
+    return render json: { error: "Vous n'êtes pas l'approbateur de cette commande." }, status: :forbidden unless authorized_approver?(order)
+    if order.pending_approval?
+      order.update!(approval_status: "refused", status: "refused", approval_comment: params[:comment].to_s.strip)
+      OrderMailer.approval_refused(order).deliver_now rescue nil
+    end
+    render json: { success: true }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Commande introuvable" }, status: :not_found
+  end
+
   private
 
-  # Explains which threshold triggered the approval step — the user's
-  # personal order_limit, the supplier's own Achats validation threshold, or
-  # both — so the confirmation message stays accurate regardless of which
-  # one(s) fired.
+  def authorized_approver?(order)
+    current_user&.admin? || (current_user&.email.present? && order.approver_email == current_user.email)
+  end
+
+  # Explains which threshold(s) triggered the approval step, so the
+  # confirmation message stays accurate regardless of which one(s) fired.
   def approval_reason_message(limit, supplier, total)
     reasons = []
-    reasons << "dépasse votre plafond de #{number_with_commas(limit)} CHF" if limit.present? && total > limit.to_f
     if supplier.approval_threshold.present? && total > supplier.approval_threshold.to_f
       reasons << "dépasse le seuil de validation Achats de #{number_with_commas(supplier.approval_threshold)} CHF pour #{supplier.name}"
     end
+    reasons << "dépasse le seuil général de #{number_with_commas(GLOBAL_APPROVAL_THRESHOLD)} CHF" if total > GLOBAL_APPROVAL_THRESHOLD
+    reasons << "dépasse votre plafond de #{number_with_commas(limit)} CHF" if limit.present? && total > limit.to_f
     "Votre commande " + reasons.join(" et ")
+  end
+
+  # Retrouve l'e-mail de l'acheteur responsable d'un catalogue (nom choisi
+  # sur la fiche fournisseur, voir Supplier::BUYERS) en le faisant
+  # correspondre à un compte utilisateur de même prénom/nom. Si cette
+  # personne n'a pas encore de compte, l'appelant se replie sur un admin.
+  def resolved_buyer_email(buyer_name)
+    return nil if buyer_name.blank?
+    first_name, last_name = buyer_name.split(" ", 2)
+    User.find_by(first_name: first_name, last_name: last_name)&.email
   end
 
   # Compares the new order's items against the order it modifies, so the

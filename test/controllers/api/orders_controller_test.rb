@@ -312,6 +312,66 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_not body["needs_approval"]
   end
 
+  test "create routes a supplier-threshold approval to the catalog's responsable achat" do
+    buyer = User.create!(
+      email: "buyer.test@induni.ch", password: "password123",
+      first_name: "Emilie", last_name: "Baranski"
+    )
+    Supplier.find_or_create_by!(name: "HGC")
+            .update!(approval_threshold: 1_000, responsable_achat: "Emilie Baranski")
+
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 1_500 } ]
+    }
+    assert_response :success
+    order = Order.find(JSON.parse(response.body)["order_id"])
+    assert_equal buyer.email, order.approver_email
+  ensure
+    User.find_by(email: "buyer.test@induni.ch")&.destroy
+  end
+
+  test "create routes an order above CHF 5'000 to the chantier's conducteur de travaux, even without a supplier threshold" do
+    Chantier.create!(nom: "12345-Chantier Test", email_conducteur_travaux: "conducteur@induni.ch")
+
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 6_000 } ]
+    }
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body["needs_approval"]
+    assert_match(/seuil général/, body["message"])
+    order = Order.find(body["order_id"])
+    assert_equal "conducteur@induni.ch", order.approver_email
+  end
+
+  test "create defaults a contremaître's N+1 to the chantier's conducteur de travaux, overriding their personal approver" do
+    users(:one).update!(job_function: "CONTREMAITRE", order_limit: 100, approver_email: "someone.else@induni.ch")
+    Chantier.create!(nom: "12345-Chantier Test", email_conducteur_travaux: "conducteur@induni.ch")
+
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 200 } ]
+    }
+    assert_response :success
+    order = Order.find(JSON.parse(response.body)["order_id"])
+    assert_equal "conducteur@induni.ch", order.approver_email
+  end
+
+  test "create keeps a non-site-lead user's own approver_email for a personal-limit approval" do
+    users(:one).update!(job_function: "ACHETEUR", order_limit: 100, approver_email: "someone.else@induni.ch")
+    Chantier.create!(nom: "12345-Chantier Test", email_conducteur_travaux: "conducteur@induni.ch")
+
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 200 } ]
+    }
+    assert_response :success
+    order = Order.find(JSON.parse(response.body)["order_id"])
+    assert_equal "someone.else@induni.ch", order.approver_email
+  end
+
   test "resend retries with the exact recipients from the original attempt and marks it sent" do
     post api_orders_url, params: {
       chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
@@ -340,5 +400,75 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
 
     post resend_api_order_url(order)
     assert_response :not_found
+  end
+
+  test "pending_approvals lists only orders awaiting the current user's approval" do
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 6_000 } ]
+    }
+    order = Order.order(:id).last
+    approver = User.create!(email: "approver.test@induni.ch", password: "password123", first_name: "App", last_name: "Rover")
+    order.update!(approver_email: approver.email)
+
+    delete logout_url
+    post login_url, params: { email: approver.email, password: "password123" }
+
+    get pending_approvals_api_orders_url
+    assert_response :success
+    ids = JSON.parse(response.body).map { |o| o["id"] }
+    assert_includes ids, order.id
+  ensure
+    User.find_by(email: "approver.test@induni.ch")&.destroy
+  end
+
+  test "approve marks the order approved and notifies its author, only for the resolved approver" do
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 6_000 } ]
+    }
+    order = Order.order(:id).last
+    approver = User.create!(email: "approver.test@induni.ch", password: "password123", first_name: "App", last_name: "Rover")
+    order.update!(approver_email: approver.email)
+
+    # A logged-in user who isn't the resolved approver (nor admin) can't approve it.
+    delete logout_url
+    post login_url, params: { email: users(:two).email, password: "password123" }
+    post approve_api_order_url(order)
+    assert_response :forbidden
+    assert order.reload.pending_approval?
+
+    delete logout_url
+    post login_url, params: { email: approver.email, password: "password123" }
+    ActionMailer::Base.deliveries.clear
+
+    post approve_api_order_url(order)
+    assert_response :success
+    assert order.reload.approved?
+    mail = ActionMailer::Base.deliveries.last
+    assert_includes mail.to, order.user.email
+  ensure
+    User.find_by(email: "approver.test@induni.ch")&.destroy
+  end
+
+  test "refuse marks the order refused with a comment and notifies its author" do
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 6_000 } ]
+    }
+    order = Order.order(:id).last
+    approver = User.create!(email: "approver.test@induni.ch", password: "password123", first_name: "App", last_name: "Rover")
+    order.update!(approver_email: approver.email)
+
+    delete logout_url
+    post login_url, params: { email: approver.email, password: "password123" }
+
+    post refuse_api_order_url(order), params: { comment: "Budget dépassé" }
+    assert_response :success
+    order.reload
+    assert order.refused?
+    assert_equal "Budget dépassé", order.approval_comment
+  ensure
+    User.find_by(email: "approver.test@induni.ch")&.destroy
   end
 end

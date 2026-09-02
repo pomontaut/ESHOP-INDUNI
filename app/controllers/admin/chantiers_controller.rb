@@ -55,7 +55,8 @@ class Admin::ChantiersController < ApplicationController
       :nom, :adresse, :npa, :ville, :canton, :secteur, :contraintes_acces, :carte_interactive, :consortium,
       :technicien, :natel_technicien, :email_technicien,
       :contremaitre, :natel_contremaitre, :email_contremaitre,
-      :chef_equipe, :natel_chef_equipe, :email_chef_equipe
+      :chef_equipe, :natel_chef_equipe, :email_chef_equipe,
+      :conducteur_travaux, :natel_conducteur_travaux, :email_conducteur_travaux
     )
   end
 end
