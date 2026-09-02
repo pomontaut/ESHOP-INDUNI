@@ -29,6 +29,10 @@ class Api::SessionsController < ApplicationController
           }
           h[s.name] = per_canton if per_canton.any?
         },
+        # E-mail par défaut réellement configuré sur la fiche fournisseur
+        # (Admin > Fournisseurs) — le client ne doit jamais retomber sur une
+        # adresse figée dans catalogue.html si celle-ci existe.
+        supplierDefaultEmails: Supplier.where.not(email: [ nil, "" ]).pluck(:name, :email).to_h,
         allowed_suppliers: current_user.effective_visible_suppliers,
         chantiers:         Chantier.visible_to(current_user).order(:nom).map { |c|
           {
