@@ -233,6 +233,26 @@ class Api::DevisImportsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1.0, surcharge["qty"]
   end
 
+  test "equivalent finds a known catalog match for a manually-added line and flags it cheaper" do
+    post equivalent_api_devis_imports_url, params: { designation: "Tuyau PVC test", price: 25.0 }
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body["equivalent"]
+    assert_equal "HGC", body["equivalent"]["catalog"]
+    assert_equal 12.5, body["equivalent"]["prix"]
+    assert body["equivalentCheaper"]
+  end
+
+  test "equivalent returns nil when nothing matches" do
+    post equivalent_api_devis_imports_url, params: { designation: "Grille métallique 40x40", price: 10.0 }
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_nil body["equivalent"]
+    assert_not body["equivalentCheaper"]
+  end
+
   test "rejects an unknown supplier" do
     post api_devis_imports_url, params: { supplier: "Fournisseur Inconnu", file: fixture_file_upload(".keep", "application/pdf") }
     assert_response :unprocessable_entity

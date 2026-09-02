@@ -1694,9 +1694,66 @@ function categoryOptionsForSupplier(catalog){
   });
   return out.sort((a,b)=>a.localeCompare(b));
 }
+function devisManualAddFormHtml(){
+  return `<div style="margin-top:14px;padding:12px;border:1px dashed #d4d7dd;border-radius:10px;background:#fafafa">
+    <b style="font-size:13px">L'extraction ne reprend pas toutes les lignes du devis ?</b>
+    <div style="display:grid;grid-template-columns:1fr 2fr 0.8fr 0.8fr 1fr;gap:8px;margin-top:8px">
+      <div><label style="font-size:11px;font-weight:800;display:block">Référence</label><input id="devisManualRef" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:7px"></div>
+      <div><label style="font-size:11px;font-weight:800;display:block">Désignation *</label><input id="devisManualDesignation" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:7px"></div>
+      <div><label style="font-size:11px;font-weight:800;display:block">Quantité *</label><input id="devisManualQty" type="number" step="0.01" min="0" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:7px"></div>
+      <div><label style="font-size:11px;font-weight:800;display:block">Unité</label><input id="devisManualUnite" placeholder="PCE" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:7px"></div>
+      <div><label style="font-size:11px;font-weight:800;display:block">Prix unitaire *</label><input id="devisManualPrix" type="number" step="0.01" min="0" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:7px"></div>
+    </div>
+    <button type="button" class="secondary" style="margin-top:8px" onclick="addManualDevisLine()">+ Ajouter cette ligne</button>
+  </div>`;
+}
+function addManualDevisLine(){
+  const refInput=document.getElementById('devisManualRef');
+  const desigInput=document.getElementById('devisManualDesignation');
+  const qtyInput=document.getElementById('devisManualQty');
+  const uniteInput=document.getElementById('devisManualUnite');
+  const prixInput=document.getElementById('devisManualPrix');
+  const designation=desigInput.value.trim();
+  const qty=parseFloat(qtyInput.value);
+  const prix=parseFloat(prixInput.value);
+  if(!designation){ alert("Merci d'indiquer une désignation."); return; }
+  if(!qty||qty<=0){ alert('Merci d\'indiquer une quantité valide.'); return; }
+  if(!prix||prix<=0){ alert('Merci d\'indiquer un prix unitaire valide.'); return; }
+  const supplier=document.getElementById('devisSupplierSelect').value;
+  const reference=refInput.value.trim();
+  devisResultItems.push({
+    matched:false, generic:true, catalog:supplier,
+    article:reference||('GEN-'+Math.random().toString(16).slice(2,8).toUpperCase()),
+    designation, descriptif:`Article générique (devis ${supplier})`,
+    prix:null, unite:uniteInput.value.trim()||'PCE',
+    famille:'Article générique', sousFamille:'Devis import',
+    icone:'＋', image:'construction material',
+    qty, devisPrix:prix, cheaperAtSupplier:false,
+    equivalent:null, equivalentCheaper:false
+  });
+  const idx=devisResultItems.length-1;
+  refInput.value='';desigInput.value='';qtyInput.value='';uniteInput.value='';prixInput.value='';
+  renderDevisResults();
+  fetchEquivalentForManualLine(idx,designation,prix);
+}
+// La ligne ajoutée manuellement n'est jamais passée par #create (analyse du
+// PDF), donc le comparatif "équivalent au catalogue" (voir EquivalentProductFinder
+// côté serveur) n'a pas encore été calculé pour elle — on le récupère à part.
+async function fetchEquivalentForManualLine(idx,designation,prix){
+  try{
+    const res=await fetch('/api/devis_imports/equivalent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({designation,price:prix})});
+    if(!res.ok) return;
+    const data=await res.json();
+    if(devisResultItems[idx]){
+      devisResultItems[idx].equivalent=data.equivalent;
+      devisResultItems[idx].equivalentCheaper=data.equivalentCheaper;
+      renderDevisResults();
+    }
+  }catch(e){}
+}
 function renderDevisResults(){
   const results=document.getElementById('devisResults');
-  if(!devisResultItems.length){results.innerHTML='<p class="muted">Aucun article détecté dans ce devis.</p>';return}
+  if(!devisResultItems.length){results.innerHTML='<p class="muted">Aucun article détecté dans ce devis.</p>'+devisManualAddFormHtml();return}
   const rows=devisResultItems.map((it,k)=>{
     const badges=[];
     if(it.generic) badges.push('<span class="tag" style="position:static;background:#f1642a">Article générique</span>');
@@ -1741,9 +1798,10 @@ function renderDevisResults(){
         ${contratCadreNote}
       </div>`;
     }
-    return `<tr><td><input type="checkbox" data-devis-check="${k}" checked></td><td><b>${esc(it.article)}</b></td><td>${esc(it.designation)}<div>${badges.join(' ')}</div>${eshopNote}${equivNote}${catalogRow}</td><td>${it.qty} ${esc(it.unite)}</td><td>${priceCell}</td></tr>`;
+    const qtyCell=`<input type="number" step="0.01" min="0" value="${Number(it.qty)||0}" data-devis-qty="${k}" style="width:64px;border:1px solid #ddd;border-radius:6px;padding:6px"> <input type="text" value="${esc(it.unite||'')}" data-devis-unite="${k}" placeholder="PCE" style="width:52px;border:1px solid #ddd;border-radius:6px;padding:6px">`;
+    return `<tr><td><input type="checkbox" data-devis-check="${k}" checked></td><td><b>${esc(it.article)}</b></td><td>${esc(it.designation)}<div>${badges.join(' ')}</div>${eshopNote}${equivNote}${catalogRow}</td><td>${qtyCell}</td><td>${priceCell}</td></tr>`;
   }).join('');
-  results.innerHTML=`<div class="sub2Note">${devisResultItems.length} ligne(s) détectée(s). Décoche celles à exclure. Le prix repris pour la commande est celui du devis — modifie-le si besoin.</div><table class="dashTable"><thead><tr><th></th><th>Référence</th><th>Désignation</th><th>Qté</th><th>Prix devis (repris pour la commande)</th></tr></thead><tbody>${rows}</tbody></table><div class="actions" style="margin-top:14px"><button type="button" class="primary" onclick="addDevisItemsToCart()">+ Ajouter la sélection au panier</button></div>`;
+  results.innerHTML=`<div class="sub2Note">${devisResultItems.length} ligne(s) détectée(s). Décoche celles à exclure. Quantité, unité et prix sont repris du devis mais restent modifiables si mal retranscrits.</div><table class="dashTable"><thead><tr><th></th><th>Référence</th><th>Désignation</th><th>Qté / Unité</th><th>Prix devis (repris pour la commande)</th></tr></thead><tbody>${rows}</tbody></table><div class="actions" style="margin-top:14px"><button type="button" class="primary" onclick="addDevisItemsToCart()">+ Ajouter la sélection au panier</button></div>${devisManualAddFormHtml()}`;
 }
 function clampDevisPrice(k){
   const it=devisResultItems[k];
@@ -1777,10 +1835,14 @@ function addDevisItemsToCart(){
     // Rempart final si le champ a été modifié sans déclencher clampDevisPrice
     // (ex. collage direct d'une valeur) : jamais plus cher que le prix e-shop.
     if(it.matched&&it.prix!=null&&prix>Number(it.prix)) prix=Number(it.prix);
+    const qtyInput=results.querySelector(`[data-devis-qty="${k}"]`);
+    const uniteInput=results.querySelector(`[data-devis-unite="${k}"]`);
+    const qty=qtyInput?(parseFloat(qtyInput.value)||0):(Number(it.qty)||0);
+    const unite=(uniteInput&&uniteInput.value.trim())||it.unite;
     setCartSupplierIfNeeded(it.catalog);
     const existing=cart.find(c=>normalizeSupplierName(c.catalog)===normalizeSupplierName(it.catalog)&&c.article===it.article);
-    if(existing){existing.qty=(Number(existing.qty)||0)+(Number(it.qty)||0);}
-    else cart.push({catalog:it.catalog,article:it.article,designation:it.designation,descriptif:it.descriptif||'',prix,catalogPrix:it.matched&&it.prix!=null?Number(it.prix):null,unite:it.unite,famille:it.famille,sousFamille:it.sousFamille,sousSousFamille:it.sousSousFamille||'',icone:it.icone,image:it.image,qty:Number(it.qty)||0});
+    if(existing){existing.qty=(Number(existing.qty)||0)+qty;}
+    else cart.push({catalog:it.catalog,article:it.article,designation:it.designation,descriptif:it.descriptif||'',prix,catalogPrix:it.matched&&it.prix!=null?Number(it.prix):null,unite,famille:it.famille,sousFamille:it.sousFamille,sousSousFamille:it.sousSousFamille||'',icone:it.icone,image:it.image,qty});
     added++;
     if(it.generic&&!it.isSurcharge){
       const addCatalogCheckbox=results.querySelector(`[data-devis-addcatalog="${k}"]`);
@@ -1790,7 +1852,7 @@ function addDevisItemsToCart(){
         const categorySelect=results.querySelector(`[data-devis-category="${k}"]`);
         const [famille,sousFamille]=(categorySelect&&categorySelect.value?categorySelect.value.split(' > '):['','']);
         catalogSupplier=it.catalog;
-        toAddToCatalog.push({reference:it.article,designation:it.designation,prix,unite:it.unite,famille:needsClassification?'':(famille||''),sousFamille:needsClassification?'':(sousFamille||''),needsClassification});
+        toAddToCatalog.push({reference:it.article,designation:it.designation,prix,unite,famille:needsClassification?'':(famille||''),sousFamille:needsClassification?'':(sousFamille||''),needsClassification});
       }
     }
   });

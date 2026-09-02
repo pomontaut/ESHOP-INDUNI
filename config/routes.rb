@@ -17,7 +17,7 @@ Rails.application.routes.draw do
     end
     resources :products, only: [ :index ]
     resources :devis_imports, only: [ :create ] do
-      collection { post :confirm_products }
+      collection { post :confirm_products; post :equivalent }
     end
     get   "nomenclature",     to: "nomenclature#index"
     patch "nomenclature/:id", to: "nomenclature#update"

@@ -24,6 +24,16 @@ class Api::DevisImportsController < ApplicationController
     render json: { error: e.message }, status: :unprocessable_entity
   end
 
+  # Comparatif catalogue pour une ligne ajoutée manuellement dans l'écran
+  # d'import (voir addManualDevisLine côté client) : contrairement aux lignes
+  # extraites automatiquement, elle n'est jamais passée par #create, donc le
+  # comparatif équivalent le plus proche n'a pas encore été calculé.
+  def equivalent
+    designation = params[:designation].to_s
+    price = params[:price].presence && params[:price].to_f
+    render json: equivalent_fields(equivalent_finder.find(designation), price)
+  end
+
   # Called when the user confirms adding unmatched (generic) devis lines to
   # our permanent catalog under the confirmed supplier, instead of only using
   # them as one-off cart lines. Marked manually_added so catalog:seed's
