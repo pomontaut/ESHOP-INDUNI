@@ -10,6 +10,11 @@
   # Chantier en consortium : gabarit sans notre logo ni nos CGA (pas de
   # visibilité sur le partenaire), le bloc CLIENT affiche juste "CONSORTIUM".
   is_consortium  = Chantier.find_by(nom: chantier_val)&.consortium? || false
+  # Prix nets confidentiels (ex. Sika, accord-cadre marqué CONFIDENTIAL) :
+  # ne doivent jamais apparaître sur le bon de commande, y compris celui
+  # envoyé au fournisseur lui-même — conformément à l'accord-cadre, seul le
+  # montant réel est géré hors de ce document (facturation directe).
+  confidential_pricing = @order.supplier&.confidential_pricing? || false
 %><!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>
 @page{size:A4;margin:14mm 15mm 18mm 15mm}
@@ -93,14 +98,24 @@ td:not(:first-child){text-align:right}
       <td style="text-align:right"><%= '%.2f' % line.quantity %></td>
       <td>PCE</td>
       <td><%= line.product.reference %></td>
+      <% if confidential_pricing %>
+      <td>Conformément à nos accords cadre</td>
+      <td>—</td>
+      <% else %>
       <td>CHF <%= fmt.call(line.unit_price) %></td>
       <td><strong>CHF <%= fmt.call(line.unit_price.to_f * line.quantity) %></strong></td>
+      <% end %>
     </tr>
     <% end %>
     <tr class="tr-total">
       <td colspan="5">Montant total commande H.T.</td>
+      <% if confidential_pricing %>
+      <td>—</td>
+      <td>—</td>
+      <% else %>
       <td>CHF</td>
       <td>CHF <%= fmt.call(@order.total) %></td>
+      <% end %>
     </tr>
   </tbody>
 </table>
