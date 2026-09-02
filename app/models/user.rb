@@ -5,7 +5,8 @@ class User < ApplicationRecord
 
   SECTORS = [
     "BAT GE", "BAT VD", "GC", "EG VS", "EG VD", "EG GE", "DEPOT",
-    "ADMIN GE", "ADMIN VS", "ADMIN VD", "TRANSFO GE", "TRANSFO VD"
+    "ADMIN GE", "ADMIN VS", "ADMIN VD", "TRANSFO GE", "TRANSFO VD",
+    "SERVICE ACHATS"
   ].freeze
 
   CHANTIER_ACCESS_SCOPES = [ "own", "secteur" ].freeze
