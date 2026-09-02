@@ -57,6 +57,12 @@ namespace :catalog do
         address: "Tüffenwies 16", postal_code: "8048", city: "Zürich", country_code: "CH",
         ide_number: "CHE-116.323.165", payment_condition: "30 jours net",
         confidential_pricing: true
+      },
+      # Devis 202600001 du 07.01.2026 (V/Référence Emilie Baranski).
+      "GANAMAT SA" => {
+        email: "info@ganamat.ch", phone: "+41 22 341 04 61", fax: "+41 22 341 20 65",
+        address: "Chemin des Batailles 16", postal_code: "1214", city: "Vernier", country_code: "CH",
+        ide_number: "CHE-113.699.912", payment_condition: "30 jours net"
       }
     }.freeze
 

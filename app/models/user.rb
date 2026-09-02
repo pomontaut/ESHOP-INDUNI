@@ -20,7 +20,8 @@ class User < ApplicationRecord
     { key: "Soreval",    label: "Soreval" },
     { key: "BTest",      label: "BTest" },
     { key: "LCBE",       label: "LCBE" },
-    { key: "Sika",       label: "Sika" }
+    { key: "Sika",       label: "Sika" },
+    { key: "GANAMAT SA", label: "GANAMAT SA" }
   ].freeze
 
   validates :email, presence: true, uniqueness: { case_sensitive: false },
