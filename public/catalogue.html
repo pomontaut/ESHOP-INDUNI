@@ -1519,6 +1519,7 @@ function resetCanplastZone(){
   const c = document.getElementById('canplastCommune'); if(c) c.value='';
   const n = document.getElementById('canplastNpa'); if(n) n.value='';
   canplastZoneStatusHtml();
+  applyChantierVilleToCanplast(currentChantierVille());
 }
 function toggleCanplastOptions(){
   const supplier=cartSupplier();
@@ -3390,6 +3391,33 @@ function fillChantierContact(){
   if(adresseEl) adresseEl.value=[c.adresse,[c.npa,c.ville].filter(Boolean).join(' ')].filter(Boolean).join('\n');
   if(contactEl && c.contact) contactEl.value=c.contact;
   if(phoneEl && c.telephone) phoneEl.value=c.telephone;
+  applyChantierVilleToCanplast(c.ville);
+  applyChantierVilleToSoreval(c.ville);
+}
+// La commune de livraison Canplast/Soreval détermine le tarif de zone : au
+// lieu de la ressaisir à chaque commande, elle se déduit automatiquement de
+// la ville du chantier sélectionné (voir fillChantierContact et
+// resetCanplastZone, qui la ré-applique après un changement de fournisseur
+// dans le panier).
+function applyChantierVilleToCanplast(ville){
+  if(!ville) return;
+  const communeEl=document.getElementById('canplastCommune');
+  if(!communeEl) return;
+  communeEl.value=ville;
+  onCanplastCommuneInput();
+}
+function applyChantierVilleToSoreval(ville){
+  if(!ville) return;
+  const sorevalEl=document.getElementById('sorevalCommune');
+  if(!sorevalEl) return;
+  sorevalEl.value=ville;
+  resolveSorevalZone();
+}
+function currentChantierVille(){
+  const chantierInput=document.getElementById('chantier');
+  const nom=chantierInput?chantierInput.value:'';
+  const c=(window._chantiers||[]).find(function(x){ return x.nom===nom; });
+  return c?c.ville:'';
 }
 
 // Popup "chantier du jour" : demande le n° de chantier au premier chargement
