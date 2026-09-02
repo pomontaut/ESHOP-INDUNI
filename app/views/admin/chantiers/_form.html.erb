@@ -38,6 +38,12 @@
         </div>
       </div>
       <div class="mb-3">
+        <%= f.label :secteur, "Secteur", class: "form-label fw-semibold" %>
+        <%= f.select :secteur, [ [ "— Choisir —", "" ] ] + User::SECTORS.map { |s| [ s, s ] },
+                     {}, class: "form-select" %>
+        <div class="form-text">Détermine quels utilisateurs voient ce chantier lorsque leur fiche est réglée sur "Tous les chantiers de son secteur" (voir Admin &gt; Utilisateurs).</div>
+      </div>
+      <div class="mb-3">
         <%= f.label :carte_interactive, "Lien carte interactive", class: "form-label fw-semibold" %>
         <%= f.text_field :carte_interactive, class: "form-control", placeholder: "https://..." %>
       </div>

@@ -49,4 +49,27 @@ class UserTest < ActiveSupport::TestCase
 
     assert_equal Supplier.pluck(:name).sort, user.effective_visible_suppliers.sort
   end
+
+  test "chantier_access_label reports full access for an admin" do
+    admin = users(:one)
+    assert_equal "Tous les chantiers Induni (compte administrateur)", admin.chantier_access_label
+  end
+
+  test "chantier_access_label reports the sector for a non-admin on the secteur scope" do
+    user = users(:two)
+    user.update!(admin: false, chantier_access_scope: "secteur", sector: "GC")
+    assert_equal "Tous les chantiers du secteur GC", user.chantier_access_label
+  end
+
+  test "chantier_access_label flags a missing sector on the secteur scope" do
+    user = users(:two)
+    user.update!(admin: false, chantier_access_scope: "secteur", sector: nil)
+    assert_equal "Secteur non défini — repli sur ses propres chantiers uniquement", user.chantier_access_label
+  end
+
+  test "chantier_access_label reports own-chantiers-only by default" do
+    user = users(:two)
+    user.update!(admin: false, chantier_access_scope: "own")
+    assert_match(/propres chantiers/, user.chantier_access_label)
+  end
 end

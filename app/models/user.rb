@@ -8,6 +8,8 @@ class User < ApplicationRecord
     "ADMIN GE", "ADMIN VS", "ADMIN VD", "TRANSFO GE", "TRANSFO VD"
   ].freeze
 
+  CHANTIER_ACCESS_SCOPES = [ "own", "secteur" ].freeze
+
   SUPPLIERS = [
     { key: "HGC",        label: "HGC" },
     { key: "Canplast",   label: "Canplast" },
@@ -25,6 +27,7 @@ class User < ApplicationRecord
                     format: { with: /\A[^@]+@induni\.ch\z/i, message: "doit être une adresse @induni.ch" }
   validates :password, length: { minimum: 8 }, if: -> { new_record? || password.present? }
   validates :first_name, :last_name, presence: true, on: :create
+  validates :chantier_access_scope, inclusion: { in: CHANTIER_ACCESS_SCOPES }
 
   before_save { self.email = email.downcase }
 
@@ -56,6 +59,18 @@ class User < ApplicationRecord
   def allowed_suppliers
     return User::SUPPLIERS.map { |s| s[:key] } if admin?
     super || []
+  end
+
+  # Résumé lisible de l'accès aux chantiers (/chantiers), affiché sur la
+  # fiche utilisateur — voir Chantier.visible_to pour la logique réelle.
+  def chantier_access_label
+    return "Tous les chantiers Induni (compte administrateur)" if admin?
+
+    if chantier_access_scope == "secteur"
+      return sector.present? ? "Tous les chantiers du secteur #{sector}" : "Secteur non défini — repli sur ses propres chantiers uniquement"
+    end
+
+    "Uniquement ses propres chantiers (e-mail renseigné comme technicien, contremaître ou chef d'équipe dans la fiche chantier)"
   end
 
   # Combines the manual per-user override above (allowed_suppliers) with the

@@ -173,6 +173,18 @@
         </div>
       </div>
 
+      <%# ── Accès aux chantiers ── %>
+      <div class="card shadow-sm mb-3">
+        <div class="card-header fw-bold" style="background:#0c1d34;color:white;">🏗 Accès aux chantiers</div>
+        <div class="card-body p-4">
+          <%= f.label :chantier_access_scope, "Portée", class: "form-label fw-semibold" %>
+          <%= f.select :chantier_access_scope,
+                       [ [ "Uniquement ses propres chantiers", "own" ], [ "Tous les chantiers de son secteur", "secteur" ] ],
+                       {}, class: "form-select" %>
+          <div class="form-text">"Ses propres chantiers" = ceux où son e-mail est renseigné comme technicien, contremaître ou chef d'équipe. "Son secteur" se base sur le champ Secteur/Service ci-dessus et sur le Secteur réglé par chantier (Admin &gt; Chantiers). Sans effet si le compte est administrateur (accès à tous les chantiers Induni).</div>
+        </div>
+      </div>
+
       <%# ── Plafond de commande ── %>
       <div class="card shadow-sm mb-4">
         <div class="card-header fw-bold" style="background:#0c1d34;color:white;">💰 Plafond de commande</div>

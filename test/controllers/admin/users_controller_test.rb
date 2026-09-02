@@ -22,6 +22,22 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_not user.can_view_nomenclature?
   end
 
+  test "update persists the chantier access scope" do
+    user = users(:two)
+
+    patch admin_user_url(user), params: {
+      user: {
+        first_name: user.first_name, last_name: user.last_name, email: user.email,
+        sector: "GC", chantier_access_scope: "secteur"
+      }
+    }
+
+    assert_redirected_to admin_users_path
+    user.reload
+    assert_equal "secteur", user.chantier_access_scope
+    assert_equal "Tous les chantiers du secteur GC", user.chantier_access_label
+  end
+
   test "update strips the hidden blank fallback from allowed_suppliers when no catalog checkbox is checked" do
     # The "Accès catalogues fournisseurs" checkboxes all share a trailing
     # hidden input (value: "") so an all-unchecked submission still sends

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_02_064448) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_02_070434) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -39,6 +39,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_064448) do
     t.string "natel_technicien"
     t.string "nom", null: false
     t.string "npa"
+    t.string "secteur"
     t.string "technicien"
     t.datetime "updated_at", null: false
     t.string "ville"
@@ -171,6 +172,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_064448) do
     t.boolean "can_view_intelligence_buying", default: false, null: false
     t.boolean "can_view_market_indices", default: false, null: false
     t.boolean "can_view_nomenclature", default: false, null: false
+    t.string "chantier_access_scope", default: "own", null: false
     t.datetime "created_at", null: false
     t.string "email", null: false
     t.string "first_name"

@@ -102,6 +102,7 @@ class Admin::UsersController < ApplicationController
       :can_view_dashboard, :can_view_analysis, :can_view_market_indices, :can_view_intelligence_buying,
       :can_view_nomenclature,
       :order_limit, :approver_email,
+      :chantier_access_scope,
       allowed_suppliers: []
     )
     # The form always submits a hidden "" alongside the checkboxes so an
