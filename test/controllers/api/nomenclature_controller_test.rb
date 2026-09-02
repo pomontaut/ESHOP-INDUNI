@@ -23,6 +23,16 @@ class Api::NomenclatureControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes ids, "CLASSIFIED-1"
   end
 
+  test "index surfaces the supplier's responsable achat" do
+    @supplier.update!(responsable_achat: "Nicolas Guéry")
+    post login_url, params: { email: users(:one).email, password: "password123" }
+
+    get api_nomenclature_url
+    assert_response :success
+    pending = JSON.parse(response.body).find { |p| p["article"] == "PENDING-1" }
+    assert_equal "Nicolas Guéry", pending["responsableAchat"]
+  end
+
   test "update sets the category and clears needs_classification" do
     post login_url, params: { email: users(:one).email, password: "password123" }
 

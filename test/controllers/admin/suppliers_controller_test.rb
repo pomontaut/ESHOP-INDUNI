@@ -36,6 +36,15 @@ class Admin::SuppliersControllerTest < ActionDispatch::IntegrationTest
     assert_equal [], supplier.visible_sectors
   end
 
+  test "update stores the responsable achat" do
+    supplier = suppliers(:one)
+
+    patch admin_supplier_url(supplier), params: { supplier: { responsable_achat: "Emilie Baranski" } }
+
+    assert_redirected_to admin_suppliers_path
+    assert_equal "Emilie Baranski", supplier.reload.responsable_achat
+  end
+
   test "requires admin" do
     delete logout_url
     post login_url, params: { email: users(:two).email, password: "password123" }

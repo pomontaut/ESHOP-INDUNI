@@ -10,13 +10,14 @@ class Api::NomenclatureController < ApplicationController
     products = Product.where(needs_classification: true).includes(:supplier).order(:created_at)
     render json: products.map { |p|
       {
-        id:          p.id,
-        catalog:     p.supplier&.name,
-        article:     p.reference,
-        designation: p.name,
-        prix:        p.unit_price.to_f,
-        unite:       p.unite,
-        createdAt:   p.created_at.strftime("%d.%m.%Y")
+        id:              p.id,
+        catalog:         p.supplier&.name,
+        article:         p.reference,
+        designation:     p.name,
+        prix:            p.unit_price.to_f,
+        unite:           p.unite,
+        createdAt:       p.created_at.strftime("%d.%m.%Y"),
+        responsableAchat: p.supplier&.responsable_achat
       }
     }
   end

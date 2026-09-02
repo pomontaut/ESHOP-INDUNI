@@ -1794,14 +1794,18 @@ function renderDevisResults(){
       ).join('');
       // Un article "contrat cadre" doit systématiquement être référencé par un
       // acheteur via Nomenclature plutôt que classé à la volée par qui importe
-      // le devis — la case est donc pré-cochée automatiquement, sans action requise.
+      // le devis — la catégorie est donc désactivée automatiquement, sans
+      // action requise. Dans tous les autres cas, ne rien choisir dans la
+      // liste route aussi automatiquement l'article vers Nomenclature (plus
+      // besoin d'une case "je ne sais pas où le classer" séparée).
       const isContratCadre=/contrat[\s-]?cadre/i.test(it.designation||'');
-      const contratCadreNote=isContratCadre?'<div style="margin-top:4px;font-size:11.5px;color:#7c3aed;font-weight:600">📌 Article contrat cadre détecté — routé automatiquement vers Nomenclature (Gestion nouveaux articles) pour traitement par un acheteur.</div>':'';
+      const routingNote=isContratCadre
+        ?'<div style="margin-top:4px;font-size:11.5px;color:#7c3aed;font-weight:600">📌 Article contrat cadre détecté — routé automatiquement vers Nomenclature (Gestion nouveaux articles) pour contrôle par l\'acheteur responsable.</div>'
+        :'<div style="margin-top:4px;font-size:11px;color:#8994a3">Sans catégorie choisie, l\'article est routé automatiquement vers Nomenclature (Gestion nouveaux articles) pour contrôle par l\'acheteur responsable.</div>';
       catalogRow=`<div style="margin-top:6px;font-size:12px">
         <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" data-devis-addcatalog="${k}" checked> Ajouter au catalogue ${esc(it.catalog)} dans :</label>
         <select data-devis-category="${k}" style="margin-top:4px;width:100%;border:1px solid #ddd;border-radius:6px;padding:5px"${isContratCadre?' disabled':''}>${optionsHtml}</select>
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;margin-top:5px;color:#7c3aed"><input type="checkbox" data-devis-unclassified="${k}" onchange="toggleDevisCategorySelect(${k})"${isContratCadre?' checked':''}> Je ne sais pas où le classer — à référencer dans l'onglet Nomenclature</label>
-        ${contratCadreNote}
+        ${routingNote}
       </div>`;
     }
     const qtyCell=`<input type="number" step="0.01" min="0" value="${Number(it.qty)||0}" data-devis-qty="${k}" style="width:64px;border:1px solid #ddd;border-radius:6px;padding:6px"> <input type="text" value="${esc(it.unite||'')}" data-devis-unite="${k}" placeholder="PCE" style="width:52px;border:1px solid #ddd;border-radius:6px;padding:6px">`;
@@ -1822,11 +1826,6 @@ function clampDevisPrice(k){
   } else if(warn){
     warn.style.display='none';
   }
-}
-function toggleDevisCategorySelect(k){
-  const sel=document.querySelector(`[data-devis-category="${k}"]`);
-  const cb=document.querySelector(`[data-devis-unclassified="${k}"]`);
-  if(sel) sel.disabled=!!(cb&&cb.checked);
 }
 function addDevisItemsToCart(){
   const results=document.getElementById('devisResults');
@@ -1853,9 +1852,9 @@ function addDevisItemsToCart(){
     if(it.generic&&!it.isSurcharge){
       const addCatalogCheckbox=results.querySelector(`[data-devis-addcatalog="${k}"]`);
       if(addCatalogCheckbox&&addCatalogCheckbox.checked){
-        const unclassifiedCheckbox=results.querySelector(`[data-devis-unclassified="${k}"]`);
-        const needsClassification=!!(unclassifiedCheckbox&&unclassifiedCheckbox.checked);
         const categorySelect=results.querySelector(`[data-devis-category="${k}"]`);
+        const isContratCadre=/contrat[\s-]?cadre/i.test(it.designation||'');
+        const needsClassification=isContratCadre||!(categorySelect&&categorySelect.value);
         const [famille,sousFamille]=(categorySelect&&categorySelect.value?categorySelect.value.split(' > '):['','']);
         catalogSupplier=it.catalog;
         toAddToCatalog.push({reference:it.article,designation:it.designation,prix,unite,famille:needsClassification?'':(famille||''),sousFamille:needsClassification?'':(sousFamille||''),needsClassification});
@@ -1873,17 +1872,20 @@ function addDevisItemsToCart(){
   save();openCart();
 }
 // Backlog des articles ajoutés au catalogue depuis un devis sans catégorie
-// connue (case "Je ne sais pas où le classer" cochée à l'import) — réservé
-// aux profils achats/admin (accès déjà gardé côté API).
+// choisie à l'import (routage automatique, voir addDevisItemsToCart) —
+// réservé aux profils achats/admin (accès déjà gardé côté API). Le
+// "Responsable achat" affiché vient du paramétrage du fournisseur
+// (Admin > Fournisseurs).
 function renderNomenclature(){
   app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › Gestion nouveaux articles</div><div class="toolbar"><h2>Gestion nouveaux articles</h2><p class="muted">Articles ajoutés depuis un import de devis sans catégorie connue (ou contrat cadre) : à ranger dans la bonne famille du catalogue.</p></div><div id="nomenclatureList"><p class="muted">Chargement…</p></div>`;
   fetch('/api/nomenclature').then(r=>r.json()).then(items=>{
     const list=document.getElementById('nomenclatureList');
     if(!Array.isArray(items)||!items.length){list.innerHTML='<p class="muted">Aucun article en attente de classification.</p>';return}
-    list.innerHTML=`<table class="dashTable"><thead><tr><th>Fournisseur</th><th>Référence</th><th>Désignation</th><th>Prix</th><th>Ajouté le</th><th>Catégorie</th><th></th></tr></thead><tbody>${items.map(it=>{
+    list.innerHTML=`<table class="dashTable"><thead><tr><th>Fournisseur</th><th>Référence</th><th>Désignation</th><th>Prix</th><th>Ajouté le</th><th>Responsable achat</th><th>Catégorie</th><th></th></tr></thead><tbody>${items.map(it=>{
       const options=categoryOptionsForSupplier(it.catalog);
       const optionsHtml=['<option value="">-- Choisir une catégorie --</option>'].concat(options.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`)).join('');
-      return `<tr data-nomenclature-row="${it.id}"><td>${esc(it.catalog)}</td><td><b>${esc(it.article)}</b></td><td>${esc(it.designation)}</td><td>${fmt(it.prix)}</td><td>${esc(it.createdAt)}</td><td><select data-nomenclature-category="${it.id}" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:5px">${optionsHtml}</select></td><td><button type="button" class="miniBtn" onclick="confirmNomenclature(${it.id})">Valider</button></td></tr>`;
+      const buyer=it.responsableAchat?esc(it.responsableAchat):'<span style="color:#b45309">Non assigné — voir fiche fournisseur</span>';
+      return `<tr data-nomenclature-row="${it.id}"><td>${esc(it.catalog)}</td><td><b>${esc(it.article)}</b></td><td>${esc(it.designation)}</td><td>${fmt(it.prix)}</td><td>${esc(it.createdAt)}</td><td>${buyer}</td><td><select data-nomenclature-category="${it.id}" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:5px">${optionsHtml}</select></td><td><button type="button" class="miniBtn" onclick="confirmNomenclature(${it.id})">Valider</button></td></tr>`;
     }).join('')}</tbody></table>`;
   }).catch(()=>{document.getElementById('nomenclatureList').innerHTML='<p class="muted">Erreur de chargement.</p>'});
 }

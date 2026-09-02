@@ -10,6 +10,11 @@ class Supplier < ApplicationRecord
   CANTONS = [ "GENEVE", "VAUD", "VALAIS", "FRIBOURG", "JURA" ].freeze
   SECTORS = [ "GC", "BAT GE", "BAT VD", "TRANSFO GE", "TRANSFO VD" ].freeze
 
+  # Acheteur en charge du contrôle des nouveaux articles de ce fournisseur
+  # (voir Api::NomenclatureController) — assigné automatiquement à chaque
+  # article importé d'un devis sans catégorie connue.
+  BUYERS = [ "Nina Heider", "Emilie Baranski", "Pierre-Olivier Montaut", "Aurélien Dondelet", "Nicolas Guéry" ].freeze
+
   # An empty list means "no restriction configured" — visible everywhere /
   # to everyone, same convention as User#allowed_suppliers, so a supplier
   # nobody has configured yet keeps behaving exactly as before.
