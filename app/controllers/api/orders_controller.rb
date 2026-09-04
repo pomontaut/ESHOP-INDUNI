@@ -18,9 +18,9 @@ class Api::OrdersController < ApplicationController
   end
 
   # Manual fallback for the reception accusé — the automated e-mail button
-  # depends on the fournisseur actually receiving and trusting an e-mail sent
-  # from a generic, unverified sender address (see indunieshop.ch domain
-  # verification), which isn't reliable enough on its own. This lets whoever
+  # depends on the fournisseur actually receiving, opening and clicking a
+  # link in the e-mail, which isn't reliable enough on its own (spam
+  # filters, someone else opening the mailbox, etc.). This lets whoever
   # created the order mark it received themselves (phone call, an ordinary
   # e-mail reply, etc.) — no dependency on the fournisseur clicking anything.
   def confirm_reception

@@ -14,7 +14,7 @@ class WebPushNotifier
         p256dh: subscription.p256dh_key,
         auth: subscription.auth_key,
         vapid: {
-          subject: "mailto:commande_induni_eshop@indunieshop.ch",
+          subject: "mailto:commande@induni.ch",
           public_key: Rails.application.config.x.vapid_public_key,
           private_key: Rails.application.config.x.vapid_private_key
         }
