@@ -63,6 +63,14 @@ namespace :catalog do
         email: "info@ganamat.ch", phone: "+41 22 341 04 61", fax: "+41 22 341 20 65",
         address: "Chemin des Batailles 16", postal_code: "1214", city: "Vernier", country_code: "CH",
         ide_number: "CHE-113.699.912", payment_condition: "30 jours net"
+      },
+      # Liste de prix nets swisspor Romandie SA, valable dès le 22.06.2026
+      # (No. Client 102061). Contact conseil/vente : Mickaël Scalisi,
+      # +41 21 948 48 80, mickael.scalisi@swisspor.com — adresse de commande
+      # ci-dessous (rue non communiquée sur le document fourni).
+      "Swisspor" => {
+        email: "commandes@swisspor.com", phone: "+41 21 948 48 80",
+        postal_code: "1618", city: "Châtel-St-Denis", country_code: "CH"
       }
     }.freeze
 

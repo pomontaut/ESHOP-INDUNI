@@ -29,7 +29,8 @@ class User < ApplicationRecord
     { key: "BTest",      label: "BTest" },
     { key: "LCBE",       label: "LCBE" },
     { key: "Sika",       label: "Sika" },
-    { key: "GANAMAT SA", label: "GANAMAT SA" }
+    { key: "GANAMAT SA", label: "GANAMAT SA" },
+    { key: "Swisspor",   label: "Swisspor" }
   ].freeze
 
   validates :email, presence: true, uniqueness: { case_sensitive: false },
