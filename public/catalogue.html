@@ -400,7 +400,8 @@ const BTEST_LOGO='/images/categories/btest.png';
 const LCBE_LOGO='/images/categories/lcbe.png';
 const SIKA_LOGO='/images/categories/sika.png';
 const GANAMAT_LOGO='/images/categories/ganamat.png';
-function catalogLogoInduni(c){return c==='HGC'?HGC_LOGO:(c==='Canplast'?CAN_LOGO:(c==='Leuba HIAG'?HIAG_LOGO:(c==='CreaBeton'?CREABETON_LOGO:(c==='MBT'?MBT_LOGO:(c==='ALZO AG'?ALZO_LOGO:(c==='Soreval'?SOREVAL_LOGO:(c==='BTest'?BTEST_LOGO:(c==='LCBE'?LCBE_LOGO:(c==='Sika'?SIKA_LOGO:(c==='GANAMAT SA'?GANAMAT_LOGO:INDUNI_LOGO))))))))))}
+const SWISSPOR_LOGO='/images/categories/swisspor.png';
+function catalogLogoInduni(c){return c==='HGC'?HGC_LOGO:(c==='Canplast'?CAN_LOGO:(c==='Leuba HIAG'?HIAG_LOGO:(c==='CreaBeton'?CREABETON_LOGO:(c==='MBT'?MBT_LOGO:(c==='ALZO AG'?ALZO_LOGO:(c==='Soreval'?SOREVAL_LOGO:(c==='BTest'?BTEST_LOGO:(c==='LCBE'?LCBE_LOGO:(c==='Sika'?SIKA_LOGO:(c==='GANAMAT SA'?GANAMAT_LOGO:(c==='Swisspor'?SWISSPOR_LOGO:INDUNI_LOGO)))))))))))}
 const SUPPLIER_INFO={
   'HGC':{email:'yannick.mace@hgc.ch',phone:'0041 22 343 85 50'},
   'Canplast':{address:'Route de Sollens 2B',postal_code:'1029',city:'Villars-Ste-Croix',email:'commandes@canplast.ch',phone:'0041 21 637 37 77'},
@@ -412,7 +413,8 @@ const SUPPLIER_INFO={
   'BTest':{},
   'LCBE':{address:"Route de l'Industrie 43B",postal_code:'1615',city:'Bossonnens',email:'info@lcbe.ch',phone:'021 947 47 58'},
   'Sika':{address:'Tüffenwies 16',postal_code:'8048',city:'Zürich',email:'brugger.patrick@ch.sika.com',phone:'+41 79 847 23 85'},
-  'GANAMAT SA':{address:'Chemin des Batailles 16',postal_code:'1214',city:'Vernier',email:'info@ganamat.ch',phone:'+41 22 341 04 61'}
+  'GANAMAT SA':{address:'Chemin des Batailles 16',postal_code:'1214',city:'Vernier',email:'info@ganamat.ch',phone:'+41 22 341 04 61'},
+  'Swisspor':{postal_code:'1618',city:'Châtel-St-Denis',email:'commandes@swisspor.com',phone:'+41 21 948 48 80'}
 };
 function chooseCatalog(c){const p=window._userPerms;if(p&&p.allowed_suppliers&&p.allowed_suppliers.length>0&&!p.allowed_suppliers.includes(c)){return;}
 
@@ -507,7 +509,7 @@ function goFunnel(cat,fam){
   render();
 }
 function render(){const q=document.getElementById('searchBox').value.trim().toLowerCase(); if(q){return renderSearch(q)} if(state.view==='home')return renderHome(); if(state.view==='catalog')return renderCatalog(); if(state.view==='family')return renderFamily(); if(state.view==='subfamily')return renderSubFamily(); if(state.view==='level4')return renderLevel4(); if(state.view==='products')return renderProducts(); if(state.view==='dashboard')return renderDashboard(); if(state.view==='analysis')return renderAnalysis(); if(state.view==='marketIndices')return renderMarketIndices(); if(state.view==='intelligenceBuying')return renderIntelligenceBuying();}
-function renderHome(){const h=PRODUCTS.filter(p=>p.catalog==='HGC').length, c=PRODUCTS.filter(p=>p.catalog==='Canplast').length, l=PRODUCTS.filter(p=>p.catalog==='Leuba HIAG').length, cb=PRODUCTS.filter(p=>p.catalog==='CreaBeton').length, mbt=PRODUCTS.filter(p=>p.catalog==='MBT').length, alz=PRODUCTS.filter(p=>p.catalog==='ALZO AG').length, srv=PRODUCTS.filter(p=>p.catalog==='Soreval').length, bt=PRODUCTS.filter(p=>p.catalog==='BTest').length, lcbe=PRODUCTS.filter(p=>p.catalog==='LCBE').length, sika=PRODUCTS.filter(p=>p.catalog==='Sika').length, gan=PRODUCTS.filter(p=>p.catalog==='GANAMAT SA').length;
+function renderHome(){const h=PRODUCTS.filter(p=>p.catalog==='HGC').length, c=PRODUCTS.filter(p=>p.catalog==='Canplast').length, l=PRODUCTS.filter(p=>p.catalog==='Leuba HIAG').length, cb=PRODUCTS.filter(p=>p.catalog==='CreaBeton').length, mbt=PRODUCTS.filter(p=>p.catalog==='MBT').length, alz=PRODUCTS.filter(p=>p.catalog==='ALZO AG').length, srv=PRODUCTS.filter(p=>p.catalog==='Soreval').length, bt=PRODUCTS.filter(p=>p.catalog==='BTest').length, lcbe=PRODUCTS.filter(p=>p.catalog==='LCBE').length, sika=PRODUCTS.filter(p=>p.catalog==='Sika').length, gan=PRODUCTS.filter(p=>p.catalog==='GANAMAT SA').length, swi=PRODUCTS.filter(p=>p.catalog==='Swisspor').length;
 const allowed=window._userPerms&&window._userPerms.allowed_suppliers;
 function canSee(key){return !allowed||allowed.length===0||allowed.includes(key);}
 const covers=[
@@ -523,6 +525,7 @@ const covers=[
   canSee('LCBE')?`<button class="cover" onclick="chooseCatalog('LCBE')"><div class="coverTop"><img src="${LCBE_LOGO}" alt="LCBE"></div><div class="coverText"><b>E-shop LCBE</b><p class="muted">${lcbe} prestations · essais béton frais chantier (région lausannoise)</p></div></button>`:'',
   canSee('Sika')?`<button class="cover" onclick="chooseCatalog('Sika')"><div class="coverTop" style="background:white"><img src="${SIKA_LOGO}" alt="Sika"></div><div class="coverText"><b>E-shop Sika 🔒</b><p class="muted">${sika} articles · adjuvants béton, réparation & décoffrants — prix net confidentiel</p></div></button>`:'',
   canSee('GANAMAT SA')?`<button class="cover" onclick="chooseCatalog('GANAMAT SA')"><div class="coverTop" style="background:white"><img src="${GANAMAT_LOGO}" alt="GANAMAT SA"></div><div class="coverText"><b>E-shop GANAMAT SA</b><p class="muted">${gan} articles · ligatures, taquets & distanceurs béton armé</p></div></button>`:'',
+  canSee('Swisspor')?`<button class="cover" onclick="chooseCatalog('Swisspor')"><div class="coverTop" style="background:white"><img src="${SWISSPOR_LOGO}" alt="Swisspor"></div><div class="coverText"><b>E-shop Swisspor</b><p class="muted">${swi} articles · isolation, étanchéité & toitures végétalisées</p></div></button>`:'',
   renderFunnelWidget(null)
 ].join('');
 app.innerHTML=`<div style="display:flex;gap:20px;align-items:flex-start">${topArticlesSidebarHtml(null)}<section class="hero" style="flex:1;min-width:0"><div><h1>Catalogues Achats Induni</h1><p class="muted" style="font-size:12.5px;margin:0 0 6px">Cliquez sur un logo pour accéder à l'e-shop correspondant.</p><div class="coverGrid threeCovers">${covers}</div></div></section></div>`}
@@ -1286,7 +1289,7 @@ function addTopArticleFromHistory(catalog,article){
 const CATALOG_COLORS={
   'HGC':'#1d4ed8', 'Canplast':'#0891b2', 'Leuba HIAG':'#16a34a', 'CreaBeton':'#78716c',
   'MBT':'#b45309', 'ALZO AG':'#f97316', 'Soreval':'#65a30d', 'BTest':'#7c3aed',
-  'LCBE':'#0d9488', 'Sika':'#dc2626', 'GANAMAT SA':'#0f766e'
+  'LCBE':'#0d9488', 'Sika':'#dc2626', 'GANAMAT SA':'#0f766e', 'Swisspor':'#003399'
 };
 function catalogColorInduni(c){return CATALOG_COLORS[c]||'#315b84';}
 function topArticlesSidebarHtml(catalogFilter){
