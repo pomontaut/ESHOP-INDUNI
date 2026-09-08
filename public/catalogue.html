@@ -168,6 +168,11 @@ const MBT_FRANCO=3000, MBT_TIER2_MIN=1500, MBT_TIER2=130, MBT_TIER1=70;
 const ALZO_TRANSPORT=12;
 const LCBE_TRANSPORT=145;
 const GANAMAT_TRANSPORT=105;
+// Conditions de vente et de livraison swisspor (liste de prix nets, valable dès le
+// 22.06.2026, §2 et §4) : franco chantier dès CHF 3'500 net (zone de plaine), sinon
+// supplément fixe CHF 150 ; supplément de transport routier (STR/majoration RPLP) de
+// 0.95% de la valeur nette, facturé dans tous les cas (même franco).
+const SWISSPOR_FRANCO=3500, SWISSPOR_SUPPLEMENT=150, SWISSPOR_STR_RATE=0.0095;
 
 /* ============================================================
    ZONES DE LIVRAISON SOREVAL — calculées par temps de trajet routier
@@ -346,6 +351,11 @@ function transportDetailsInduni(sub,supplier,weightOverride){
   }
   if(supplier==='LCBE') return {transport:LCBE_TRANSPORT,rplp:0,crane:0,prep:0,totalTransport:LCBE_TRANSPORT,total:sub+LCBE_TRANSPORT,label:'Forfait déplacement LCBE'};
   if(supplier==='GANAMAT SA') return {transport:GANAMAT_TRANSPORT,rplp:0,crane:0,prep:0,totalTransport:GANAMAT_TRANSPORT,total:sub+GANAMAT_TRANSPORT,label:'Participation transport GANAMAT'};
+  if(supplier==='Swisspor'){
+    const base=sub>=SWISSPOR_FRANCO?0:SWISSPOR_SUPPLEMENT;
+    const rplp=Math.round(sub*SWISSPOR_STR_RATE*100)/100;
+    return {transport:base,rplp:rplp,crane:0,prep:0,totalTransport:base+rplp,total:sub+base+rplp,label:'Transport Swisspor'};
+  }
   return {transport:0,rplp:0,crane:0,prep:0,totalTransport:0,total:sub,label:'Transport'};
 }
 function transportHtmlInduni(sub,supplier,included){
@@ -371,6 +381,7 @@ function transportHtmlInduni(sub,supplier,included){
   if(supplier==='BTest') return `<div class="sum"><span>Remise de volume BTest${t.rate?` (${Math.round(t.rate*100)}%)`:''}</span><b>${fmt(t.totalTransport)}</b></div>`;
   if(supplier==='LCBE') return `<div class="sum"><span>Forfait déplacement LCBE</span><b>${fmt(t.totalTransport)}</b></div>`;
   if(supplier==='GANAMAT SA') return `<div class="sum"><span>Participation transport GANAMAT</span><b>${fmt(t.totalTransport)}</b></div>`;
+  if(supplier==='Swisspor') return `<div class="sum"><span>Supplément transport routier (STR) — 0.95%</span><b>${fmt(t.rplp)}</b></div><div class="sum"><span>Livraison Swisspor${sub>=SWISSPOR_FRANCO?' franco chantier dès CHF 3’500':' — commande < CHF 3’500'}</span><b>${fmt(t.transport)}</b></div><div class="muted" style="font-size:11px;padding:4px 2px;line-height:1.4">ℹ️ Selon conditions de vente et de livraison swisspor, d'autres suppléments peuvent s'appliquer et ne sont pas calculés automatiquement : accès difficile/montagne +CHF 150/camion, livraison express (commande la veille après 11h) +CHF 80, livraison de nuit (20h–5h) +CHF 700, palette EURO CHF 20 (crédit CHF 15 si retournée), forfait de déchargement CHF 200 à 400 si le chantier ne peut pas décharger.</div>`;
   return `<div class="sum"><span>Transport</span><b>${fmt(t.totalTransport)}</b></div>`;
 }
 const fmt=n=>'CHF '+Number(n||0).toLocaleString('fr-CH',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -416,6 +427,57 @@ const SUPPLIER_INFO={
   'GANAMAT SA':{address:'Chemin des Batailles 16',postal_code:'1214',city:'Vernier',email:'info@ganamat.ch',phone:'+41 22 341 04 61'},
   'Swisspor':{postal_code:'1618',city:'Châtel-St-Denis',email:'commandes@swisspor.com',phone:'+41 21 948 48 80'}
 };
+// Classement "Produits swisspor sur la liste de produits Eco" (annexe de la liste de
+// prix nets swisspor, valable dès le 22.06.2026) : badge par gamme de produit, servant
+// de repère MINERGIE-Eco. Niveau le plus favorable retenu quand une gamme apparaît
+// pour plusieurs applications avec des niveaux différents.
+// 1 = "Très approprié pour MINERGIE-Eco" (1ère priorité Eco-CFC)
+// 2 = "Bien approprié pour MINERGIE-Eco" (2ème priorité Eco-CFC)
+// base = "Respecte les critères d'exclusion MINERGIE-Eco"
+const SWISSPOR_ECO_BY_GROUP={
+  'EPS Roof':1,'EPS Roof ECO':1,'EPS 20':1,'EPS 30':1,'EPS 40':1,'EPS 150 Sol':1,
+  'EPS-T':1,'EPS-T HD':1,
+  'Roll EPS 150 Sol PE-Plus':1,'Roll EPS 150 Sol Type 2':1,'Roll EPS 150 Sol Type 3':1,'Roll EPS 150 Sol Type 4':1,
+  'Roll EPS-T PE-Plus':1,'Roll EPS-T Type 2':1,'Roll EPS-T Type 3':1,'Roll EPS-T Type 4':1,'Roll EPS-T HD Type 4':1,
+  'EPS Panneau périmétrique':2,'EPS Drain périmétrique':2,
+  'LAMBDA Roof':1,'LAMBDA Roof REC 100%':1,'LAMBDA universel 031':1,'LAMBDA universel 031 REC 100%':1,
+  'LAMBDA universel 029':2,'LAMBDA 150 Sol REC 100%':1,
+  'Roll LAMBDA-T PE-Plus':1,'Roll LAMBDA-T Type 2':1,'Roll LAMBDA-T Type 4':1,
+  'TERA':2,
+  'PIR Voile':2,'PIR Alu':2,'PIR Alu ECO':1,'PIR Premium':1,'PIR Premium Plus':2,'PIR Floor':'base',
+  'XPS 300 GE':1,'XPS 300 SF':1,'XPS 300 SO':1,'XPS 500 SF':1,'XPS 700 SF':1,
+  'XPS Premium Plus 300 GE':1,'XPS Premium Plus 300 GE/SF':1,'XPS Premium Plus 300 SF':1,
+  'ROC Type 150 (toiture)':2,'ROC Type 1':1,'ROC Type 3':2,'ROC Panneau de sol TS 3':1,'ROC Panneau de sol TS 5':1,
+  'Isover PS 81':1,'Isover Isocalor':1,'GLASS Roll-T PE-Plus':2,'GLASS Roll-T Type 3':2,'GLASS Roll-T Type 4':2,
+  'Eléments drainants':2,
+  'TPO lé de protection / lé de protection anti-racines':2,
+  'Voiles de séparation et de protection':2,
+  'TOPLINE Colle périmétrique 1K':1,
+  "TOPLINE Enduit d'apprêt VS":1,
+};
+// BIKUTOP (étanchéité) : classé par nom de produit, porté par la désignation plutôt
+// que par la sous-sous-famille (regroupée par fonction — pare-vapeur, couches...).
+// Ordre du plus spécifique au plus générique : le premier motif qui correspond gagne.
+const SWISSPOR_ECO_BY_DESIGNATION=[
+  ['BIKUTOP ECO',1],['Bikuplan ECO',1],
+  ['BIKUTOP PRO AQUA',1],
+  ['Bikuplan EGV3',1],
+  ['BIKUTOP',2],['Bikuplan',2],['Bikuvap',2],['Bikuponte',2],
+];
+const SWISSPOR_ECO_LABEL={1:'eco① — Très approprié MINERGIE-Eco',2:'eco② — Bien approprié MINERGIE-Eco','base':'eco Base — Critères d’exclusion MINERGIE-Eco respectés'};
+const SWISSPOR_ECO_STYLE={1:'background:#0f766e',2:'background:#16a34a','base':'background:#78716c'};
+function swissporEcoLevel(p){
+  if(p.catalog!=='Swisspor') return null;
+  if(SWISSPOR_ECO_BY_GROUP[p.sousSousFamille]!=null) return SWISSPOR_ECO_BY_GROUP[p.sousSousFamille];
+  for(const [needle,lvl] of SWISSPOR_ECO_BY_DESIGNATION){ if(String(p.designation||'').includes(needle)) return lvl; }
+  return null;
+}
+function ecoBadgeHtmlInduni(p){
+  const lvl=swissporEcoLevel(p);
+  if(lvl==null) return '';
+  const txt=lvl==='base'?'eco':`eco${lvl===1?'①':'②'}`;
+  return `<span class="tag" style="${SWISSPOR_ECO_STYLE[lvl]};margin-left:4px" title="${esc(SWISSPOR_ECO_LABEL[lvl])}">${txt}</span>`;
+}
 function chooseCatalog(c){const p=window._userPerms;if(p&&p.allowed_suppliers&&p.allowed_suppliers.length>0&&!p.allowed_suppliers.includes(c)){return;}
 
   setCartSupplierIfNeeded(c);
@@ -1366,7 +1428,7 @@ function prixM2HtmlInduni(p){
   if(p.prixM2==null||!isFinite(Number(p.prixM2))||Number(p.prixM2)<=0) return '';
   return `<div class="piecePrice">≈ ${fmt(p.prixM2)} / m² <small style="opacity:.75">(référentiel interne)</small></div>`;
 }
-function productCard(p){const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation); return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':productIconOrDiamHtmlInduni(p)}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}</div><div class="prodBody"><h4>${productTitleHtmlInduni(p)}</h4><div class="desc">${productMetaHtmlInduni(p)}</div><div class="article">N° article : ${esc(p.article)}</div>${p.qtePalette?`<div class="qtePalette">Quantité par palette : ${esc(p.qtePalette)}</div>`:""}${p.synonymes?`<div class="synHint">Recherche aussi : ${esc(p.synonymes.split(/\s+/).slice(0,8).join(", "))}</div>`:""}<div class="price">${priceHtml(p.prix,p.confidential,p.unite)}</div>${piecePriceHtmlInduni(p)}${prixM2HtmlInduni(p)}${(()=>{
+function productCard(p){const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation); return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':productIconOrDiamHtmlInduni(p)}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}${ecoBadgeHtmlInduni(p)}</div><div class="prodBody"><h4>${productTitleHtmlInduni(p)}</h4><div class="desc">${productMetaHtmlInduni(p)}</div><div class="article">N° article : ${esc(p.article)}</div>${p.qtePalette?`<div class="qtePalette">Quantité par palette : ${esc(p.qtePalette)}</div>`:""}${p.synonymes?`<div class="synHint">Recherche aussi : ${esc(p.synonymes.split(/\s+/).slice(0,8).join(", "))}</div>`:""}<div class="price">${priceHtml(p.prix,p.confidential,p.unite)}</div>${piecePriceHtmlInduni(p)}${prixM2HtmlInduni(p)}${(()=>{
   const eq=findEquivalents(p);
   if(!eq.length) return '';
   const cp=comparablePrice(p);
@@ -1590,7 +1652,7 @@ function updateCartWeightInduni(){
   document.getElementById('weightLabel').innerHTML=`Poids total (indicatif)${missing?` · <span style="color:#b45309">${missing} article(s) sans poids connu</span>`:''}`;
   document.getElementById('weightTotal').innerHTML=`${totalWeight.toLocaleString('fr-CH')} kg <span style="font-size:11px;color:${pct>=100?'#b91c1c':'#546273'}">(${pct}% d'un camion ${TRUCK_CAPACITY_KG_INDUNI/1000}t)</span>`;
 }
-function updateCart(){document.getElementById('cartCount').textContent=cart.length?`(${cart.length})`:''; const box=document.getElementById('cartItems'); const supplier=cartSupplier(); box.innerHTML=cart.length?`<div style="padding:10px 12px;margin-bottom:8px;border-radius:10px;background:#eef5ff;color:#0b4f9c;font-weight:900">Panier fournisseur : ${esc(supplier)}</div>`+cart.map((i,k)=>`<div class="cartRow"><div class="thumb" style="${photoUrl(i)?`background-image:url('${photoUrl(i)}')`:`background-color:${tileColor(i.famille)}`}">${photoUrl(i)?'':`<span class="thumbGlyph">${esc(i.icone||'📦')}</span>`}</div><div><b>${esc(i.designation)}</b><div class="muted">${esc(i.article)} · ${esc(i.unite)}</div><div class="qty"><button onclick="qty(${k},-1)">−</button><input type="number" min="0" step="any" value="${i.qty}" onchange="setQty(${k},this.value)" style="width:56px;text-align:center;border:1px solid #ddd;border-radius:6px;height:28px"><span class="muted" style="font-size:12px">${esc(i.unite)}</span><button onclick="qty(${k},1)">+</button></div></div><div style="text-align:right"><b>${amountOrConfidential(i.prix*i.qty,i.confidential)}</b><button onclick="removeItem(${k})" style="margin-top:8px;border:0;background:white;color:#999;font-size:20px">×</button></div></div>`).join('')+(cart.some(i=>i.confidential)?'<div class="muted" style="padding:6px 4px;font-size:11.5px">🔒 Le prix des article(s) confidentiel(s) n\'est pas affiché ici (visible uniquement dans l\'Analyse achat) et n\'est pas inclus dans les totaux ci-dessous.</div>':'')+cartPrefaBetonPaletteNoteHtml()+cartComparatifTriggerHtml():'<p class="muted">Panier vide.</p>'; const sub=cart.reduce((s,i)=>s+i.prix*i.qty,0); document.getElementById('subTotal').textContent=fmt(sub); updateCartWeightInduni(); const td=transportDetailsInduni(sub,supplier); const rplpLine=document.getElementById('rplpLine'); if(supplier==='Canplast'){rplpLine.style.display='';document.getElementById('rplpTotal').textContent=transportIncluded()?fmt(td.rplp):'Non inclus';}else{rplpLine.style.display='none';} document.getElementById('transportLineLabel').textContent=supplier==='HGC'?'Transport HGC fixe':(supplier==='Canplast'?'Livraison Canplast':(supplier==='Leuba HIAG'?'Leuba HIAG franco':(supplier==='MBT'?'Livraison MBT':(supplier==='CreaBeton'?'Transport CreaBeton':(supplier==='ALZO AG'?'Transport ALZO AG':(supplier==='Soreval'?'Transport Soreval':(supplier==='BTest'?'Remise de volume BTest':(supplier==='LCBE'?'Forfait déplacement LCBE':'Transport')))))))); const transportPart=(supplier==='Canplast'||supplier==='CreaBeton')?(td.transport+td.crane):td.totalTransport; document.getElementById('transportTotal').textContent=transportIncluded()?fmt(transportPart):'Non inclus'; document.getElementById('grandTotal').textContent=fmt(effectiveOrderTotalInduni(sub,supplier));; toggleCanplastOptions();toggleCanplastZoneBlock();toggleSorevalZoneBlock();toggleSupplierFields();toggleBillingMerchant();updateRequiredSupplierFields();}
+function updateCart(){document.getElementById('cartCount').textContent=cart.length?`(${cart.length})`:''; const box=document.getElementById('cartItems'); const supplier=cartSupplier(); box.innerHTML=cart.length?`<div style="padding:10px 12px;margin-bottom:8px;border-radius:10px;background:#eef5ff;color:#0b4f9c;font-weight:900">Panier fournisseur : ${esc(supplier)}</div>`+cart.map((i,k)=>`<div class="cartRow"><div class="thumb" style="${photoUrl(i)?`background-image:url('${photoUrl(i)}')`:`background-color:${tileColor(i.famille)}`}">${photoUrl(i)?'':`<span class="thumbGlyph">${esc(i.icone||'📦')}</span>`}</div><div><b>${esc(i.designation)}</b><div class="muted">${esc(i.article)} · ${esc(i.unite)}</div><div class="qty"><button onclick="qty(${k},-1)">−</button><input type="number" min="0" step="any" value="${i.qty}" onchange="setQty(${k},this.value)" style="width:56px;text-align:center;border:1px solid #ddd;border-radius:6px;height:28px"><span class="muted" style="font-size:12px">${esc(i.unite)}</span><button onclick="qty(${k},1)">+</button></div></div><div style="text-align:right"><b>${amountOrConfidential(i.prix*i.qty,i.confidential)}</b><button onclick="removeItem(${k})" style="margin-top:8px;border:0;background:white;color:#999;font-size:20px">×</button></div></div>`).join('')+(cart.some(i=>i.confidential)?'<div class="muted" style="padding:6px 4px;font-size:11.5px">🔒 Le prix des article(s) confidentiel(s) n\'est pas affiché ici (visible uniquement dans l\'Analyse achat) et n\'est pas inclus dans les totaux ci-dessous.</div>':'')+cartPrefaBetonPaletteNoteHtml()+cartComparatifTriggerHtml():'<p class="muted">Panier vide.</p>'; const sub=cart.reduce((s,i)=>s+i.prix*i.qty,0); document.getElementById('subTotal').textContent=fmt(sub); updateCartWeightInduni(); const td=transportDetailsInduni(sub,supplier); const rplpLine=document.getElementById('rplpLine'); if(supplier==='Canplast'){rplpLine.style.display='';document.getElementById('rplpTotal').textContent=transportIncluded()?fmt(td.rplp):'Non inclus';}else{rplpLine.style.display='none';} document.getElementById('transportLineLabel').textContent=supplier==='HGC'?'Transport HGC fixe':(supplier==='Canplast'?'Livraison Canplast':(supplier==='Leuba HIAG'?'Leuba HIAG franco':(supplier==='MBT'?'Livraison MBT':(supplier==='CreaBeton'?'Transport CreaBeton':(supplier==='ALZO AG'?'Transport ALZO AG':(supplier==='Soreval'?'Transport Soreval':(supplier==='BTest'?'Remise de volume BTest':(supplier==='LCBE'?'Forfait déplacement LCBE':(supplier==='Swisspor'?'Transport Swisspor':'Transport'))))))))); const transportPart=(supplier==='Canplast'||supplier==='CreaBeton')?(td.transport+td.crane):td.totalTransport; document.getElementById('transportTotal').textContent=transportIncluded()?fmt(transportPart):'Non inclus'; document.getElementById('grandTotal').textContent=fmt(effectiveOrderTotalInduni(sub,supplier));; toggleCanplastOptions();toggleCanplastZoneBlock();toggleSorevalZoneBlock();toggleSupplierFields();toggleBillingMerchant();updateRequiredSupplierFields();}
 const PREFA_BETON_PALETTE_SKIP_SOUS_INDUNI=new Set(['Outillage béton']);
 function cartPrefaBetonPaletteNoteHtml(){
   const hasPrefa=cart.some(i=>i.famille==='Préfa-béton'&&!PREFA_BETON_PALETTE_SKIP_SOUS_INDUNI.has(i.sousFamille));
@@ -2325,7 +2387,7 @@ function productCardFast(p, scoreVal){
   const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation);
   const cp=comparablePrice(p);
   const cpHtml=(!p.confidential&&cp&&cp.unit&&cp.unit!==String(p.unite||'').toUpperCase())?`<div class="unit equivMeta">≈ ${fmt(cp.value)} / ${esc(cp.unit)}</div>`:'';
-  return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':productIconOrDiamHtmlInduni(p)}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}</div><div class="prodBody"><h4>${productTitleHtmlInduni(p)} <span class="scoreBadge">⭐${scoreVal}</span></h4><div class="desc">${productMetaHtmlInduni(p)}</div><div class="article">N° ${esc(p.article)}</div>${p.qtePalette?`<div class="qtePalette">Quantité par palette : ${esc(p.qtePalette)}</div>`:""}<div class="price">${priceHtml(p.prix,p.confidential,p.unite)}</div>${piecePriceHtmlInduni(p)}${prixM2HtmlInduni(p)}${cpHtml}${p.equivalenceKey?`<div id="eq_${p._idx}" class="equivBox emptyEquiv" style="cursor:pointer" onclick="loadEquivCard(${p._idx},this)"><div class="equivTitle">🔄 Voir comparatif fournisseurs</div></div>`:""}<button class="add ${inCart?'ok':''}" onclick="addCartByIndex(${Number(p._idx)})">${inCart?'✓ Dans le panier':'+ Ajouter au panier'}</button></div></div>`;
+  return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':productIconOrDiamHtmlInduni(p)}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}${ecoBadgeHtmlInduni(p)}</div><div class="prodBody"><h4>${productTitleHtmlInduni(p)} <span class="scoreBadge">⭐${scoreVal}</span></h4><div class="desc">${productMetaHtmlInduni(p)}</div><div class="article">N° ${esc(p.article)}</div>${p.qtePalette?`<div class="qtePalette">Quantité par palette : ${esc(p.qtePalette)}</div>`:""}<div class="price">${priceHtml(p.prix,p.confidential,p.unite)}</div>${piecePriceHtmlInduni(p)}${prixM2HtmlInduni(p)}${cpHtml}${p.equivalenceKey?`<div id="eq_${p._idx}" class="equivBox emptyEquiv" style="cursor:pointer" onclick="loadEquivCard(${p._idx},this)"><div class="equivTitle">🔄 Voir comparatif fournisseurs</div></div>`:""}<button class="add ${inCart?'ok':''}" onclick="addCartByIndex(${Number(p._idx)})">${inCart?'✓ Dans le panier':'+ Ajouter au panier'}</button></div></div>`;
 }
 function loadEquivCard(idx, el){
   el.onclick=null;

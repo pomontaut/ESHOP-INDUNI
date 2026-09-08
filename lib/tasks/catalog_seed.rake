@@ -104,6 +104,14 @@ namespace :catalog do
             .update_all(email: "l.sogno@soreval.ch", phone: "+41 22 341 15 71",
                          address: "10, Route de la Maison Carrée", postal_code: "1242", city: "Satigny", country_code: "CH")
 
+    # Correction ponctuelle : l'adresse de commande Swisspor n'était pas connue
+    # au moment de la création du fournisseur. On ne la complète que si elle
+    # est encore vide, pour ne jamais écraser une modification faite depuis
+    # l'admin.
+    Supplier.where(name: "Swisspor", email: [ nil, "" ])
+            .update_all(email: "commandes@swisspor.com", phone: "+41 21 948 48 80",
+                         postal_code: "1618", city: "Châtel-St-Denis", country_code: "CH")
+
     # Correction critique : un fournisseur "Sika" a pu être auto-créé sans
     # confidential_pricing (ex. via Api::OrdersController#create's
     # find_or_create_by!, si une commande a été passée avant que ce seed ne
