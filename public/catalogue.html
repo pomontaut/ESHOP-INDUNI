@@ -381,7 +381,10 @@ function transportHtmlInduni(sub,supplier,included){
   if(supplier==='BTest') return `<div class="sum"><span>Remise de volume BTest${t.rate?` (${Math.round(t.rate*100)}%)`:''}</span><b>${fmt(t.totalTransport)}</b></div>`;
   if(supplier==='LCBE') return `<div class="sum"><span>Forfait déplacement LCBE</span><b>${fmt(t.totalTransport)}</b></div>`;
   if(supplier==='GANAMAT SA') return `<div class="sum"><span>Participation transport GANAMAT</span><b>${fmt(t.totalTransport)}</b></div>`;
-  if(supplier==='Swisspor') return `<div class="sum"><span>Supplément transport routier (STR) — 0.95%</span><b>${fmt(t.rplp)}</b></div><div class="sum"><span>Livraison Swisspor${sub>=SWISSPOR_FRANCO?' franco chantier dès CHF 3’500':' — commande < CHF 3’500'}</span><b>${fmt(t.transport)}</b></div><div class="muted" style="font-size:11px;padding:4px 2px;line-height:1.4">ℹ️ Selon conditions de vente et de livraison swisspor, d'autres suppléments peuvent s'appliquer et ne sont pas calculés automatiquement : accès difficile/montagne +CHF 150/camion, livraison express (commande la veille après 11h) +CHF 80, livraison de nuit (20h–5h) +CHF 700, palette EURO CHF 20 (crédit CHF 15 si retournée), forfait de déchargement CHF 200 à 400 si le chantier ne peut pas décharger.</div>`;
+  if(supplier==='Swisspor'){
+    const otherSupplementsNote="Selon les conditions de vente et de livraison swisspor, d'autres suppléments peuvent s'appliquer et ne sont pas calculés automatiquement ici : accès difficile/montagne +CHF 150/camion, livraison express (commande la veille après 11h) +CHF 80, livraison de nuit (20h–5h) +CHF 700, palette EURO CHF 20 (crédit CHF 15 si retournée), forfait de déchargement CHF 200 à 400 si le chantier ne peut pas décharger.";
+    return `<div class="sum"><span>Supplément transport routier (STR) — 0.95%</span><b>${fmt(t.rplp)}</b></div><div class="sum"><span>Livraison Swisspor${sub>=SWISSPOR_FRANCO?' franco chantier dès CHF 3’500':' — commande < CHF 3’500'} <span title="${esc(otherSupplementsNote)}" style="cursor:help;opacity:.6">ⓘ</span></span><b>${fmt(t.transport)}</b></div>`;
+  }
   return `<div class="sum"><span>Transport</span><b>${fmt(t.totalTransport)}</b></div>`;
 }
 const fmt=n=>'CHF '+Number(n||0).toLocaleString('fr-CH',{minimumFractionDigits:2,maximumFractionDigits:2});
