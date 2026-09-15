@@ -2742,17 +2742,61 @@ function loadBrentPrices(){
 function renderMarketIndices(){
   const crumbs='<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Indicateurs de marché</div>';
   app.innerHTML=crumbs+'<p class="muted">Chargement des indices…</p>';
-  Promise.all([loadMarketIndices(),loadDieselPrices(),loadCanplastSurcharges(),loadBrentPrices()]).then(([data,diesel,canplast,brent])=>{
+  Promise.all([loadMarketIndices(),loadDieselPrices(),loadCanplastSurcharges(),loadBrentPrices(),loadEurChfRates(),loadUsdChfRates()]).then(([data,diesel,canplast,brent,eurchf,usdchf])=>{
     const materials=Object.keys(data.series);
     const current=(window._selectedMarketIndex && materials.includes(window._selectedMarketIndex)) ? window._selectedMarketIndex : materials[0];
     window._selectedMarketIndex=current;
     window._dieselPrices=diesel;
     window._canplastSurcharges=canplast;
     window._brentPrices=brent;
-    renderMarketIndexDetail(data,current,diesel,canplast,brent);
+    window._eurChfRates=eurchf;
+    window._usdChfRates=usdchf;
+    renderMarketIndexDetail(data,current,diesel,canplast,brent,eurchf,usdchf);
   }).catch(()=>{
     app.innerHTML=crumbs+'<p style="color:#b91c1c">Impossible de charger les indices.</p>';
   });
+}
+// Bascule le panneau de détail affiché dans la page Indicateurs de marché —
+// un seul panneau visible à la fois, ouvert via la loupe du tableau récap.
+function toggleMarketDetail(key){
+  document.querySelectorAll('.marketDetailPanel').forEach(el=>{ el.hidden=(el.id!=='mkt-'+key); });
+  const panel=document.getElementById('mkt-'+key);
+  if(panel){ panel.hidden=false; panel.scrollIntoView({behavior:'smooth',block:'start'}); }
+}
+function setMktEurChfRange(n){
+  window._mktEurChfRange=n;
+  renderMarketIndexDetail(MARKET_INDICES,window._selectedMarketIndex,window._dieselPrices,window._canplastSurcharges,window._brentPrices,window._eurChfRates);
+}
+function resetMktEurChfRange(){ setMktEurChfRange(DEFAULT_RANGE); }
+function setMktUsdChfRange(n){
+  window._mktUsdChfRange=n;
+  renderMarketIndexDetail(MARKET_INDICES,window._selectedMarketIndex,window._dieselPrices,window._canplastSurcharges,window._brentPrices,window._eurChfRates,window._usdChfRates);
+}
+function resetMktUsdChfRange(){ setMktUsdChfRange(DEFAULT_RANGE); }
+// Mini-bloc KPI+graphique pour une série KBOB donnée (Gaz, Électricité...),
+// sans sélecteur — reprend le même calcul que le bloc KBOB principal.
+function kbobMiniSeries(data,seriesName){
+  const values=data.series[seriesName]||[];
+  const dates=data.dates||[];
+  let lastIdx=values.length-1; while(lastIdx>=0&&values[lastIdx]==null) lastIdx--;
+  const currentValue=lastIdx>=0?values[lastIdx]:null;
+  const c1=marketIndexChange(values,1), c3=marketIndexChange(values,3), c12=marketIndexChange(values,12);
+  const rDates=dates.slice(-36), rValues=values.slice(-36);
+  return {currentValue,c1,c3,c12,chart:rValues.length?svgTrendChartV52(rDates,rValues,{decimals:1}):'<p class="muted">Aucune donnée.</p>'};
+}
+function mktDeltaInline(ch){
+  if(!ch||ch.deltaPct==null) return '<span class="muted">n/d</span>';
+  const up=ch.deltaAbs>=0; const color=up?'#b91c1c':'#176b28'; const arrow=up?'▲':'▼';
+  return `<span style="color:${color};font-weight:800">${arrow} ${ch.deltaPct>=0?'+':''}${ch.deltaPct.toFixed(1)}%</span>`;
+}
+function mktRowHtml(icon,label,valueText,changeHtml,key,sub){
+  return `<tr><td>${icon} ${esc(label)}${sub?`<div class="muted" style="font-size:11px;font-weight:400">${sub}</div>`:''}</td><td><b>${valueText}</b></td><td>${changeHtml}</td><td style="text-align:center"><button class="miniBtn" onclick="toggleMarketDetail('${key}')" title="Afficher le détail">🔍</button></td></tr>`;
+}
+function mktPlaceholderRowHtml(icon,label){
+  return `<tr style="opacity:.55"><td>${icon} ${esc(label)}</td><td colspan="2" class="muted">Donnée non disponible — fichier à fournir</td><td style="text-align:center" class="muted">—</td></tr>`;
+}
+function mktCategoryHeaderHtml(title){
+  return `<tr><td colspan="4" style="background:#f3f6fa;font-weight:800;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;color:#5b6b82;padding:8px 10px">${esc(title)}</td></tr>`;
 }
 // Générateur générique des boutons d'intervalle + réinitialiser, réutilisé
 // par les graphiques diesel et Brent.
@@ -2887,9 +2931,11 @@ function setDieselRange(n){
   renderMarketIndexDetail(MARKET_INDICES,window._selectedMarketIndex,window._dieselPrices,window._canplastSurcharges);
 }
 function resetDieselRange(){ setDieselRange(DEFAULT_RANGE); }
-function renderMarketIndexDetail(data,current,diesel,canplast,brent){
+function renderMarketIndexDetail(data,current,diesel,canplast,brent,eurchf,usdchf){
   diesel=diesel||window._dieselPrices||[];
   canplast=canplast||window._canplastSurcharges||[];
+  eurchf=eurchf||window._eurChfRates||{dates:[],values:[]};
+  usdchf=usdchf||window._usdChfRates||{dates:[],values:[]};
   const materials=Object.keys(data.series);
   const options=materials.map(m=>`<option value="${esc(m)}"${m===current?' selected':''}>${esc(m)} (${esc(data.codes[m]||'')})</option>`).join('');
   const values=data.series[current];
@@ -2937,6 +2983,37 @@ function renderMarketIndexDetail(data,current,diesel,canplast,brent){
   const corrOverlay=!!window._corrOverlay;
   const corrChart=aligned.dates.length?svgDualLineChartV52(compareDates,rebasedAstag,rebasedBrent,{labelA:'Diesel ASTAG',labelB:'Brent',colorA:'#0b4f9c',colorB:'#f1642a'}):'<p class="muted">Aucune donnée commune.</p>';
 
+  // Taux de change CHF/EUR (page Indicateurs de marché — carte dédiée,
+  // distincte de celle d'Intelligence Buying qui a son propre état de plage).
+  const mktEurChfRange=(window._mktEurChfRange!=null)?window._mktEurChfRange:DEFAULT_RANGE;
+  const eDatesAll=eurchf.dates||[], eValuesAll=eurchf.values||[];
+  const eSliceDates=mktEurChfRange>0?eDatesAll.slice(-mktEurChfRange):eDatesAll;
+  const eSliceValues=mktEurChfRange>0?eValuesAll.slice(-mktEurChfRange):eValuesAll;
+  const eurChfChart=eSliceValues.length?svgTrendChartV52(eSliceDates,eSliceValues,{decimals:3}):'<p class="muted">Aucune donnée.</p>';
+  const eurChfRangeLabel=mktEurChfRange>0?(mktEurChfRange+' dernières semaines'):'depuis le début du suivi';
+  const eurChfRangeButtons=rangeButtonsHtml(mktEurChfRange,'setMktEurChfRange','resetMktEurChfRange');
+  const eWeek=seriesChangeAt(eValuesAll,1), eMonth=seriesChangeAt(eValuesAll,4), eYear=seriesChangeAt(eValuesAll,52);
+  let eLastIdx=eValuesAll.length-1; while(eLastIdx>=0&&eValuesAll[eLastIdx]==null) eLastIdx--;
+  const eurChfCurrent=eLastIdx>=0?eValuesAll[eLastIdx]:null;
+
+  // Taux de change CHF/USD (utilisé aussi pour convertir le Brent en CHF).
+  const mktUsdChfRange=(window._mktUsdChfRange!=null)?window._mktUsdChfRange:DEFAULT_RANGE;
+  const uDatesAll=usdchf.dates||[], uValuesAll=usdchf.values||[];
+  const uSliceDates=mktUsdChfRange>0?uDatesAll.slice(-mktUsdChfRange):uDatesAll;
+  const uSliceValues=mktUsdChfRange>0?uValuesAll.slice(-mktUsdChfRange):uValuesAll;
+  const usdChfChart=uSliceValues.length?svgTrendChartV52(uSliceDates,uSliceValues,{decimals:3}):'<p class="muted">Aucune donnée.</p>';
+  const usdChfRangeLabel=mktUsdChfRange>0?(mktUsdChfRange+' dernières semaines'):'depuis le début du suivi';
+  const usdChfRangeButtons=rangeButtonsHtml(mktUsdChfRange,'setMktUsdChfRange','resetMktUsdChfRange');
+  const uWeek=seriesChangeAt(uValuesAll,1), uMonth=seriesChangeAt(uValuesAll,4), uYear=seriesChangeAt(uValuesAll,52);
+  let uLastIdx=uValuesAll.length-1; while(uLastIdx>=0&&uValuesAll[uLastIdx]==null) uLastIdx--;
+  const usdChfCurrent=uLastIdx>=0?uValuesAll[uLastIdx]:null;
+  const brentCurrentChf=(brentCurrent!=null&&usdChfCurrent!=null)?brentCurrent*usdChfCurrent:null;
+
+  // Gaz et Électricité : déjà présents dans les indices KBOB, affichés ici
+  // sous forme de mini-cartes dédiées dans la catégorie Énergie.
+  const gazMini=kbobMiniSeries(data,'Gaz (artisanat, industries, services)');
+  const elecMini=kbobMiniSeries(data,'Electricité (artisanat, industries, services)');
+
   const cpGroups=canplastGroups(canplast);
   const cpCurrent=(window._selectedCanplastGroup && cpGroups.some(g=>g.codes===window._selectedCanplastGroup)) ? window._selectedCanplastGroup : (cpGroups[0]&&cpGroups[0].codes);
   window._selectedCanplastGroup=cpCurrent;
@@ -2951,7 +3028,50 @@ function renderMarketIndexDetail(data,current,diesel,canplast,brent){
   const cpAdminForm=(window._userPerms&&window._userPerms.admin)?`<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label style="font-size:12.5px;font-weight:800">Nouvelle date d'effet</label><input id="canplastNewDate" type="date" style="border:1px solid #ddd;border-radius:6px;padding:6px"><label style="font-size:12.5px;font-weight:800">Surrenchérissement %</label><input id="canplastNewPct" type="number" step="0.1" min="0" placeholder="ex. 65" style="width:90px;border:1px solid #ddd;border-radius:6px;padding:6px"><button class="miniBtn" onclick="saveCanplastSurcharge()">Enregistrer pour ce groupe</button></div>`:'';
   const cpTable=cpTimeline.length?`<table class="dashTable" style="margin-top:10px"><thead><tr><th>Date d'effet</th><th>Surrenchérissement</th><th>Source</th></tr></thead><tbody>${cpTimeline.map(r=>`<tr><td>${dateFR(r.effectiveDate)}</td><td><b>${r.surchargePct.toFixed(1)}%</b></td><td class="muted">${esc(r.source||'')}</td></tr>`).join('')}</tbody></table>`:'';
 
-  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Indicateurs de marché</div><div class="toolbar"><h2>📈 Indicateurs de marché — indices KBOB</h2><p class="muted">Indices des prix à la production (KBOB, publiés par trimestre). Une variation nulle sur 1 mois est normale si le mois choisi reste dans le même trimestre que le précédent relevé — les hausses (rouge) et baisses (vert) sont vues du point de vue d'un acheteur.</p></div><div style="max-width:560px;margin-bottom:16px"><label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:4px">Matériau / indice KBOB</label><select onchange="onMarketIndexChange(this.value)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:9px">${options}</select></div><div class="dashboardCards">${marketChangeTile('Évolution 1 mois',c1)}${marketChangeTile('Évolution 3 mois',c3)}${marketChangeTile('Évolution 1 an',c12)}<div class="kpi"><small>Indice actuel</small><b style="font-size:22px">${currentValue!=null?currentValue.toFixed(1):'n/d'}</b><small class="muted">${esc(data.codes[current]||'')}</small></div></div><div class="chartGrid"><div class="chartCard"><h3>${esc(current)} — 3 dernières années</h3>${svgTrendChartV52(rDates,rValues,{decimals:1})}</div></div><div class="analysisBlock" style="margin-top:18px"><h3>⛽ Carburant diesel — surcharge nationale ASTAG</h3><p class="muted">Prix moyen hebdomadaire du diesel à la pompe (CHF/litre TVA incl., source ASTAG/IRU). Surcharge calculée par rapport à la base ASTAG 0% = CHF 1.64/litre.</p><div class="dashboardCards">${dieselChangeTile('Évolution 1 semaine',d1)}${dieselChangeTile('Évolution 4 semaines',d4)}${dieselChangeTile('Depuis le 1er janvier 2026',dYtd)}<div class="kpi"><small>Prix actuel</small><b style="font-size:22px">${dieselLast?dieselLast.price.toFixed(2)+' CHF/l':'n/d'}</b><small class="muted">${dieselLast?'surcharge '+dieselLast.surchargePct.toFixed(1)+'%':''}</small></div></div><div class="chartCard" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">Prix diesel — ${dieselRangeLabel}</h3><div style="display:flex;gap:6px;flex-wrap:wrap">${dieselRangeButtons}</div></div><p class="muted" style="margin:6px 0 10px">Échelle CHF/litre à gauche, surcharge % (base CHF 1.64) à droite — ligne rouge en pointillé = base 0%.</p>${dieselChart}</div></div><div class="analysisBlock" style="margin-top:18px"><h3>🧱 Canplast — surrenchérissement par famille d'articles</h3><p class="muted">Suivi des avis de hausse (et baisse) Canplast successifs, par groupe d'articles PVC/PE/PP, incluant les dates où le taux n'a pas changé pour le groupe sélectionné.</p><div style="max-width:560px;margin:10px 0"><label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:4px">Famille d'articles Canplast</label><select onchange="onCanplastGroupChange(this.value)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:9px">${cpOptions}</select></div>${cpAdminForm}<div class="dashboardCards" style="margin-top:12px">${canplastChangeTile('Depuis la hausse précédente',cpSincePrev)}${canplastChangeTile('Depuis le début du suivi',cpSinceFirst)}<div class="kpi"><small>Surrenchérissement actuel connu</small><b style="font-size:22px">${cpLast?cpLast.surchargePct.toFixed(1)+'%':'n/d'}</b><small class="muted">${cpLast?'au '+dateFR(cpLast.effectiveDate):''}</small></div></div><div class="chartCard" style="margin-top:12px"><h3>${cpLast?esc(cpGroups.find(g=>g.codes===cpCurrent).label):''} — historique</h3>${cpChart}</div>${cpTable}</div><div class="analysisBlock" style="margin-top:18px"><h3>🛢️ Pétrole brut (Brent)</h3><p class="muted">Cours hebdomadaire du Brent (clôture du dernier jour de bourse de la semaine, USD/baril).</p><div class="dashboardCards">${genericChangeTile('Évolution 1 semaine',bWeek,' $')}${genericChangeTile('Évolution 4 semaines',bMonth,' $')}${genericChangeTile('Évolution 1 an',bYear,' $')}<div class="kpi"><small>Cours actuel</small><b style="font-size:22px">${brentCurrent!=null?brentCurrent.toFixed(1)+' $':'n/d'}</b><small class="muted">USD/baril</small></div></div><div class="chartCard" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">Brent — ${brentRangeLabel}</h3><div style="display:flex;gap:6px;flex-wrap:wrap">${brentRangeButtons}</div></div>${brentChart}</div></div><div class="analysisBlock" style="margin-top:18px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">🔗 ASTAG vs Brent</h3><button class="miniBtn" style="${corrOverlay?'background:#0b4f9c':'background:#eef2f7;color:#10233e'}" onclick="toggleCorrOverlay()">${corrOverlay?'⬛ Afficher séparément':'🔀 Superposer les 2 courbes'}</button></div><p class="muted">${corrOverlay?'Les deux séries sont ramenées à la même base 100 sur leurs semaines communes, pour comparer leurs évolutions relatives plutôt que leurs niveaux.':'Valeurs réelles de chaque série (CHF/litre pour l\'ASTAG, USD/baril pour le Brent).'} <small>Ratio retenu : +1 USD/baril Brent ≈ +0,003 CHF/l sur l'ASTAG (hors TVA, avec un décalage de 2 semaines).</small></p>${corrOverlay?`<div class="chartCard" style="margin-top:12px"><h3>ASTAG (bleu) et Brent (orange, pointillé) — base 100</h3>${corrChart}</div>`:`<div class="chartGrid"><div class="chartCard"><h3>Diesel ASTAG — CHF/l</h3>${dieselChart}</div><div class="chartCard"><h3>Pétrole Brent — USD/baril</h3>${brentChart}</div></div>`}</div>`;
+  const mktSummaryRows=
+    mktCategoryHeaderHtml('KBOB')+
+    mktRowHtml('🧱','Indices KBOB (matériaux)',currentValue!=null?currentValue.toFixed(1):'n/d',mktDeltaInline(c1),'kbob',esc(current))+
+    mktCategoryHeaderHtml('ASTAG')+
+    mktRowHtml('⛽','Indice ASTAG (diesel)',dieselLast?dieselLast.price.toFixed(2)+' CHF/l':'n/d',mktDeltaInline(d1&&{deltaAbs:d1.deltaChf,deltaPct:dieselLast&&dieselLast.price?d1.deltaChf/(dieselLast.price-d1.deltaChf)*100:null}),'astag')+
+    mktRowHtml('🔗','Corrélation ASTAG / Brent (impact taux de change)','—','',"corr")+
+    mktCategoryHeaderHtml('Matières premières')+
+    mktPlaceholderRowHtml('🔩','Aluminium')+
+    mktPlaceholderRowHtml('⚙️','Nickel')+
+    mktPlaceholderRowHtml('⬜','Zinc')+
+    mktPlaceholderRowHtml('♻️','Ferraille (Turquie)')+
+    mktPlaceholderRowHtml('📐','Indice HRC')+
+    mktPlaceholderRowHtml('🏗️','Indice Steel Rebar')+
+    mktCategoryHeaderHtml('Énergie')+
+    mktRowHtml('🛢️','Pétrole (Brent)',brentCurrent!=null?brentCurrent.toFixed(1)+' $':'n/d',mktDeltaInline(bWeek),'brent',brentCurrentChf!=null?'≈ '+brentCurrentChf.toFixed(1)+' CHF/baril':'prix CHF non disponible — CHF/USD manquant')+
+    mktRowHtml('🔥','Gaz',gazMini.currentValue!=null?gazMini.currentValue.toFixed(1):'n/d',mktDeltaInline(gazMini.c1),'gaz')+
+    mktRowHtml('💡','Électricité',elecMini.currentValue!=null?elecMini.currentValue.toFixed(1):'n/d',mktDeltaInline(elecMini.c1),'elec')+
+    mktCategoryHeaderHtml('Taux de change')+
+    mktRowHtml('💶','CHF/EUR',eurChfCurrent!=null?eurChfCurrent.toFixed(3):'n/d',mktDeltaInline(eWeek),'eurchf')+
+    mktRowHtml('💵','CHF/USD',usdChfCurrent!=null?usdChfCurrent.toFixed(3):'n/d',mktDeltaInline(uWeek),'usdchf')+
+    mktCategoryHeaderHtml('Plastiques')+
+    mktRowHtml('🧱','Indice Canplast',cpLast?cpLast.surchargePct.toFixed(1)+'%':'n/d','','canplast',cpLast?esc(cpGroups.find(g=>g.codes===cpCurrent).label):'');
+
+  const mktTable=`<table class="dashTable"><thead><tr><th>Indicateur</th><th>Valeur actuelle</th><th>Évolution</th><th style="text-align:center">Graphique</th></tr></thead><tbody>${mktSummaryRows}</tbody></table>`;
+
+  const panelKbob=`<div id="mkt-kbob" class="marketDetailPanel" hidden><div class="analysisBlock" style="margin-top:18px"><h3>🧱 KBOB — indices des prix à la production</h3><p class="muted">Indices des prix à la production (KBOB, publiés par trimestre). Une variation nulle sur 1 mois est normale si le mois choisi reste dans le même trimestre que le précédent relevé — les hausses (rouge) et baisses (vert) sont vues du point de vue d'un acheteur.</p><div style="max-width:560px;margin-bottom:16px"><label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:4px">Matériau / indice KBOB</label><select onchange="onMarketIndexChange(this.value)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:9px">${options}</select></div><div class="dashboardCards">${marketChangeTile('Évolution 1 mois',c1)}${marketChangeTile('Évolution 3 mois',c3)}${marketChangeTile('Évolution 1 an',c12)}<div class="kpi"><small>Indice actuel</small><b style="font-size:22px">${currentValue!=null?currentValue.toFixed(1):'n/d'}</b><small class="muted">${esc(data.codes[current]||'')}</small></div></div><div class="chartGrid"><div class="chartCard"><h3>${esc(current)} — 3 dernières années</h3>${svgTrendChartV52(rDates,rValues,{decimals:1})}</div></div></div></div>`;
+
+  const panelAstag=`<div id="mkt-astag" class="marketDetailPanel" hidden><div class="analysisBlock" style="margin-top:18px"><h3>⛽ Carburant diesel — surcharge nationale ASTAG</h3><p class="muted">Prix moyen hebdomadaire du diesel à la pompe (CHF/litre TVA incl., source ASTAG/IRU). Surcharge calculée par rapport à la base ASTAG 0% = CHF 1.64/litre.</p><div class="dashboardCards">${dieselChangeTile('Évolution 1 semaine',d1)}${dieselChangeTile('Évolution 4 semaines',d4)}${dieselChangeTile('Depuis le 1er janvier 2026',dYtd)}<div class="kpi"><small>Prix actuel</small><b style="font-size:22px">${dieselLast?dieselLast.price.toFixed(2)+' CHF/l':'n/d'}</b><small class="muted">${dieselLast?'surcharge '+dieselLast.surchargePct.toFixed(1)+'%':''}</small></div></div><div class="chartCard" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">Prix diesel — ${dieselRangeLabel}</h3><div style="display:flex;gap:6px;flex-wrap:wrap">${dieselRangeButtons}</div></div><p class="muted" style="margin:6px 0 10px">Échelle CHF/litre à gauche, surcharge % (base CHF 1.64) à droite — ligne rouge en pointillé = base 0%.</p>${dieselChart}</div></div></div>`;
+
+  const panelCorr=`<div id="mkt-corr" class="marketDetailPanel" hidden><div class="analysisBlock" style="margin-top:18px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">🔗 ASTAG vs Brent</h3><button class="miniBtn" style="${corrOverlay?'background:#0b4f9c':'background:#eef2f7;color:#10233e'}" onclick="toggleCorrOverlay()">${corrOverlay?'⬛ Afficher séparément':'🔀 Superposer les 2 courbes'}</button></div><p class="muted">${corrOverlay?'Les deux séries sont ramenées à la même base 100 sur leurs semaines communes, pour comparer leurs évolutions relatives plutôt que leurs niveaux.':'Valeurs réelles de chaque série (CHF/litre pour l\'ASTAG, USD/baril pour le Brent).'} <small>Ratio retenu : +1 USD/baril Brent ≈ +0,003 CHF/l sur l'ASTAG (hors TVA, avec un décalage de 2 semaines) — c'est l'impact du taux de change/cours du pétrole sur le diesel.</small></p>${corrOverlay?`<div class="chartCard" style="margin-top:12px"><h3>ASTAG (bleu) et Brent (orange, pointillé) — base 100</h3>${corrChart}</div>`:`<div class="chartGrid"><div class="chartCard"><h3>Diesel ASTAG — CHF/l</h3>${dieselChart}</div><div class="chartCard"><h3>Pétrole Brent — USD/baril</h3>${brentChart}</div></div>`}</div></div>`;
+
+  const panelBrent=`<div id="mkt-brent" class="marketDetailPanel" hidden><div class="analysisBlock" style="margin-top:18px"><h3>🛢️ Pétrole brut (Brent)</h3><p class="muted">Cours hebdomadaire du Brent (clôture du dernier jour de bourse de la semaine, USD/baril), converti en CHF via le cours CHF/USD de la même semaine.</p><div class="dashboardCards">${genericChangeTile('Évolution 1 semaine',bWeek,' $')}${genericChangeTile('Évolution 4 semaines',bMonth,' $')}${genericChangeTile('Évolution 1 an',bYear,' $')}<div class="kpi"><small>Cours actuel</small><b style="font-size:22px">${brentCurrent!=null?brentCurrent.toFixed(1)+' $':'n/d'}</b><small class="muted">USD/baril</small></div><div class="kpi"><small>Cours actuel (CHF)</small><b style="font-size:22px">${brentCurrentChf!=null?brentCurrentChf.toFixed(1)+' CHF':'n/d'}</b><small class="muted">${usdChfCurrent!=null?'à '+usdChfCurrent.toFixed(3)+' CHF/USD':'CHF/USD non disponible'}</small></div></div><div class="chartCard" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">Brent — ${brentRangeLabel}</h3><div style="display:flex;gap:6px;flex-wrap:wrap">${brentRangeButtons}</div></div>${brentChart}</div></div></div>`;
+
+  const panelGaz=`<div id="mkt-gaz" class="marketDetailPanel" hidden><div class="analysisBlock" style="margin-top:18px"><h3>🔥 Gaz (artisanat, industries, services)</h3><p class="muted">Indice KBOB des prix à la production, publié par trimestre.</p><div class="dashboardCards">${marketChangeTile('Évolution 1 mois',gazMini.c1)}${marketChangeTile('Évolution 3 mois',gazMini.c3)}${marketChangeTile('Évolution 1 an',gazMini.c12)}<div class="kpi"><small>Indice actuel</small><b style="font-size:22px">${gazMini.currentValue!=null?gazMini.currentValue.toFixed(1):'n/d'}</b></div></div><div class="chartCard" style="margin-top:12px">${gazMini.chart}</div></div></div>`;
+
+  const panelElec=`<div id="mkt-elec" class="marketDetailPanel" hidden><div class="analysisBlock" style="margin-top:18px"><h3>💡 Électricité (artisanat, industries, services)</h3><p class="muted">Indice KBOB des prix à la production, publié par trimestre.</p><div class="dashboardCards">${marketChangeTile('Évolution 1 mois',elecMini.c1)}${marketChangeTile('Évolution 3 mois',elecMini.c3)}${marketChangeTile('Évolution 1 an',elecMini.c12)}<div class="kpi"><small>Indice actuel</small><b style="font-size:22px">${elecMini.currentValue!=null?elecMini.currentValue.toFixed(1):'n/d'}</b></div></div><div class="chartCard" style="margin-top:12px">${elecMini.chart}</div></div></div>`;
+
+  const panelEurChf=`<div id="mkt-eurchf" class="marketDetailPanel" hidden><div class="analysisBlock" style="margin-top:18px"><h3>💶 Taux de change CHF/EUR</h3><p class="muted">Cours spot hebdomadaire (clôture du dernier jour de bourse de la semaine).</p><div class="dashboardCards">${genericChangeTile('Évolution 1 semaine',eWeek,'')}${genericChangeTile('Évolution 4 semaines',eMonth,'')}${genericChangeTile('Évolution 1 an',eYear,'')}<div class="kpi"><small>Cours actuel</small><b style="font-size:22px">${eurChfCurrent!=null?eurChfCurrent.toFixed(3):'n/d'}</b></div></div><div class="chartCard" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">CHF/EUR — ${eurChfRangeLabel}</h3><div style="display:flex;gap:6px;flex-wrap:wrap">${eurChfRangeButtons}</div></div>${eurChfChart}</div></div></div>`;
+
+  const panelUsdChf=`<div id="mkt-usdchf" class="marketDetailPanel" hidden><div class="analysisBlock" style="margin-top:18px"><h3>💵 Taux de change CHF/USD</h3><p class="muted">Cours spot hebdomadaire (clôture du dernier jour de bourse de la semaine).</p><div class="dashboardCards">${genericChangeTile('Évolution 1 semaine',uWeek,'')}${genericChangeTile('Évolution 4 semaines',uMonth,'')}${genericChangeTile('Évolution 1 an',uYear,'')}<div class="kpi"><small>Cours actuel</small><b style="font-size:22px">${usdChfCurrent!=null?usdChfCurrent.toFixed(3):'n/d'}</b></div></div><div class="chartCard" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">CHF/USD — ${usdChfRangeLabel}</h3><div style="display:flex;gap:6px;flex-wrap:wrap">${usdChfRangeButtons}</div></div>${usdChfChart}</div></div></div>`;
+
+  const panelCanplast=`<div id="mkt-canplast" class="marketDetailPanel" hidden><div class="analysisBlock" style="margin-top:18px"><h3>🧱 Canplast — surrenchérissement par famille d'articles</h3><p class="muted">Suivi des avis de hausse (et baisse) Canplast successifs, par groupe d'articles PVC/PE/PP, incluant les dates où le taux n'a pas changé pour le groupe sélectionné.</p><div style="max-width:560px;margin:10px 0"><label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:4px">Famille d'articles Canplast</label><select onchange="onCanplastGroupChange(this.value)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:9px">${cpOptions}</select></div>${cpAdminForm}<div class="dashboardCards" style="margin-top:12px">${canplastChangeTile('Depuis la hausse précédente',cpSincePrev)}${canplastChangeTile('Depuis le début du suivi',cpSinceFirst)}<div class="kpi"><small>Surrenchérissement actuel connu</small><b style="font-size:22px">${cpLast?cpLast.surchargePct.toFixed(1)+'%':'n/d'}</b><small class="muted">${cpLast?'au '+dateFR(cpLast.effectiveDate):''}</small></div></div><div class="chartCard" style="margin-top:12px"><h3>${cpLast?esc(cpGroups.find(g=>g.codes===cpCurrent).label):''} — historique</h3>${cpChart}</div>${cpTable}</div></div>`;
+
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Indicateurs de marché</div><div class="toolbar"><h2>📈 Indicateurs de marché</h2><p class="muted">Récapitulatif des indicateurs suivis, par catégorie. Cliquez sur 🔍 pour afficher le graphique et le détail d'un indicateur.</p></div><div class="chartCard">${mktTable}</div>${panelKbob}${panelAstag}${panelCorr}${panelBrent}${panelGaz}${panelElec}${panelEurChf}${panelUsdChf}${panelCanplast}`;
 }
 
 /* ===================================================
@@ -3014,6 +3134,9 @@ function computeIntelBuying(){
 }
 function loadEurChfRates(){
   return fetch('/eurchf_rates.json').then(r=>r.json()).catch(()=>({dates:[],values:[]}));
+}
+function loadUsdChfRates(){
+  return fetch('/usdchf_rates.json').then(r=>r.json()).catch(()=>({dates:[],values:[]}));
 }
 function renderIntelligenceBuying(){
   const crumbs='<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Intelligence Buying</div>';
