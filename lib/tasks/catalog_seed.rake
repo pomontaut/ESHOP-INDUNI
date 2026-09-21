@@ -71,7 +71,11 @@ namespace :catalog do
       "Swisspor" => {
         email: "commandes@swisspor.com", phone: "+41 21 948 48 80",
         postal_code: "1618", city: "Châtel-St-Denis", country_code: "CH"
-      }
+      },
+      # Coordonnées de commande non communiquées dans la liste de prix
+      # fournie : à compléter par un admin (fiche fournisseur) avant le
+      # premier envoi réel.
+      "EFCO" => {}
     }.freeze
 
     # "Alzo" (mauvaise casse/nom, remplacé par "ALZO AG") a été seedé par
