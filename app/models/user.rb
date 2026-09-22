@@ -31,7 +31,8 @@ class User < ApplicationRecord
     { key: "Sika",       label: "Sika" },
     { key: "GANAMAT SA", label: "GANAMAT SA" },
     { key: "Swisspor",   label: "Swisspor" },
-    { key: "EFCO",       label: "EFCO" }
+    { key: "EFCO",       label: "EFCO" },
+    { key: "HILTI",      label: "HILTI" }
   ].freeze
 
   validates :email, presence: true, uniqueness: { case_sensitive: false },

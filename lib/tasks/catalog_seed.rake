@@ -75,7 +75,13 @@ namespace :catalog do
       # Coordonnées de commande non communiquées dans la liste de prix
       # fournie : à compléter par un admin (fiche fournisseur) avant le
       # premier envoi réel.
-      "EFCO" => {}
+      "EFCO" => {},
+      # Extrait de l'accord-cadre HILTI (onglet "BC Standard" du catalogue
+      # BC Induni), prix nets déjà calculés (Bruttopreis - Rabatt %) : forets,
+      # burins, disques et lames couramment commandés. Coordonnées de
+      # commande non communiquées — à compléter par un admin avant le
+      # premier envoi réel.
+      "HILTI" => {}
     }.freeze
 
     # "Alzo" (mauvaise casse/nom, remplacé par "ALZO AG") a été seedé par
