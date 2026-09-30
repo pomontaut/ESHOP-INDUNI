@@ -32,7 +32,8 @@ class User < ApplicationRecord
     { key: "GANAMAT SA", label: "GANAMAT SA" },
     { key: "Swisspor",   label: "Swisspor" },
     { key: "EFCO",       label: "EFCO" },
-    { key: "HILTI",      label: "HILTI" }
+    { key: "HILTI",      label: "HILTI" },
+    { key: "Matériel Induni", label: "Matériel Induni" }
   ].freeze
 
   validates :email, presence: true, uniqueness: { case_sensitive: false },

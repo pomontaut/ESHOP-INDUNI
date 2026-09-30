@@ -31,7 +31,8 @@ class Api::ProductsController < ApplicationController
         equivalenceKey:   p.equivalence_key,
         qtePalette:       p.qte_palette,
         poids:            p.poids_kg&.to_f,
-        prixM2:           p.prix_m2&.to_f
+        prixM2:           p.prix_m2&.to_f,
+        prixExterne:      p.prix_externe&.to_f
       }
     }
   end

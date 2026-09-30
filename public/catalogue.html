@@ -433,7 +433,8 @@ const SUPPLIER_INFO={
   'GANAMAT SA':{address:'Chemin des Batailles 16',postal_code:'1214',city:'Vernier',email:'info@ganamat.ch',phone:'+41 22 341 04 61'},
   'Swisspor':{postal_code:'1618',city:'Châtel-St-Denis',email:'commandes@swisspor.com',phone:'+41 21 948 48 80'},
   'EFCO':{},
-  'HILTI':{}
+  'HILTI':{},
+  'Matériel Induni':{}
 };
 // Classement "Produits swisspor sur la liste de produits Eco" (annexe de la liste de
 // prix nets swisspor, valable dès le 22.06.2026) : badge par gamme de produit, servant
@@ -600,12 +601,13 @@ const covers=[
 ].join('');
 app.innerHTML=`<div style="display:flex;gap:20px;align-items:flex-start">${topArticlesSidebarHtml(null)}<section class="hero" style="flex:1;min-width:0"><div><h1>Catalogues Achats Induni</h1><p class="muted" style="font-size:12.5px;margin:0 0 6px">Cliquez sur un logo pour accéder à l'e-shop correspondant.</p><div class="coverGrid threeCovers">${covers}</div></div></section></div>`}
 function renderDepotInduni(){
-  const efco=PRODUCTS.filter(p=>p.catalog==='EFCO').length, hilti=PRODUCTS.filter(p=>p.catalog==='HILTI').length;
+  const efco=PRODUCTS.filter(p=>p.catalog==='EFCO').length, hilti=PRODUCTS.filter(p=>p.catalog==='HILTI').length, materiel=PRODUCTS.filter(p=>p.catalog==='Matériel Induni').length;
   const allowed=window._userPerms&&window._userPerms.allowed_suppliers;
   function canSee(key){return !allowed||allowed.length===0||allowed.includes(key);}
   const covers=[
     canSee('EFCO')?`<button class="cover" onclick="chooseCatalog('EFCO')"><div class="coverTop" style="background:white"><img src="${EFCO_LOGO}" alt="EFCO"></div><div class="coverText"><b>EFCO</b><p class="muted">${efco} articles · fixations, outillage & consommables chantier</p></div></button>`:'',
-    canSee('HILTI')?`<button class="cover" onclick="chooseCatalog('HILTI')"><div class="coverTop" style="background:white"><img src="${HILTI_LOGO}" alt="HILTI"></div><div class="coverText"><b>HILTI</b><p class="muted">${hilti} articles · forets, burins, disques & lames</p></div></button>`:''
+    canSee('HILTI')?`<button class="cover" onclick="chooseCatalog('HILTI')"><div class="coverTop" style="background:white"><img src="${HILTI_LOGO}" alt="HILTI"></div><div class="coverText"><b>HILTI</b><p class="muted">${hilti} articles · forets, burins, disques & lames</p></div></button>`:'',
+    canSee('Matériel Induni')?`<button class="cover" onclick="chooseCatalog('Matériel Induni')"><div class="coverTop"><img src="${INDUNI_LOGO}" alt="Matériel Induni"></div><div class="coverText"><b>Matériel Induni</b><p class="muted">${materiel} articles · équipement propre au dépôt (échelles, EPI, outillage...)</p></div></button>`:''
   ].join('');
   app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › Dépôt INDUNI</div><div class="toolbar"><h2>📦 Dépôt INDUNI</h2><p class="muted">Commande directe depuis le dépôt Induni, par fournisseur.</p></div><div class="coverGrid threeCovers">${covers}</div>`;
 }
@@ -1454,7 +1456,11 @@ function prixM2HtmlInduni(p){
   if(p.prixM2==null||!isFinite(Number(p.prixM2))||Number(p.prixM2)<=0) return '';
   return `<div class="piecePrice">≈ ${fmt(p.prixM2)} / m² <small style="opacity:.75">(référentiel interne)</small></div>`;
 }
-function productCard(p){const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation); return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':productIconOrDiamHtmlInduni(p)}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}${ecoBadgeHtmlInduni(p)}</div><div class="prodBody"><h4>${productTitleHtmlInduni(p)}</h4><div class="desc">${productMetaHtmlInduni(p)}</div><div class="article">N° article : ${esc(p.article)}</div>${p.qtePalette?`<div class="qtePalette">Quantité par palette : ${esc(p.qtePalette)}</div>`:""}${p.synonymes?`<div class="synHint">Recherche aussi : ${esc(p.synonymes.split(/\s+/).slice(0,8).join(", "))}</div>`:""}<div class="price">${priceHtml(p.prix,p.confidential,p.unite)}</div>${piecePriceHtmlInduni(p)}${prixM2HtmlInduni(p)}${(()=>{
+function prixExterneHtmlInduni(p){
+  if(p.prixExterne==null||!isFinite(Number(p.prixExterne))||Number(p.prixExterne)<=0) return '';
+  return `<div class="piecePrice">${fmt(p.prixExterne)} <small style="opacity:.75">(prix vente externe)</small></div>`;
+}
+function productCard(p){const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation); return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':productIconOrDiamHtmlInduni(p)}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}${ecoBadgeHtmlInduni(p)}</div><div class="prodBody"><h4>${productTitleHtmlInduni(p)}</h4><div class="desc">${productMetaHtmlInduni(p)}</div><div class="article">N° article : ${esc(p.article)}</div>${p.qtePalette?`<div class="qtePalette">Quantité par palette : ${esc(p.qtePalette)}</div>`:""}${p.synonymes?`<div class="synHint">Recherche aussi : ${esc(p.synonymes.split(/\s+/).slice(0,8).join(", "))}</div>`:""}<div class="price">${priceHtml(p.prix,p.confidential,p.unite)}</div>${piecePriceHtmlInduni(p)}${prixM2HtmlInduni(p)}${prixExterneHtmlInduni(p)}${(()=>{
   const eq=findEquivalents(p);
   if(!eq.length) return '';
   const cp=comparablePrice(p);

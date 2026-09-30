@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_21_143208) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_141208) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -114,6 +114,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_143208) do
     t.string "name"
     t.boolean "needs_classification", default: false, null: false
     t.decimal "poids_kg"
+    t.decimal "prix_externe"
     t.decimal "prix_m2"
     t.string "qte_palette"
     t.string "reference"

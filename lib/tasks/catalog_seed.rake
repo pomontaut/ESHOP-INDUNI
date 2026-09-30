@@ -81,7 +81,13 @@ namespace :catalog do
       # burins, disques et lames couramment commandés. Coordonnées de
       # commande non communiquées — à compléter par un admin avant le
       # premier envoi réel.
-      "HILTI" => {}
+      "HILTI" => {},
+      # Export ABACUS du dépôt Induni (997 articles, tous Type_categorie
+      # "Vente" / dépôt 230) : matériel et équipement propre à Induni
+      # (échelles, EPI, outillage, signalisation...), pas un fournisseur
+      # externe — pas de coordonnées de commande, c'est un transfert
+      # interne depuis le dépôt.
+      "Matériel Induni" => {}
     }.freeze
 
     # "Alzo" (mauvaise casse/nom, remplacé par "ALZO AG") a été seedé par
@@ -156,6 +162,7 @@ namespace :catalog do
           qte_palette:       it["qtePalette"],
           poids_kg:          it["poids"],
           prix_m2:           it["prixM2"],
+          prix_externe:      it["prixExterne"],
           manually_added:    false,
           created_at:        now,
           updated_at:        now
