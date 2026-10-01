@@ -250,6 +250,36 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1200.0, line.unit_price.to_f
   end
 
+  test "create uses the depot's external price for a consortium chantier, ignoring the client-submitted price" do
+    depot = Supplier.create!(name: "Matériel Induni")
+    Product.create!(supplier: depot, reference: "MAT-1", name: "Echelle", famille: "Echelle", unit_price: 100.0, prix_externe: 150.0)
+    Chantier.create!(nom: "9999-Consortium Test", consortium: true)
+
+    post api_orders_url, params: {
+      chantier: "9999-Consortium Test", delai: "Urgent", supplier: "Matériel Induni",
+      items: [ { article: "MAT-1", designation: "Echelle", qty: 2, prix: 1.0 } ]
+    }
+    assert_response :success
+
+    line = Order.order(:id).last.order_lines.sole
+    assert_equal 150.0, line.unit_price.to_f
+  end
+
+  test "create uses the depot's internal price for Induni's own (non-consortium) chantier" do
+    depot = Supplier.create!(name: "Matériel Induni")
+    Product.create!(supplier: depot, reference: "MAT-2", name: "Echelle", famille: "Echelle", unit_price: 100.0, prix_externe: 150.0)
+    Chantier.create!(nom: "9999-Chantier Propre", consortium: false)
+
+    post api_orders_url, params: {
+      chantier: "9999-Chantier Propre", delai: "Urgent", supplier: "Matériel Induni",
+      items: [ { article: "MAT-2", designation: "Echelle", qty: 2, prix: 1.0 } ]
+    }
+    assert_response :success
+
+    line = Order.order(:id).last.order_lines.sole
+    assert_equal 100.0, line.unit_price.to_f
+  end
+
   test "index exposes the real total/prices only to a user with analysis rights, and always flags the order as confidential" do
     confidential_supplier = Supplier.create!(name: "Fournisseur confidentiel", confidential_pricing: true)
     product = Product.create!(supplier: confidential_supplier, reference: "ART-CONF", name: "Article confidentiel", famille: "Adjuvants", unit_price: 1200.0)

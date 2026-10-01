@@ -102,6 +102,8 @@ class Api::OrdersController < ApplicationController
       s.email = "commandes@#{supplier_name.downcase.gsub(/[^a-z0-9]/, '')}.ch"
     end
 
+    chantier_record = Chantier.find_by(nom: chantier)
+
     # Prix net confidentiel (ex. Sika) : le client ne l'a jamais vu (masqué
     # dès Api::ProductsController#index), donc item[:prix] vaut 0 — on
     # reconstitue le vrai prix depuis le catalogue pour le plafond
@@ -111,8 +113,28 @@ class Api::OrdersController < ApplicationController
       Product.where(supplier: supplier, reference: items.map { |item| item[:article].to_s })
              .pluck(:reference, :unit_price).to_h
     end
+
+    # "Matériel Induni" (dépôt interne) a deux tarifs par article (prix vente
+    # interne / externe) : externe pour un chantier consortium, interne pour
+    # un chantier Induni en propre — reconstitué depuis le catalogue (pas
+    # depuis ce que le client a soumis) pour que le chantier choisi fasse
+    # foi, pas une valeur pouvant être trafiquée côté navigateur.
+    materiel_induni_prices = if supplier.name == "Matériel Induni"
+      Product.where(supplier: supplier, reference: items.map { |item| item[:article].to_s })
+             .pluck(:reference, :unit_price, :prix_externe)
+             .each_with_object({}) { |(ref, interne, externe), h| h[ref] = { interne: interne, externe: externe } }
+    end
+    materiel_induni_consortium = chantier_record&.consortium? || false
+
     resolved_price = ->(item) {
-      confidential_prices ? confidential_prices[item[:article].to_s].to_f : item[:prix].to_f
+      if confidential_prices
+        confidential_prices[item[:article].to_s].to_f
+      elsif materiel_induni_prices
+        prices = materiel_induni_prices[item[:article].to_s]
+        prices ? (materiel_induni_consortium ? (prices[:externe] || prices[:interne]) : prices[:interne]).to_f : item[:prix].to_f
+      else
+        item[:prix].to_f
+      end
     }
 
     # Trois règles d'approbation indépendantes, chacune avec son propre
@@ -126,7 +148,6 @@ class Api::OrdersController < ApplicationController
     #     toujours le conducteur de travaux du chantier de la commande.
     total = items.sum { |item| resolved_price.call(item) * item[:qty].to_i }
     limit = current_user&.order_limit
-    chantier_record = Chantier.find_by(nom: chantier)
     chantier_conducteur_email = chantier_record&.email_conducteur_travaux.presence
 
     supplier_threshold_exceeded = supplier.approval_threshold.present? && total > supplier.approval_threshold.to_f

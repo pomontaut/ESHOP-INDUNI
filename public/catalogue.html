@@ -1684,7 +1684,7 @@ function updateCartWeightInduni(){
   document.getElementById('weightLabel').innerHTML=`Poids total (indicatif)${missing?` · <span style="color:#b45309">${missing} article(s) sans poids connu</span>`:''}`;
   document.getElementById('weightTotal').innerHTML=`${totalWeight.toLocaleString('fr-CH')} kg <span style="font-size:11px;color:${pct>=100?'#b91c1c':'#546273'}">(${pct}% d'un camion ${TRUCK_CAPACITY_KG_INDUNI/1000}t)</span>`;
 }
-function updateCart(){document.getElementById('cartCount').textContent=cart.length?`(${cart.length})`:''; const box=document.getElementById('cartItems'); const supplier=cartSupplier(); box.innerHTML=cart.length?`<div style="padding:10px 12px;margin-bottom:8px;border-radius:10px;background:#eef5ff;color:#0b4f9c;font-weight:900">Panier fournisseur : ${esc(supplier)}</div>`+cart.map((i,k)=>`<div class="cartRow"><div class="thumb" style="${photoUrl(i)?`background-image:url('${photoUrl(i)}')`:`background-color:${tileColor(i.famille)}`}">${photoUrl(i)?'':`<span class="thumbGlyph">${esc(i.icone||'📦')}</span>`}</div><div><b>${esc(i.designation)}</b><div class="muted">${esc(i.article)} · ${esc(i.unite)}</div><div class="qty"><button onclick="qty(${k},-1)">−</button><input type="number" min="0" step="any" value="${i.qty}" onchange="setQty(${k},this.value)" style="width:56px;text-align:center;border:1px solid #ddd;border-radius:6px;height:28px"><span class="muted" style="font-size:12px">${esc(i.unite)}</span><button onclick="qty(${k},1)">+</button></div></div><div style="text-align:right"><b>${amountOrConfidential(i.prix*i.qty,i.confidential)}</b><button onclick="removeItem(${k})" style="margin-top:8px;border:0;background:white;color:#999;font-size:20px">×</button></div></div>`).join('')+(cart.some(i=>i.confidential)?'<div class="muted" style="padding:6px 4px;font-size:11.5px">🔒 Le prix des article(s) confidentiel(s) n\'est pas affiché ici (visible uniquement dans l\'Analyse achat) et n\'est pas inclus dans les totaux ci-dessous.</div>':'')+cartPrefaBetonPaletteNoteHtml()+cartComparatifTriggerHtml():'<p class="muted">Panier vide.</p>'; const sub=cart.reduce((s,i)=>s+i.prix*i.qty,0); document.getElementById('subTotal').textContent=fmt(sub); updateCartWeightInduni(); const td=transportDetailsInduni(sub,supplier); const rplpLine=document.getElementById('rplpLine'); if(supplier==='Canplast'){rplpLine.style.display='';document.getElementById('rplpTotal').textContent=transportIncluded()?fmt(td.rplp):'Non inclus';}else{rplpLine.style.display='none';} document.getElementById('transportLineLabel').textContent=supplier==='HGC'?'Transport HGC fixe':(supplier==='Canplast'?'Livraison Canplast':(supplier==='Leuba HIAG'?'Leuba HIAG franco':(supplier==='MBT'?'Livraison MBT':(supplier==='CreaBeton'?'Transport CreaBeton':(supplier==='ALZO AG'?'Transport ALZO AG':(supplier==='Soreval'?'Transport Soreval':(supplier==='BTest'?'Remise de volume BTest':(supplier==='LCBE'?'Forfait déplacement LCBE':(supplier==='Swisspor'?'Transport Swisspor':'Transport'))))))))); const transportPart=(supplier==='Canplast'||supplier==='CreaBeton')?(td.transport+td.crane):td.totalTransport; document.getElementById('transportTotal').textContent=transportIncluded()?fmt(transportPart):'Non inclus'; document.getElementById('grandTotal').textContent=fmt(effectiveOrderTotalInduni(sub,supplier));; toggleCanplastOptions();toggleCanplastZoneBlock();toggleSorevalZoneBlock();toggleSupplierFields();toggleBillingMerchant();updateRequiredSupplierFields();}
+function updateCart(){document.getElementById('cartCount').textContent=cart.length?`(${cart.length})`:''; const box=document.getElementById('cartItems'); const supplier=cartSupplier(); const chantierVal=(document.getElementById('chantier')||{}).value||''; box.innerHTML=cart.length?`<div style="padding:10px 12px;margin-bottom:8px;border-radius:10px;background:#eef5ff;color:#0b4f9c;font-weight:900">Panier fournisseur : ${esc(supplier)}</div>`+cart.map((i,k)=>`<div class="cartRow"><div class="thumb" style="${photoUrl(i)?`background-image:url('${photoUrl(i)}')`:`background-color:${tileColor(i.famille)}`}">${photoUrl(i)?'':`<span class="thumbGlyph">${esc(i.icone||'📦')}</span>`}</div><div><b>${esc(i.designation)}</b><div class="muted">${esc(i.article)} · ${esc(i.unite)}</div><div class="qty"><button onclick="qty(${k},-1)">−</button><input type="number" min="0" step="any" value="${i.qty}" onchange="setQty(${k},this.value)" style="width:56px;text-align:center;border:1px solid #ddd;border-radius:6px;height:28px"><span class="muted" style="font-size:12px">${esc(i.unite)}</span><button onclick="qty(${k},1)">+</button></div></div><div style="text-align:right"><b>${amountOrConfidential(effectivePriceInduni(i,chantierVal)*i.qty,i.confidential)}</b><button onclick="removeItem(${k})" style="margin-top:8px;border:0;background:white;color:#999;font-size:20px">×</button></div></div>`).join('')+(cart.some(i=>i.confidential)?'<div class="muted" style="padding:6px 4px;font-size:11.5px">🔒 Le prix des article(s) confidentiel(s) n\'est pas affiché ici (visible uniquement dans l\'Analyse achat) et n\'est pas inclus dans les totaux ci-dessous.</div>':'')+cartPrefaBetonPaletteNoteHtml()+cartComparatifTriggerHtml():'<p class="muted">Panier vide.</p>'; const sub=cart.reduce((s,i)=>s+effectivePriceInduni(i,chantierVal)*i.qty,0); document.getElementById('subTotal').textContent=fmt(sub); updateCartWeightInduni(); const td=transportDetailsInduni(sub,supplier); const rplpLine=document.getElementById('rplpLine'); if(supplier==='Canplast'){rplpLine.style.display='';document.getElementById('rplpTotal').textContent=transportIncluded()?fmt(td.rplp):'Non inclus';}else{rplpLine.style.display='none';} document.getElementById('transportLineLabel').textContent=supplier==='HGC'?'Transport HGC fixe':(supplier==='Canplast'?'Livraison Canplast':(supplier==='Leuba HIAG'?'Leuba HIAG franco':(supplier==='MBT'?'Livraison MBT':(supplier==='CreaBeton'?'Transport CreaBeton':(supplier==='ALZO AG'?'Transport ALZO AG':(supplier==='Soreval'?'Transport Soreval':(supplier==='BTest'?'Remise de volume BTest':(supplier==='LCBE'?'Forfait déplacement LCBE':(supplier==='Swisspor'?'Transport Swisspor':'Transport'))))))))); const transportPart=(supplier==='Canplast'||supplier==='CreaBeton')?(td.transport+td.crane):td.totalTransport; document.getElementById('transportTotal').textContent=transportIncluded()?fmt(transportPart):'Non inclus'; document.getElementById('grandTotal').textContent=fmt(effectiveOrderTotalInduni(sub,supplier));; toggleCanplastOptions();toggleCanplastZoneBlock();toggleSorevalZoneBlock();toggleSupplierFields();toggleBillingMerchant();updateRequiredSupplierFields();}
 const PREFA_BETON_PALETTE_SKIP_SOUS_INDUNI=new Set(['Outillage béton']);
 function cartPrefaBetonPaletteNoteHtml(){
   const hasPrefa=cart.some(i=>i.famille==='Préfa-béton'&&!PREFA_BETON_PALETTE_SKIP_SOUS_INDUNI.has(i.sousFamille));
@@ -2107,6 +2107,17 @@ function chantierTechnicienEmail(nomChantier){
   return (c&&c.emailTechnicien)||'';
 }
 function isChantierConsortium(nom){const c=(window._chantiers||[]).find(x=>x.nom===nom); return !!(c&&c.consortium);}
+// "Matériel Induni" (dépôt interne) a deux tarifs par article (prix vente
+// interne / externe) : externe pour un chantier consortium, interne pour un
+// chantier Induni en propre. N'affecte que ce catalogue — tous les autres
+// fournisseurs n'ont qu'un seul prix (prixExterne vaut null/undefined).
+// Affichage seulement : la commande réelle est toujours re-tarifée
+// côté serveur depuis le chantier soumis (Api::OrdersController#create),
+// pas depuis ce que le navigateur a calculé.
+function effectivePriceInduni(item,chantierNom){
+  if(item.catalog==='Matériel Induni'&&item.prixExterne!=null&&isChantierConsortium(chantierNom)) return item.prixExterne;
+  return item.prix;
+}
 // Certains fournisseurs (ex. LCBE) ont un e-mail de commande différent selon
 // le canton du chantier, configuré dans Admin > Contrats — n'a d'effet que
 // si le chantier tapé correspond exactement à un chantier connu avec un
@@ -3489,10 +3500,10 @@ async function previewOrder(e) {
   if ((supplier === 'Canplast') && !canplastResolvedZone) { alert('Veuillez renseigner une commune ou un NPA valide pour déterminer le tarif de livraison Canplast.'); return; }
   const no = 'BC-' + Math.floor(100000 + Math.random() * 900000);
   const today = new Date().toLocaleDateString('fr-CH');
-  const sub = cart.reduce((s, i) => s + i.prix * i.qty, 0);
+  const sub = cart.reduce((s, i) => s + effectivePriceInduni(i, chantier) * i.qty, 0);
   const tdet = transportDetailsInduni(sub, supplier);
   const total = effectiveOrderTotalInduni(sub, supplier);
-  const rows = cart.map((i, k) => `<tr><td>${k+1}</td><td><b>${esc(i.designation)}</b><br><small>${esc(i.descriptif)}</small></td><td>${esc(i.article)}</td><td>${i.qty}<br><small>${esc(i.unite)}</small></td><td>${i.confidential?'—':fmt(i.prix)}</td><td><b>${amountOrConfidential(i.prix*i.qty,i.confidential)}</b></td></tr>`).join('');
+  const rows = cart.map((i, k) => `<tr><td>${k+1}</td><td><b>${esc(i.designation)}</b><br><small>${esc(i.descriptif)}</small></td><td>${esc(i.article)}</td><td>${i.qty}<br><small>${esc(i.unite)}</small></td><td>${i.confidential?'—':fmt(effectivePriceInduni(i,chantier))}</td><td><b>${amountOrConfidential(effectivePriceInduni(i,chantier)*i.qty,i.confidential)}</b></td></tr>`).join('');
   const orderHtml = buildOrderHtml(no, today, chantier, delai, billingMerchant, supplier, rows, sub, tdet, total);
   const blob = new Blob([orderHtml], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
@@ -3534,15 +3545,15 @@ async function sendOrderByEmail(e) {
   } catch (err) { /* on garde le repli ci-dessus si la requête échoue */ }
 
   const today = new Date().toLocaleDateString('fr-CH');
-  const sub = cart.reduce((s, i) => s + i.prix * i.qty, 0);
+  const sub = cart.reduce((s, i) => s + effectivePriceInduni(i, chantier) * i.qty, 0);
   const tdet = transportDetailsInduni(sub, supplier);
   const total = effectiveOrderTotalInduni(sub, supplier);
-  const rows = cart.map((i, k) => `<tr><td>${k+1}</td><td><b>${esc(i.designation)}</b><br><small>${esc(i.descriptif)}</small></td><td>${esc(i.article)}</td><td>${i.qty}<br><small>${esc(i.unite)}</small></td><td>${i.confidential?'—':fmt(i.prix)}</td><td><b>${amountOrConfidential(i.prix*i.qty,i.confidential)}</b></td></tr>`).join('');
+  const rows = cart.map((i, k) => `<tr><td>${k+1}</td><td><b>${esc(i.designation)}</b><br><small>${esc(i.descriptif)}</small></td><td>${esc(i.article)}</td><td>${i.qty}<br><small>${esc(i.unite)}</small></td><td>${i.confidential?'—':fmt(effectivePriceInduni(i,chantier))}</td><td><b>${amountOrConfidential(effectivePriceInduni(i,chantier)*i.qty,i.confidential)}</b></td></tr>`).join('');
   const html = buildOrderHtml(no, today, chantier, delai, billingMerchant, supplier, rows, sub, tdet, total);
 
   _pendingOrder = { chantier, delai, adresse, contact, phone, conducteur, remarks, supplier, no, html,
     modifiesOrderId: _modifyingOrderId,
-    items: cart.map(i => ({ article: i.article, designation: i.designation, descriptif: i.descriptif || '', qty: i.qty, prix: i.prix, catalogPrix: i.catalogPrix ?? null, unite: i.unite || 'PCE', catalog: i.catalog || '' }))
+    items: cart.map(i => ({ article: i.article, designation: i.designation, descriptif: i.descriptif || '', qty: i.qty, prix: effectivePriceInduni(i, chantier), catalogPrix: i.catalogPrix ?? null, unite: i.unite || 'PCE', catalog: i.catalog || '' }))
   };
 
   document.getElementById('confirmOrderNumber').textContent = no;
