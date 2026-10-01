@@ -28,6 +28,11 @@ class ApplicationController < ActionController::Base
     end
   end
 
+  def require_achat_access
+    return if current_user&.portail_achat_access?
+    redirect_to root_path, alert: "Accès réservé au service achats."
+  end
+
   def current_user
     @current_user ||= User.find_by(id: session[:user_id]) if session[:user_id]
   end

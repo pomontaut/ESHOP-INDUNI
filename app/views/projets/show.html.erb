@@ -1,0 +1,23 @@
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <p class="mb-1"><%= link_to "← Portail achat", portail_path %></p>
+    <h1 class="mb-1"><%= @projet.nom %>
+      <span class="badge <%= @projet.statut == "clos" ? "bg-secondary" : "bg-success" %> fs-6"><%= @projet.statut_label %></span>
+    </h1>
+    <p class="text-muted mb-0">
+      <%= @projet.numero.presence %>
+      <% if @projet.chantier %> · Chantier : <%= @projet.chantier.nom %><% end %>
+      <% if @projet.responsable %> · Responsable : <%= @projet.responsable.full_name %><% end %>
+    </p>
+    <% if @projet.description.present? %><p class="mt-2"><%= @projet.description %></p><% end %>
+  </div>
+  <div class="d-flex gap-2">
+    <%= link_to "✏ Modifier", edit_projet_path(@projet), class: "btn btn-outline-primary btn-sm" %>
+    <%= button_to "✕ Supprimer", @projet, method: :delete, class: "btn btn-outline-danger btn-sm",
+        data: { turbo_confirm: "Supprimer le projet #{@projet.nom} ?" } %>
+  </div>
+</div>
+
+<div class="row g-3">
+  <%= render partial: "portail/brique", collection: @briques, as: :brique, locals: { projet: @projet } %>
+</div>

@@ -2,6 +2,10 @@ Rails.application.routes.draw do
   resources :suppliers
   resources :products
   resources :chantiers, only: [ :index, :show ]
+  get "portail", to: "portail#index", as: :portail
+  resources :projets do
+    resource :seance_lancement, only: [ :show, :edit, :update ], path: "seance-lancement"
+  end
   resources :orders do
     member do
       post :send_to_supplier
