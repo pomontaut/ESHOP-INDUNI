@@ -1,0 +1,22 @@
+<%# locals: brique, projet (optionnel) %>
+<% projet = local_assigns[:projet] %>
+<% href = projet ? brique.projet_url&.call(projet) : brique.url %>
+<div class="col-12 col-md-6 col-lg-4">
+  <% if href.present? %>
+    <%= link_to href, class: "card h-100 shadow-sm text-decoration-none brique" do %>
+      <div class="card-body">
+        <div class="fs-2"><%= brique.icone %></div>
+        <h5 class="card-title text-dark mt-2"><%= brique.label %></h5>
+        <p class="card-text small text-muted mb-0"><%= brique.description %></p>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="card h-100 bg-light border-dashed" style="opacity:.7">
+      <div class="card-body">
+        <div class="fs-2"><%= brique.icone %></div>
+        <h5 class="card-title mt-2"><%= brique.label %> <span class="badge bg-secondary" style="font-size:10px;">à venir</span></h5>
+        <p class="card-text small text-muted mb-0"><%= brique.description %></p>
+      </div>
+    </div>
+  <% end %>
+</div>

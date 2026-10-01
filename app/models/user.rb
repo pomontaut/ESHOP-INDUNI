@@ -57,6 +57,11 @@ class User < ApplicationRecord
     [ first_name, last_name ].compact_blank.join(" ").presence || email
   end
 
+  # Portail achat : administrateurs, acheteurs et service achats.
+  def portail_achat_access?
+    admin? || job_function == "ACHETEUR" || sector == "SERVICE ACHATS"
+  end
+
   def effective_can_create_users?  = admin? || can_create_users?
   def effective_can_create_orders? = admin? || can_create_orders?
   def effective_can_modify_orders? = admin? || can_modify_orders?

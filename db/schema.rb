@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_141208) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_01_090000) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -129,6 +129,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_141208) do
     t.index ["supplier_id"], name: "index_products_on_supplier_id"
   end
 
+  create_table "projets", force: :cascade do |t|
+    t.integer "chantier_id"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "nom", null: false
+    t.string "numero"
+    t.integer "responsable_id"
+    t.string "statut", default: "en_cours", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chantier_id"], name: "index_projets_on_chantier_id"
+    t.index ["responsable_id"], name: "index_projets_on_responsable_id"
+  end
+
   create_table "push_subscriptions", force: :cascade do |t|
     t.string "auth_key"
     t.datetime "created_at", null: false
@@ -138,6 +151,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_141208) do
     t.integer "user_id", null: false
     t.index ["endpoint"], name: "index_push_subscriptions_on_endpoint", unique: true
     t.index ["user_id"], name: "index_push_subscriptions_on_user_id"
+  end
+
+  create_table "seance_lancements", force: :cascade do |t|
+    t.text "actions"
+    t.decimal "budget_cible", precision: 12, scale: 2
+    t.datetime "created_at", null: false
+    t.date "date_seance"
+    t.text "decisions"
+    t.string "lieu"
+    t.text "participants"
+    t.text "perimetre"
+    t.integer "projet_id", null: false
+    t.boolean "realisee", default: false, null: false
+    t.text "risques"
+    t.text "strategie_achat"
+    t.datetime "updated_at", null: false
+    t.index ["projet_id"], name: "index_seance_lancements_on_projet_id", unique: true
   end
 
   create_table "suppliers", force: :cascade do |t|
@@ -203,5 +233,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_141208) do
   add_foreign_key "orders", "suppliers"
   add_foreign_key "orders", "users"
   add_foreign_key "products", "suppliers"
+  add_foreign_key "projets", "chantiers", on_delete: :nullify
+  add_foreign_key "projets", "users", column: "responsable_id", on_delete: :nullify
   add_foreign_key "push_subscriptions", "users"
+  add_foreign_key "seance_lancements", "projets"
 end

@@ -22,6 +22,11 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
+            <% if current_user&.portail_achat_access? %>
+              <li class="nav-item">
+                <%= link_to "Portail achat", portail_path, class: "nav-link" %>
+              </li>
+            <% end %>
             <li class="nav-item">
               <%= link_to "Fournisseurs", suppliers_path, class: "nav-link" %>
             </li>

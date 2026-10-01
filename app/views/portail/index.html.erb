@@ -1,0 +1,56 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="mb-1">Portail achat</h1>
+    <p class="text-muted mb-0">Outils achats communs à tous les projets.</p>
+  </div>
+</div>
+
+<div class="row g-3 mb-5">
+  <%= render partial: "portail/brique", collection: @briques.reject { |b| b.key == "lancement" }, as: :brique %>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="h4 mb-0">Projets en cours</h2>
+  <%= link_to "＋ Nouveau projet", new_projet_path, class: "btn btn-primary" %>
+</div>
+
+<% if @projets.empty? %>
+  <p class="text-muted">Aucun projet en cours. Créez un projet pour le traiter individuellement (séance de lancement, achats, soumissions…).</p>
+<% else %>
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead style="background:#0c1d34;color:white;">
+          <tr>
+            <th class="py-3 ps-3">Projet</th>
+            <th class="py-3">Chantier</th>
+            <th class="py-3">Responsable</th>
+            <th class="py-3">Séance de lancement</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @projets.each do |projet| %>
+            <% seance = projet.seance_lancement %>
+            <tr>
+              <td class="py-3 ps-3 fw-semibold">
+                <%= link_to projet.nom, projet %>
+                <% if projet.numero.present? %><span class="text-muted small">· <%= projet.numero %></span><% end %>
+              </td>
+              <td class="py-3 small"><%= projet.chantier&.nom || "—" %></td>
+              <td class="py-3 small"><%= projet.responsable&.full_name || "—" %></td>
+              <td class="py-3 small">
+                <% if seance&.realisee? %>
+                  <span class="badge bg-success">Réalisée<%= " le #{l(seance.date_seance)}" if seance.date_seance %></span>
+                <% elsif seance&.date_seance %>
+                  <span class="badge bg-warning text-dark">Planifiée le <%= l(seance.date_seance) %></span>
+                <% else %>
+                  <span class="badge bg-secondary">À planifier</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>

@@ -1,0 +1,41 @@
+<%= form_with model: projet do |f| %>
+  <% if projet.errors.any? %>
+    <div class="alert alert-danger">
+      <ul class="mb-0"><% projet.errors.full_messages.each do |msg| %><li><%= msg %></li><% end %></ul>
+    </div>
+  <% end %>
+  <div class="card shadow-sm mb-3">
+    <div class="card-body p-4">
+      <div class="row g-3 mb-3">
+        <div class="col-md-8">
+          <%= f.label :nom, "Nom du projet", class: "form-label fw-semibold" %>
+          <%= f.text_field :nom, class: "form-control", required: true, autofocus: true %>
+        </div>
+        <div class="col-md-4">
+          <%= f.label :numero, "N° de projet", class: "form-label fw-semibold" %>
+          <%= f.text_field :numero, class: "form-control" %>
+        </div>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <%= f.label :chantier_id, "Chantier lié", class: "form-label fw-semibold" %>
+          <%= f.collection_select :chantier_id, Chantier.order(:nom), :id, :nom, { include_blank: "— Aucun —" }, class: "form-select" %>
+        </div>
+        <div class="col-md-4">
+          <%= f.label :responsable_id, "Responsable achat", class: "form-label fw-semibold" %>
+          <%= f.collection_select :responsable_id, User.order(:last_name, :first_name), :id, :full_name, { include_blank: "— Aucun —" }, class: "form-select" %>
+        </div>
+        <div class="col-md-4">
+          <%= f.label :statut, "Statut", class: "form-label fw-semibold" %>
+          <%= f.select :statut, Projet::STATUTS.map { |k, v| [ v, k ] }, {}, class: "form-select" %>
+        </div>
+      </div>
+      <div>
+        <%= f.label :description, "Description", class: "form-label fw-semibold" %>
+        <%= f.text_area :description, rows: 3, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+  <%= f.submit class: "btn btn-primary" %>
+  <%= link_to "Annuler", portail_path, class: "btn btn-outline-secondary" %>
+<% end %>
