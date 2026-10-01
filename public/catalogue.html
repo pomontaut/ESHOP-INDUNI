@@ -1456,11 +1456,7 @@ function prixM2HtmlInduni(p){
   if(p.prixM2==null||!isFinite(Number(p.prixM2))||Number(p.prixM2)<=0) return '';
   return `<div class="piecePrice">≈ ${fmt(p.prixM2)} / m² <small style="opacity:.75">(référentiel interne)</small></div>`;
 }
-function prixExterneHtmlInduni(p){
-  if(p.prixExterne==null||!isFinite(Number(p.prixExterne))||Number(p.prixExterne)<=0) return '';
-  return `<div class="piecePrice">${fmt(p.prixExterne)} <small style="opacity:.75">(prix vente externe)</small></div>`;
-}
-function productCard(p){const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation); return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':productIconOrDiamHtmlInduni(p)}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}${ecoBadgeHtmlInduni(p)}</div><div class="prodBody"><h4>${productTitleHtmlInduni(p)}</h4><div class="desc">${productMetaHtmlInduni(p)}</div><div class="article">N° article : ${esc(p.article)}</div>${p.qtePalette?`<div class="qtePalette">Quantité par palette : ${esc(p.qtePalette)}</div>`:""}${p.synonymes?`<div class="synHint">Recherche aussi : ${esc(p.synonymes.split(/\s+/).slice(0,8).join(", "))}</div>`:""}<div class="price">${priceHtml(p.prix,p.confidential,p.unite)}</div>${piecePriceHtmlInduni(p)}${prixM2HtmlInduni(p)}${prixExterneHtmlInduni(p)}${(()=>{
+function productCard(p){const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation); return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':productIconOrDiamHtmlInduni(p)}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}${ecoBadgeHtmlInduni(p)}</div><div class="prodBody"><h4>${productTitleHtmlInduni(p)}</h4><div class="desc">${productMetaHtmlInduni(p)}</div><div class="article">N° article : ${esc(p.article)}</div>${p.qtePalette?`<div class="qtePalette">Quantité par palette : ${esc(p.qtePalette)}</div>`:""}${p.synonymes?`<div class="synHint">Recherche aussi : ${esc(p.synonymes.split(/\s+/).slice(0,8).join(", "))}</div>`:""}<div class="price">${priceHtml(p.prix,p.confidential,p.unite)}</div>${piecePriceHtmlInduni(p)}${prixM2HtmlInduni(p)}${(()=>{
   const eq=findEquivalents(p);
   if(!eq.length) return '';
   const cp=comparablePrice(p);
