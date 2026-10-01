@@ -27,17 +27,19 @@ class Admin::ChantiersController < ApplicationController
 
   def update
     if @chantier.update(chantier_params)
-      # Un même chantier existe parfois sous plusieurs lignes Chantier (une
-      # par combinaison technicien/contremaître/chef d'équipe — nécessaire
-      # pour que Chantier.visible_to donne accès au bon chantier à chacun,
-      # vu qu'un seul de chaque rôle tient par ligne). Sans cette
-      # propagation, changer "consortium" ici ne corrigeait que cette seule
-      # ligne et laissait les autres divergentes, d'où un prix Matériel
-      # Induni tantôt juste tantôt faux selon la ligne que l'app lisait.
+      # Un même chantier existe parfois encore sous plusieurs lignes
+      # Chantier partageant le même nom (résidu avant dédoublonnage, ou
+      # recréé depuis) : sans cette propagation, changer "consortium" ici ne
+      # corrigerait que cette seule ligne et laisserait les autres
+      # divergentes, d'où un prix Matériel Induni tantôt juste tantôt faux
+      # selon la ligne que l'app lirait.
       unless @chantier.saved_change_to_nom?
         Chantier.where(nom: @chantier.nom).where.not(id: @chantier.id)
                 .update_all(consortium: @chantier.consortium)
       end
+      # Un enregistrement réussi vaut vérification : on efface l'avertissement
+      # posé par la migration de dédoublonnage (voir consortium_conflict).
+      @chantier.update_column(:consortium_conflict, false) if @chantier.consortium_conflict?
       redirect_to admin_chantiers_path, notice: "Chantier #{@chantier.nom} mis à jour."
     else
       render :edit, status: :unprocessable_entity

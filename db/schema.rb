@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_01_144211) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -29,6 +29,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_090000) do
     t.string "chef_equipe"
     t.string "conducteur_travaux"
     t.boolean "consortium", default: false, null: false
+    t.boolean "consortium_conflict", default: false, null: false
     t.text "contraintes_acces"
     t.string "contremaitre"
     t.datetime "created_at", null: false

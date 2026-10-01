@@ -6,6 +6,16 @@
   <%= link_to "＋ Nouveau chantier", new_admin_chantier_path, class: "btn btn-primary" %>
 </div>
 
+<% conflicted = @chantiers.select(&:consortium_conflict?) %>
+<% if conflicted.any? %>
+  <div class="alert alert-warning">
+    <b>⚠️ Statut consortium à vérifier</b> — ces chantiers avaient des doublons en désaccord
+    sur "consortium" (fusionnés automatiquement sur <code>true</code> par précaution) :
+    <%= conflicted.map(&:nom).join(", ") %>. Rouvrez-les et enregistrez une fois vérifiés
+    pour faire disparaître cet avertissement.
+  </div>
+<% end %>
+
 <%= form_with url: admin_chantiers_path, method: :get, class: "mb-3" do %>
   <div class="input-group" style="max-width:420px">
     <%= text_field_tag :q, params[:q], class: "form-control", placeholder: "Rechercher un nom, une ville, un NPA…" %>
@@ -34,6 +44,9 @@
               <%= chantier.nom %>
               <% if chantier.consortium? %>
                 <span class="badge bg-info ms-1" style="font-size:10px;">consortium</span>
+              <% end %>
+              <% if chantier.consortium_conflict? %>
+                <span class="badge bg-warning text-dark ms-1" style="font-size:10px;" title="Doublons en désaccord sur consortium, fusionnés par précaution">⚠️ à vérifier</span>
               <% end %>
             </td>
             <td class="py-3 small text-muted"><%= chantier.adresse.presence || "—" %></td>
