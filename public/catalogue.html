@@ -2102,7 +2102,7 @@ function chantierTechnicienEmail(nomChantier){
   const c=(window._chantiers||[]).find(x=>x.nom===nomChantier);
   return (c&&c.emailTechnicien)||'';
 }
-function isChantierConsortium(nom){const c=(window._chantiers||[]).find(x=>x.nom===nom); return !!(c&&c.consortium);}
+function isChantierConsortium(nom){return (window._chantiers||[]).some(x=>x.nom===nom&&x.consortium);}
 // "Matériel Induni" (dépôt interne) a deux tarifs par article (prix vente
 // interne / externe) : externe pour un chantier consortium, interne pour un
 // chantier Induni en propre. N'affecte que ce catalogue — tous les autres

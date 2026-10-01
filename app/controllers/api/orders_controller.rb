@@ -124,7 +124,13 @@ class Api::OrdersController < ApplicationController
              .pluck(:reference, :unit_price, :prix_externe)
              .each_with_object({}) { |(ref, interne, externe), h| h[ref] = { interne: interne, externe: externe } }
     end
-    materiel_induni_consortium = chantier_record&.consortium? || false
+    # Un même nom de chantier correspond parfois à plusieurs lignes Chantier
+    # (une par combinaison technicien/contremaître/chef d'équipe — voir
+    # Admin::ChantiersController#update) : si elles ne sont pas encore
+    # synchronisées, une seule marquée consortium suffit à trancher — sous-
+    # facturer un chantier consortium coûterait plus cher à Induni qu'une
+    # application par excès.
+    materiel_induni_consortium = chantier.present? && Chantier.where(nom: chantier, consortium: true).exists?
 
     resolved_price = ->(item) {
       if confidential_prices

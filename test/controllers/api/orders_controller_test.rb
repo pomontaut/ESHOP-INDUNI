@@ -280,6 +280,27 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_equal 100.0, line.unit_price.to_f
   end
 
+  test "create uses the depot's external price when any duplicate Chantier row for that nom is consortium" do
+    # Un même nom de chantier existe parfois sous plusieurs lignes Chantier
+    # (une par combinaison technicien/contremaître/chef d'équipe). Si elles
+    # ne sont pas (encore) synchronisées sur "consortium", une seule vraie
+    # suffit à trancher : sous-facturer un chantier consortium coûte plus
+    # cher à Induni qu'une application par excès.
+    depot = Supplier.create!(name: "Matériel Induni")
+    Product.create!(supplier: depot, reference: "MAT-3", name: "Echelle", famille: "Echelle", unit_price: 100.0, prix_externe: 150.0)
+    Chantier.create!(nom: "9999-Chantier Mixte", chef_equipe: "A", consortium: false)
+    Chantier.create!(nom: "9999-Chantier Mixte", chef_equipe: "B", consortium: true)
+
+    post api_orders_url, params: {
+      chantier: "9999-Chantier Mixte", delai: "Urgent", supplier: "Matériel Induni",
+      items: [ { article: "MAT-3", designation: "Echelle", qty: 2, prix: 1.0 } ]
+    }
+    assert_response :success
+
+    line = Order.order(:id).last.order_lines.sole
+    assert_equal 150.0, line.unit_price.to_f
+  end
+
   test "index exposes the real total/prices only to a user with analysis rights, and always flags the order as confidential" do
     confidential_supplier = Supplier.create!(name: "Fournisseur confidentiel", confidential_pricing: true)
     product = Product.create!(supplier: confidential_supplier, reference: "ART-CONF", name: "Article confidentiel", famille: "Adjuvants", unit_price: 1200.0)
