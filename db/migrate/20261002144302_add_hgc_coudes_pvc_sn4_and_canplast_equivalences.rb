@@ -32,7 +32,12 @@ class AddHgcCoudesPvcSn4AndCanplastEquivalences < ActiveRecord::Migration[8.1]
     canplast = Supplier.find_by(name: "Canplast")
     return unless hgc
 
-    Product.where(supplier_id: hgc.id, reference: RETIRED_REFERENCES).delete_all
+    # A discontinued reference still referenced by a past order must be kept
+    # (deleting it violates the order_lines foreign key and aborts every
+    # subsequent boot, as documented in CLAUDE.md).
+    Product.where(supplier_id: hgc.id, reference: RETIRED_REFERENCES)
+           .where.not(id: OrderLine.select(:product_id))
+           .delete_all
 
     items = JSON.parse(File.read(path)).select do |it|
       it["catalog"] == "HGC" && NEW_REFERENCES.include?(it["article"])
