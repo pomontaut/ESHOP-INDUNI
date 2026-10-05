@@ -622,7 +622,7 @@ const CANPLAST_CONFIG = {
     gradient:'linear-gradient(135deg,#1a56a0,#3b82f6)', icone:'🔵', badge:'PVC',
     photo:'/images/categories/pvc-famille.png',
     desc:'Tuyaux · Coudes · Manchons · Réductions · Bouchons · Ø110→1200mm',
-    subs:['Autres produits PVC','Bouchons','Clapets','Coudes','Embranchement/manchettes','Joint Frank','Manchons','Ouverture de nettoyage','Raccord PVC ciment','Raccords','Réductions','Tuyau compact drainage','Tuyaux compact standard','Tuyaux CR0.5 (à bétonner)'],
+    subs:['Autres produits PVC','Bouchons','Clapets','Coudes','Embranchements','Joint Frank','Manchettes','Manchons','Ouverture de nettoyage','Raccord PVC ciment','Raccords','Réductions','Tuyau compact drainage','Tuyaux compact standard','Tuyaux CR0.5 (à bétonner)'],
     order:1
   },
   'Canalisations PE/HDPE': {
@@ -674,7 +674,8 @@ const SUBFAMILY_PHOTOS = {
   'Canalisations PVC|Clapets': '/images/categories/pvc-clapets.png',
   'Canalisations PVC|Ouverture de nettoyage': '/images/categories/pvc-ouverture-nettoyage.png',
   'Canalisations PVC|Raccord PVC ciment': '/images/categories/pvc-raccord-ciment.png',
-  'Canalisations PVC|Embranchement/manchettes': '/images/categories/pvc-embranchement-manchettes.png',
+  'Canalisations PVC|Manchettes': '/images/categories/pvc-raccord-ciment.png',
+  'Canalisations PVC|Embranchements': '/images/categories/pvc-embranchement-manchettes.png',
   'Canalisations PVC|Joint Frank': '/images/categories/pvc-joint-frank.png',
   'Canalisations PE/HDPE|Coudes': '/images/categories/pehd-coudes.png',
   'Canalisations PE/HDPE|Réductions': '/images/categories/pehd-reductions.png',
@@ -728,7 +729,7 @@ const HGC_CONFIG = {
     gradient:'linear-gradient(135deg,#1a56a0,#3b82f6)', icone:'🔵', badge:'PVC',
     photo:'/images/categories/pvc-famille.png',
     desc:'Tuyaux · Coudes · Manchons · Réductions · Bouchons',
-    subs:['Bouchons','Coudes','Embranchements','Manchons','Réductions','Tuyau compact drainage','Tuyaux compact standard','Tuyaux structurés standard','Autres articles'],
+    subs:['Bouchons','Coudes','Embranchements','Manchons','Réductions','Tuyau compact drainage','Tuyaux compact standard','Tuyaux structurés standard','Autres produits PVC'],
     order:1
   },
   'Protection Câbles': {
@@ -1128,7 +1129,7 @@ const NO_DIAMETER_SPLIT_INDUNI=new Set([
   'Canalisations PE/HDPE|Manchons|Manchon double PE',
   'Canalisations PE/HDPE|Manchons|Manchon double HDPE LONG',
   'Canalisations PP|Réductions|null',
-  'Canalisations PVC|Autres articles|null',
+  'Canalisations PVC|Autres produits PVC|null',
   'Ciments & Bétons|Accessoires béton/mortiers|null',
   'Isolation & Étanchéité|Isolation|Panneaux EPS 20kg/m3',
   'Isolation & Étanchéité|Isolation|Panneaux EPS 30kg/m3',
@@ -1173,7 +1174,7 @@ function renderLevel4(){
   const kind=level4KindInduni(state.sous,state.sous2==='__ALL__'?null:state.sous2,base)||'diameterRange';
   const groups=groupByFnInduni(base,p=>level4KeyInduni(kind,p));
   const label=state.sous2&&state.sous2!=='__ALL__'?state.sous2:state.sous;
-  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a> › <a onclick='state.view="family";render()'>${esc(state.famille)}</a> › <a onclick='state.view="subfamily";state.sous2=null;state.sous3=null;render()'>${esc(state.sous)}</a> › <b>${esc(label)}</b></div><div class="banner"><div style="font-size:70px">${esc(base[0]?.icone||'📦')}</div><div><h2>${esc(label)}</h2><p>${base.length} articles</p></div></div><div class="sectionTitle">${kind==='angle'?'Choisissez un angle':'Choisissez une plage de diamètre'}</div><div class="subgrid">${Object.entries(groups).sort((a,b)=>level4SortInduni(kind,a[0],b[0])).map(([k,it])=>`<div class="sub level4Tile" onclick='state.view="products";state.sous3=${jsAttr(k)};state.sous3Kind=${jsAttr(kind)};render()'><b class="level4Big">${esc(k)}</b><p class="muted">${it.length} articles</p></div>`).join('')}<div class="sub" onclick='state.view="products";state.sous3=null;render()'><b>Voir tout</b><p class="muted">${base.length} articles</p></div></div>`;
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a> › <a onclick='state.view="family";render()'>${esc(state.famille)}</a> › <a onclick='state.view="subfamily";state.sous2=null;state.sous3=null;render()'>${esc(state.sous)}</a> › <b>${esc(label)}</b></div><div class="banner"><div style="font-size:70px">${esc(base[0]?.icone||'📦')}</div><div><h2>${esc(label)}</h2><p>${base.length} articles</p></div></div><div class="sectionTitle">${kind==='angle'?'Choisissez un angle':'Choisissez une plage de diamètre'}</div><div class="subgrid">${Object.entries(groups).sort((a,b)=>level4SortInduni(kind,a[0],b[0])).map(([k,it])=>`<div class="sub level4Tile" onclick='state.view="products";state.sous3=${jsAttr(k)};state.sous3Kind=${jsAttr(kind)};render()'><b class="level4Big">${esc(k)}</b><p class="muted">${it.length} articles</p></div>`).join('')}</div>`;
 }
 function hasLevel2Induni(items){
   const vals=[...new Set(items.map(p=>p.sousSousFamille).filter(x=>x&&x!=='__DIRECT__'))];
@@ -1201,9 +1202,9 @@ const LEVEL2_PHOTOS={
   'Canalisations PVC|Clapets|Clapet anti-refoulement avec flotteurs': '/images/categories/pvc-clapet-avec-flotteur.png',
   'Canalisations PVC|Clapets|Clapet anti-refoulement sans flotteurs': '/images/categories/pvc-clapet-sans-flotteur.png',
   'Canalisations PVC|Clapets|__ALL__': '/images/categories/pvc-clapets-voir-tout.png',
-  'Canalisations PVC|Embranchement/manchettes|Embranchement à coller': '/images/categories/pvc-embranchement-coller.png',
-  'Canalisations PVC|Embranchement/manchettes|Embranchement culotte SN4': '/images/categories/pvc-embranchement-culotte.png',
-  'Canalisations PVC|Embranchement/manchettes|Embranchement culotte SN2': '/images/categories/pvc-embranchement-culotte.png',
+  'Canalisations PVC|Embranchements|Embranchement à coller': '/images/categories/pvc-embranchement-coller.png',
+  'Canalisations PVC|Embranchements|Embranchement culotte SN4': '/images/categories/pvc-embranchement-culotte.png',
+  'Canalisations PVC|Embranchements|Embranchement culotte SN2': '/images/categories/pvc-embranchement-culotte.png',
   'Canalisations PVC|Autres produits PVC|Clef de fixation': '/images/categories/pvc-clef-fixation.png',
   'Canalisations PVC|Autres produits PVC|Colle': '/images/categories/pvc-colle.png',
   'Canalisations PVC|Autres produits PVC|Cloche': '/images/categories/pvc-cloche.png',
@@ -3373,7 +3374,7 @@ const RECLASSIF_RULES = [
   // Sista F 130 dans Isolation → Mastics & Colles
   { match: p => /sista f 130/i.test(p.designation), famille: 'Mastics & Colles', sousFamille: 'Mastics', icone: '🔫' },
   // Tuyau béton dans Ciments → Canalisation (ne correspond pas au catalogue Canplast)
-  { match: p => /tuyau.*b[eé]ton/i.test(p.designation) && p.famille === 'Ciments & Bétons', famille: 'Canalisations PVC', sousFamille: 'Autres articles', icone: '🔩' },
+  { match: p => /tuyau.*b[eé]ton/i.test(p.designation) && p.famille === 'Ciments & Bétons', famille: 'Canalisations PVC', sousFamille: 'Autres produits PVC', icone: '🔩' },
 ];
 
 // Appliquer la reclassification
