@@ -662,6 +662,15 @@ const CANPLAST_CONFIG = {
 };
 
 const SUBFAMILY_PHOTOS = {
+  'Leuba HIAG|Bois & Coffrage|Bois C24': '/images/categories/hiag-bois-c24.png',
+  'Leuba HIAG|Bois & Coffrage|Carrelets / planches de coffrage': '/images/categories/hiag-carrelets-planches.png',
+  'Leuba HIAG|Bois & Coffrage|Lambourdes': '/images/categories/hiag-lambourdes.png',
+  'Leuba HIAG|Bois & Coffrage|Panneaux filmés': '/images/categories/hiag-panneaux-filmes.png',
+  'Leuba HIAG|Bois & Coffrage|Panneaux jaunes': '/images/categories/hiag-panneaux-jaunes.png',
+  'Leuba HIAG|Bois & Coffrage|Panneaux OSB 3': '/images/categories/hiag-panneaux-osb3.png',
+  'Leuba HIAG|Bois & Coffrage|Poutrelles H20': '/images/categories/hiag-poutrelles-h20.png',
+  'Leuba HIAG|Bois & Coffrage|Accessoires': '/images/categories/hiag-accessoires.png',
+  'Leuba HIAG|Bois & Coffrage|Divers': '/images/categories/hiag-divers.png',
   'Ciments & Bétons|Accessoires béton/mortiers': '/images/products/hgc-caisse-mortier-plastique-200l.png',
   'Canalisations PVC|Tuyau compact drainage': '/images/categories/pvc-tuyau-drainage.png',
   'Canalisations PVC|Tuyaux compact standard': '/images/categories/pvc-tuyau-compact-standard.png',
@@ -987,7 +996,7 @@ function renderFamily(){
   const famPhoto=famCfg.photo||null;
   const parentGroup=state.catalog==='HGC'?hgcParentGroupOf(state.famille):null;
   const groupCrumb=parentGroup?` › <a onclick='state.view="family";state.famille=${jsAttr(parentGroup)};state.sous=null;render()'>${esc(parentGroup)}</a>`:'';
-  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a>${groupCrumb} › ${esc(state.famille)}</div><div class="banner"><div style="font-size:70px">${esc(items[0]?.icone||'📦')}</div><div><h2>${esc(state.famille)}</h2><p>${items.length} articles · ${Object.keys(subs).length} sous-familles</p></div>${renderFunnelWidget(state.catalog,state.famille)}</div><div class="sectionTitle">Sommaire intermédiaire des sous-familles</div><div class="subgrid">${Object.entries(subs).sort((a,b)=>subFamilySortInduni(a[0],b[0])).map(([s,it])=>{const photo=SUBFAMILY_PHOTOS[state.famille+'|'+s]||famPhoto;return `<div class="sub" onclick='state.view="subfamily";state.sous=${jsAttr(s)};state.sous2=null;render()'>${photo?`<div class="subPhoto" style="background-image:url(${photo})"></div>`:''}<b>${esc(s)}</b><p class="muted">${it.length} articles<span class="sub2Badge">${hasLevel2Induni(it)?'détaillé':''}</span></p></div>`;}).join('')}</div>`}
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a>${groupCrumb} › ${esc(state.famille)}</div><div class="banner"><div style="font-size:70px">${esc(items[0]?.icone||'📦')}</div><div><h2>${esc(state.famille)}</h2><p>${items.length} articles · ${Object.keys(subs).length} sous-familles</p></div>${renderFunnelWidget(state.catalog,state.famille)}</div><div class="sectionTitle">Sommaire intermédiaire des sous-familles</div><div class="subgrid">${Object.entries(subs).sort((a,b)=>subFamilySortInduni(a[0],b[0])).map(([s,it])=>{const photo=SUBFAMILY_PHOTOS[state.catalog+'|'+state.famille+'|'+s]||SUBFAMILY_PHOTOS[state.famille+'|'+s]||famPhoto;return `<div class="sub" onclick='state.view="subfamily";state.sous=${jsAttr(s)};state.sous2=null;render()'>${photo?`<div class="subPhoto" style="background-image:url(${photo})"></div>`:''}<b>${esc(s)}</b><p class="muted">${it.length} articles<span class="sub2Badge">${hasLevel2Induni(it)?'détaillé':''}</span></p></div>`;}).join('')}</div>`}
 
 /* ============================================================
    NIVEAU 4 — angle (Coudes/Embranchements) ou plage de diamètre
@@ -1241,7 +1250,7 @@ function renderSubFamily(){
   }
   const groups=group(base,'sousSousFamille');
   delete groups['__DIRECT__'];
-  const parentPhoto=SUBFAMILY_PHOTOS[state.famille+'|'+state.sous]||(CANPLAST_CONFIG[state.famille]||HGC_CONFIG[state.famille]||CREABETON_CONFIG[state.famille]||MBT_CONFIG[state.famille]||{}).photo||null;
+  const parentPhoto=SUBFAMILY_PHOTOS[state.catalog+'|'+state.famille+'|'+state.sous]||SUBFAMILY_PHOTOS[state.famille+'|'+state.sous]||(CANPLAST_CONFIG[state.famille]||HGC_CONFIG[state.famille]||CREABETON_CONFIG[state.famille]||MBT_CONFIG[state.famille]||{}).photo||null;
   app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a> › <a onclick='state.view="family";render()'>${esc(state.famille)}</a> › <b>${esc(state.sous)}</b></div><div class="banner"><div style="font-size:70px">${esc(base[0]?.icone||'📦')}</div><div><h2>${esc(state.sous)}</h2><p>${base.length} articles · ${Object.keys(groups).length} sous-familles détaillées</p></div>${renderFunnelWidget(state.catalog,state.famille)}</div><div class="sectionTitle">Choisissez une sous-famille détaillée</div><p class="sub2Note">Ce niveau apparaît uniquement quand il y a assez d’articles pour que le classement soit utile.</p><div class="subgrid">${Object.entries(groups).sort((a,b)=>level2SortInduni(a[0],b[0])).map(([s,it])=>{const kind=level4KindInduni(state.sous,s,it);const onclick=kind?`state.view="level4";state.sous2=${jsAttr(s)};state.sous3=null;render()`:`state.view="products";state.sous2=${jsAttr(s)};state.sous3=null;render()`;const photo=LEVEL2_PHOTOS[state.famille+'|'+state.sous+'|'+s]||parentPhoto;return `<div class="sub" onclick='${onclick}'>${photo?`<div class="subPhoto" style="background-image:url(${photo})"></div>`:''}<b>${esc(s)}</b><p class="muted">${it.length} articles</p></div>`;}).join('')}</div>`;
 }
 
