@@ -1145,7 +1145,7 @@ const NO_DIAMETER_SPLIT_INDUNI=new Set([
 function level4KindInduni(sous,sous2,items){
   if(isAngleContextInduni(sous,sous2)) return 'angle';
   if(NO_DIAMETER_SPLIT_INDUNI.has(state.famille+'|'+sous+'|'+sous2)) return null;
-  if(items.length>10) return 'diameterRange';
+  // Plus de découpage par plage de diamètre : on affiche directement les articles.
   return null;
 }
 function level4KeyInduni(kind,p){
