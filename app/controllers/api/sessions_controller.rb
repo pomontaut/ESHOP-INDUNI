@@ -8,6 +8,8 @@ class Api::SessionsController < ApplicationController
         logged_in:         true,
         admin:             current_user.admin?,
         full_name:         current_user.full_name,
+        email:             current_user.email,
+        phone:             current_user.phone,
         sector:            current_user.sector,
         can_create_users:  current_user.effective_can_create_users?,
         can_create_orders: current_user.effective_can_create_orders?,

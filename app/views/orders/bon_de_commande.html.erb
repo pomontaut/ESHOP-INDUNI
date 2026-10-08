@@ -11,13 +11,16 @@
   # Chantier en consortium : gabarit sans notre logo ni nos CGA (pas de
   # visibilité sur le partenaire), le bloc CLIENT affiche juste "CONSORTIUM".
   is_consortium  = chantier_record&.consortium? || false
-  # Nom de la personne Induni ayant passé la commande (le compte connecté au
-  # moment de l'envoi, sauf saisie manuelle différente dans le formulaire) et
-  # coordonnées du contact sur site pour la livraison — ces deux informations
-  # n'étaient auparavant jamais reportées sur le document (toujours "Pierre-
-  # Olivier MONTAUT" en dur, quel que soit qui commande / livre réellement).
-  conducteur_travaux = @order.conducteur_travaux.presence || @order.user&.full_name.presence || "—"
-  conducteur_email   = @order.user&.email
+  # Rédacteur de la commande (le compte connecté qui l'a envoyée) — toujours
+  # la vraie personne qui a rédigé la commande, jamais un champ modifiable du
+  # formulaire, pour qu'on sache toujours qui contacter côté Induni si le
+  # fournisseur a une question. Distinct du conducteur de travaux, qui est un
+  # rôle chantier (saisi dans le formulaire, potentiellement une tout autre
+  # personne) et du contact de réception sur site pour la livraison.
+  redacteur_nom   = @order.user&.full_name.presence || "—"
+  redacteur_email = @order.user&.email
+  redacteur_tel   = @order.user&.phone
+  conducteur_travaux = @order.conducteur_travaux.presence || chantier_record&.conducteur_travaux.presence || "—"
   contact_livraison  = @order.contact.presence || "—"
   delivery_address_html = (@order.delivery_address.presence || "INDUNI & Cie SA\nAvenue des Grandes-Communes 6\n1213 Petit-Lancy").gsub("\n", "<br>")
   # Prix nets confidentiels (ex. Sika, accord-cadre marqué CONFIDENTIAL) :
@@ -66,12 +69,14 @@ td:not(:first-child){text-align:right}
   <div class="hcol">
     <div class="htitle">CLIENT</div>
     <div class="cname"><%= is_consortium ? 'CONSORTIUM' : 'INDUNI &amp; CIE SA'.html_safe %></div>
-    <div class="ir"><span class="il">Conducteur de travaux :</span> <%= conducteur_travaux %><%= conducteur_email.present? ? " — #{conducteur_email}" : "" %></div>
+    <div class="ir"><span class="il">Contact rédacteur de la commande :</span> <%= redacteur_nom %><%= redacteur_email.present? ? " — #{redacteur_email}" : "" %><%= redacteur_tel.present? ? " — #{redacteur_tel}" : "" %></div>
     <div class="ir"><span class="il">Chantier :</span> <%= chantier_val %></div>
     <div class="ir"><span class="il">Délai livraison :</span> <%= delai_val %></div>
     <div class="ir"><span class="il">Adresse de livraison :</span></div>
     <div class="ir" style="padding-left:10px"><%= delivery_address_html.html_safe %></div>
-    <div class="ir"><span class="il">Contact pour la livraison :</span> <%= contact_livraison %><%= @order.phone.present? ? " — #{@order.phone}" : "" %></div>
+    <div class="ir" style="margin-top:6px"><span class="il">Contact chantier :</span></div>
+    <div class="ir" style="padding-left:10px">Conducteur de travaux : <%= conducteur_travaux %></div>
+    <div class="ir" style="padding-left:10px">Contact réception livraison : <%= contact_livraison %><%= @order.phone.present? ? " — #{@order.phone}" : "" %></div>
   </div>
   <div class="hcol">
     <div class="htitle">FOURNISSEUR</div>
@@ -148,7 +153,7 @@ td:not(:first-child){text-align:right}
 </div>
 
 <div class="sigrow">
-  <div class="sigbox"><%= conducteur_travaux %></div>
+  <div class="sigbox"><%= redacteur_nom %></div>
   <div class="sigbox">&nbsp;</div>
 </div>
 

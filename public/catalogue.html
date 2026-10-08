@@ -2156,12 +2156,14 @@ ${isConsortium?'':`<img src="${INDUNI_LOGO}" class="logo" alt="INDUNI">`}
   <div class="hcol">
     <div class="htitle">CLIENT</div>
     <div class="cname">${isConsortium?'CONSORTIUM':'INDUNI &amp; CIE SA'}</div>
-    <div class="ir"><span class="il">Conducteur de travaux :</span> ${esc(document.getElementById('conducteurTravaux').value)}</div>
+    <div class="ir"><span class="il">Contact rédacteur de la commande :</span> ${esc((window._userPerms&&window._userPerms.full_name)||'—')}${(window._userPerms&&window._userPerms.email)?' — '+esc(window._userPerms.email):''}${(window._userPerms&&window._userPerms.phone)?' — '+esc(window._userPerms.phone):''}</div>
     <div class="ir"><span class="il">Chantier :</span> ${esc(document.getElementById('chantier').value)}</div>
     <div class="ir"><span class="il">Délai de livraison :</span> ${esc(document.getElementById('delai').value)}</div>
     <div class="ir"><span class="il">Adresse de livraison :</span></div>
     <div class="ir" style="padding-left:10px;white-space:pre-line">${esc(document.getElementById('adresse').value)}</div>
-    <div class="ir"><span class="il">Contact pour la livraison :</span> ${esc(document.getElementById('contact').value)} — ${esc(document.getElementById('phone').value)}</div>
+    <div class="ir" style="margin-top:6px"><span class="il">Contact chantier :</span></div>
+    <div class="ir" style="padding-left:10px">Conducteur de travaux : ${esc(document.getElementById('conducteurTravaux').value)}</div>
+    <div class="ir" style="padding-left:10px">Contact réception livraison : ${esc(document.getElementById('contact').value)} — ${esc(document.getElementById('phone').value)}</div>
     ${['Canplast','Swisspor','Sika'].includes(supplier)?`<div class="ir"><span class="il">Marchand pour la facturation :</span> HG COMMERCIAL</div>`:''}
     ${document.getElementById('remarks').value?`<div class="ir"><span class="il">Remarques :</span> ${esc(document.getElementById('remarks').value)}</div>`:''}
   </div>

@@ -46,7 +46,7 @@ class BonDeCommandeTemplateTest < ActiveSupport::TestCase
     assert_not_includes html, "Pierre-Olivier MONTAUT" # l'ancien texte figé, casse différente
   end
 
-  test "falls back to the ordering user's name when no conducteur de travaux was entered, and to the Induni depot address" do
+  test "falls back to the Induni depot address, and shows an em-dash for conducteur de travaux when none was entered and no chantier matches" do
     supplier = Supplier.create!(name: "Fournisseur ouvert", email: "commandes@fournisseur.ch")
     product = Product.create!(supplier: supplier, reference: "ART-OUVERT", name: "Article ouvert", famille: "Voirie", unit_price: 10.0, unite: "PCE")
     order = Order.create!(supplier: supplier, user: users(:one), order_date: Date.current, notes: "Chantier: X | Délai: Y")
@@ -54,8 +54,26 @@ class BonDeCommandeTemplateTest < ActiveSupport::TestCase
 
     html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
 
-    assert_includes html, users(:one).full_name
     assert_includes html, "Avenue des Grandes-Communes 6"
+    assert_includes html, "Conducteur de travaux : —"
+  end
+
+  test "always shows the ordering user as the contact rédacteur de la commande, regardless of the conducteur de travaux" do
+    supplier = Supplier.create!(name: "Fournisseur ouvert", email: "commandes@fournisseur.ch")
+    product = Product.create!(supplier: supplier, reference: "ART-OUVERT", name: "Article ouvert", famille: "Voirie", unit_price: 10.0, unite: "PCE")
+    order = Order.create!(
+      supplier: supplier, user: users(:one), order_date: Date.current, notes: "Chantier: X | Délai: Y",
+      conducteur_travaux: "Paul Dupont"
+    )
+    order.order_lines.create!(product: product, quantity: 1, unit_price: 10.0)
+
+    html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
+
+    assert_includes html, "Contact rédacteur de la commande :"
+    assert_includes html, users(:one).full_name
+    assert_includes html, users(:one).email
+    assert_includes html, "Contact chantier :"
+    assert_includes html, "Conducteur de travaux : Paul Dupont"
   end
 
   test "shows the chantier's own contremaître and technicien when a matching chantier exists" do
