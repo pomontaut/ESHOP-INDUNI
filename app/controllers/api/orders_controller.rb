@@ -249,7 +249,7 @@ class Api::OrdersController < ApplicationController
       # The order number itself is never user-editable content, so any
       # ESHOP_NN pattern found is corrected to the real one rather than left
       # to silently mismatch the attachment.
-      subject = subject.gsub(/ESHOP_\d+/, order.number) if subject&.match?(/ESHOP_\d+/)
+      subject = subject.gsub(/ESHOP(?:_INDUNI)?_\d+/, order.number) if subject&.match?(/ESHOP(?:_INDUNI)?_\d+/)
       body    = params[:body].to_s.strip.presence
       # Persisted so a failed send can be retried later (see #resend) with the
       # exact same recipients/message, instead of falling back to generic

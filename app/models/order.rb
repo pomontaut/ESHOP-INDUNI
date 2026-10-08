@@ -39,9 +39,9 @@ class Order < ApplicationRecord
   # concurrent submissions — purely cosmetic if two land at once, since the
   # actual number is still assigned atomically by set_number on save.
   def self.next_number
-    last = where("number LIKE 'ESHOP_%'").order(:id).last
-    seq = last ? last.number.gsub("ESHOP_", "").to_i + 1 : 1
-    "ESHOP_#{seq.to_s.rjust(2, '0')}"
+    last_seq = where("number LIKE 'ESHOP%'").pluck(:number)
+                 .filter_map { |n| n[/(\d+)\z/]&.to_i }.max || 0
+    "ESHOP_INDUNI_#{(last_seq + 1).to_s.rjust(2, '0')}"
   end
 
   def set_number

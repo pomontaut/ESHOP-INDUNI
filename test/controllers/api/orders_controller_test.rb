@@ -29,7 +29,7 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     get next_number_api_orders_url
     assert_response :success
     predicted = JSON.parse(response.body)["number"]
-    assert_match(/\AESHOP_\d+\z/, predicted)
+    assert_match(/\AESHOP_INDUNI_\d+\z/, predicted)
 
     post api_orders_url, params: {
       chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",

@@ -3562,7 +3562,7 @@ async function sendOrderByEmail(e) {
   // réellement attribué à l'envoi (ESHOP_xx) — utiliser un numéro provisoire
   // sans rapport (ex. BC-XXXXXX) faisait apparaître un numéro différent selon
   // qu'on regardait l'aperçu ou l'e-mail effectivement reçu.
-  let no = 'ESHOP_?';
+  let no = 'ESHOP_INDUNI_?';
   try {
     const r = await fetch('/api/orders/next_number');
     const data = await r.json();
