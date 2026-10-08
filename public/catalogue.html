@@ -29,7 +29,7 @@
 .prodBody{padding:9px}
 .prod h4{font-size:12px;line-height:1.2;min-height:32px;margin:0 0 4px}
 .desc{font-size:10px;line-height:1.2;min-height:16px}
-.article{font-size:10px;margin:4px 0}.qtePalette{font-size:10px;color:#8994a3;text-align:right;margin:0 0 6px}.piecePrice{font-size:10px;color:#8994a3;text-align:right;margin:-4px 0 4px}
+.article{font-size:10px;margin:4px 0}.stockBadge{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;margin:0 0 4px}.stockOk{background:#dcfce7;color:#176b28}.stockAsk{background:#ffedd5;color:#c2410c}.qtePalette{font-size:10px;color:#8994a3;text-align:right;margin:0 0 6px}.piecePrice{font-size:10px;color:#8994a3;text-align:right;margin:-4px 0 4px}
 .price{font-size:22px;padding-top:8px}
 .unit{font-size:12px}
 .add{margin-top:10px;padding:9px;font-size:14px}
@@ -1322,6 +1322,41 @@ function findEquivalents(p){
   if(!p.equivalenceKey) return [];
   return PRODUCTS.filter(x=>x.equivalenceKey===p.equivalenceKey && x._idx!==p._idx);
 }
+// Marqueur délai (vert = en stock, orange = sur demande) : stockStatus
+// vient du catalogue (voir Api::ProductsController#index) et n'est renseigné
+// que lorsque l'information nous est transmise explicitement — un produit
+// sans valeur n'affiche aucun marqueur plutôt qu'une supposition.
+function stockStatusBadgeHtml(p){
+  if(p.stockStatus==='stock') return '<div class="stockBadge stockOk" title="En stock">🟢 En stock</div>';
+  if(p.stockStatus==='sur_demande') return '<div class="stockBadge stockAsk" title="Sur demande — délai à confirmer par le fournisseur">🟠 Sur demande</div>';
+  return '';
+}
+// Estimation purement indicative affichée dans le panier (jamais reportée
+// dans la commande elle-même : seul le délai saisi manuellement à l'étape
+// "Générer le bon de commande" y figure). "En stock" = livraison sous 24h
+// ouvrées si commandé le matin avant 10h, sinon le jour ouvré suivant ;
+// "Sur demande" = délai à confirmer par le fournisseur, pas de date promise.
+const STOCK_MORNING_CUTOFF_HOUR = 10;
+function addBusinessDays(date, days){
+  const d = new Date(date);
+  let remaining = days;
+  while (remaining > 0) {
+    d.setDate(d.getDate() + 1);
+    if (d.getDay() !== 0 && d.getDay() !== 6) remaining--;
+  }
+  return d;
+}
+function estimatedDeliveryLabel(p){
+  if (!p) return '';
+  if (p.stockStatus === 'sur_demande') return '⏳ Sur demande — délai à confirmer par le fournisseur';
+  if (p.stockStatus !== 'stock') return '';
+  const now = new Date();
+  const isWeekend = now.getDay() === 0 || now.getDay() === 6;
+  const beforeCutoff = !isWeekend && now.getHours() < STOCK_MORNING_CUTOFF_HOUR;
+  const target = addBusinessDays(now, beforeCutoff ? 1 : 2);
+  return `📦 Livraison théorique : ${target.toLocaleDateString('fr-CH', { weekday: 'short', day: '2-digit', month: '2-digit' })}`;
+}
+
 function selfBestBadge(p){
   const eq=findEquivalents(p);
   if(!eq.length) return '';
@@ -1442,7 +1477,7 @@ function prixM2HtmlInduni(p){
   if(p.prixM2==null||!isFinite(Number(p.prixM2))||Number(p.prixM2)<=0) return '';
   return `<div class="piecePrice">≈ ${fmt(p.prixM2)} / m² <small style="opacity:.75">(référentiel interne)</small></div>`;
 }
-function productCard(p){const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation); return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':productIconOrDiamHtmlInduni(p)}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}${ecoBadgeHtmlInduni(p)}</div><div class="prodBody"><h4>${productTitleHtmlInduni(p)}</h4><div class="desc">${productMetaHtmlInduni(p)}</div><div class="article">N° article : ${esc(p.article)}</div>${p.qtePalette?`<div class="qtePalette">Quantité par palette : ${esc(p.qtePalette)}</div>`:""}${p.synonymes?`<div class="synHint">Recherche aussi : ${esc(p.synonymes.split(/\s+/).slice(0,8).join(", "))}</div>`:""}<div class="price">${priceHtml(p.prix,p.confidential,p.unite)}</div>${piecePriceHtmlInduni(p)}${prixM2HtmlInduni(p)}${(()=>{
+function productCard(p){const inCart=cart.some(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation); return `<div class="prod"><div class="prodImg" style="${photoUrl(p)?`background-image:url('${photoUrl(p)}')`:`background-color:${tileColor(p.famille)}`}">${photoUrl(p)?'':productIconOrDiamHtmlInduni(p)}<span class="tag">${esc(p.catalog)}</span>${selfBestBadge(p)}${ecoBadgeHtmlInduni(p)}</div><div class="prodBody"><h4>${productTitleHtmlInduni(p)}</h4><div class="desc">${productMetaHtmlInduni(p)}</div><div class="article">N° article : ${esc(p.article)}</div>${stockStatusBadgeHtml(p)}${p.qtePalette?`<div class="qtePalette">Quantité par palette : ${esc(p.qtePalette)}</div>`:""}${p.synonymes?`<div class="synHint">Recherche aussi : ${esc(p.synonymes.split(/\s+/).slice(0,8).join(", "))}</div>`:""}<div class="price">${priceHtml(p.prix,p.confidential,p.unite)}</div>${piecePriceHtmlInduni(p)}${prixM2HtmlInduni(p)}${(()=>{
   const eq=findEquivalents(p);
   if(!eq.length) return '';
   const cp=comparablePrice(p);
@@ -1633,7 +1668,7 @@ function updateCartWeightInduni(){
   document.getElementById('weightLabel').innerHTML=`Poids total (indicatif)${missing?` · <span style="color:#b45309">${missing} article(s) sans poids connu</span>`:''}`;
   document.getElementById('weightTotal').innerHTML=`${totalWeight.toLocaleString('fr-CH')} kg <span style="font-size:11px;color:${pct>=100?'#b91c1c':'#546273'}">(${pct}% d'un camion ${TRUCK_CAPACITY_KG_INDUNI/1000}t)</span>`;
 }
-function updateCart(){document.getElementById('cartCount').textContent=cart.length?`(${cart.length})`:''; const box=document.getElementById('cartItems'); const supplier=cartSupplier(); const chantierVal=(document.getElementById('chantier')||{}).value||''; box.innerHTML=cart.length?`<div style="padding:10px 12px;margin-bottom:8px;border-radius:10px;background:#eef5ff;color:#0b4f9c;font-weight:900">Panier fournisseur : ${esc(supplier)}</div>`+cart.map((i,k)=>`<div class="cartRow"><div class="thumb" style="${photoUrl(i)?`background-image:url('${photoUrl(i)}')`:`background-color:${tileColor(i.famille)}`}">${photoUrl(i)?'':`<span class="thumbGlyph">${esc(i.icone||'📦')}</span>`}</div><div><b>${esc(i.designation)}</b><div class="muted">${esc(i.article)} · ${esc(i.unite)}</div><div class="qty"><button onclick="qty(${k},-1)">−</button><input type="number" min="0" step="any" value="${i.qty}" onchange="setQty(${k},this.value)" style="width:56px;text-align:center;border:1px solid #ddd;border-radius:6px;height:28px"><span class="muted" style="font-size:12px">${esc(i.unite)}</span><button onclick="qty(${k},1)">+</button></div></div><div style="text-align:right"><b>${amountOrConfidential(effectivePriceInduni(i,chantierVal)*i.qty,i.confidential)}</b><button onclick="removeItem(${k})" style="margin-top:8px;border:0;background:white;color:#999;font-size:20px">×</button></div></div>`).join('')+(cart.some(i=>i.confidential)?'<div class="muted" style="padding:6px 4px;font-size:11.5px">🔒 Le prix des article(s) confidentiel(s) n\'est pas affiché ici (visible uniquement dans l\'Analyse achat) et n\'est pas inclus dans les totaux ci-dessous.</div>':'')+cartPrefaBetonPaletteNoteHtml()+cartComparatifTriggerHtml():'<p class="muted">Panier vide.</p>'; const sub=cart.reduce((s,i)=>s+effectivePriceInduni(i,chantierVal)*i.qty,0); document.getElementById('subTotal').textContent=fmt(sub); updateCartWeightInduni(); const td=transportDetailsInduni(sub,supplier); const rplpLine=document.getElementById('rplpLine'); if(supplier==='Canplast'){rplpLine.style.display='';document.getElementById('rplpTotal').textContent=transportIncluded()?fmt(td.rplp):'Non inclus';}else{rplpLine.style.display='none';} document.getElementById('transportLineLabel').textContent=supplier==='HGC'?'Transport HGC fixe':(supplier==='Canplast'?'Livraison Canplast':(supplier==='Leuba HIAG'?'Leuba HIAG franco':(supplier==='MBT'?'Livraison MBT':(supplier==='CreaBeton'?'Transport CreaBeton':(supplier==='ALZO AG'?'Transport ALZO AG':(supplier==='Soreval'?'Transport Soreval':(supplier==='BTest'?'Remise de volume BTest':(supplier==='LCBE'?'Forfait déplacement LCBE':(supplier==='Swisspor'?'Transport Swisspor':'Transport'))))))))); const transportPart=(supplier==='Canplast'||supplier==='CreaBeton')?(td.transport+td.crane):td.totalTransport; document.getElementById('transportTotal').textContent=transportIncluded()?fmt(transportPart):'Non inclus'; document.getElementById('grandTotal').textContent=fmt(effectiveOrderTotalInduni(sub,supplier));; toggleCanplastOptions();toggleCanplastZoneBlock();toggleSorevalZoneBlock();toggleSupplierFields();toggleBillingMerchant();updateRequiredSupplierFields();}
+function updateCart(){document.getElementById('cartCount').textContent=cart.length?`(${cart.length})`:''; const box=document.getElementById('cartItems'); const supplier=cartSupplier(); const chantierVal=(document.getElementById('chantier')||{}).value||''; box.innerHTML=cart.length?`<div style="padding:10px 12px;margin-bottom:8px;border-radius:10px;background:#eef5ff;color:#0b4f9c;font-weight:900">Panier fournisseur : ${esc(supplier)}</div>`+cart.map((i,k)=>`<div class="cartRow"><div class="thumb" style="${photoUrl(i)?`background-image:url('${photoUrl(i)}')`:`background-color:${tileColor(i.famille)}`}">${photoUrl(i)?'':`<span class="thumbGlyph">${esc(i.icone||'📦')}</span>`}</div><div><b>${esc(i.designation)}</b><div class="muted">${esc(i.article)} · ${esc(i.unite)}</div>${estimatedDeliveryLabel(i)?`<div class="muted" style="font-size:11px">${estimatedDeliveryLabel(i)}</div>`:""}<div class="qty"><button onclick="qty(${k},-1)">−</button><input type="number" min="0" step="any" value="${i.qty}" onchange="setQty(${k},this.value)" style="width:56px;text-align:center;border:1px solid #ddd;border-radius:6px;height:28px"><span class="muted" style="font-size:12px">${esc(i.unite)}</span><button onclick="qty(${k},1)">+</button></div></div><div style="text-align:right"><b>${amountOrConfidential(effectivePriceInduni(i,chantierVal)*i.qty,i.confidential)}</b><button onclick="removeItem(${k})" style="margin-top:8px;border:0;background:white;color:#999;font-size:20px">×</button></div></div>`).join('')+(cart.some(i=>i.confidential)?'<div class="muted" style="padding:6px 4px;font-size:11.5px">🔒 Le prix des article(s) confidentiel(s) n\'est pas affiché ici (visible uniquement dans l\'Analyse achat) et n\'est pas inclus dans les totaux ci-dessous.</div>':'')+cartPrefaBetonPaletteNoteHtml()+cartComparatifTriggerHtml():'<p class="muted">Panier vide.</p>'; const sub=cart.reduce((s,i)=>s+effectivePriceInduni(i,chantierVal)*i.qty,0); document.getElementById('subTotal').textContent=fmt(sub); updateCartWeightInduni(); const td=transportDetailsInduni(sub,supplier); const rplpLine=document.getElementById('rplpLine'); if(supplier==='Canplast'){rplpLine.style.display='';document.getElementById('rplpTotal').textContent=transportIncluded()?fmt(td.rplp):'Non inclus';}else{rplpLine.style.display='none';} document.getElementById('transportLineLabel').textContent=supplier==='HGC'?'Transport HGC fixe':(supplier==='Canplast'?'Livraison Canplast':(supplier==='Leuba HIAG'?'Leuba HIAG franco':(supplier==='MBT'?'Livraison MBT':(supplier==='CreaBeton'?'Transport CreaBeton':(supplier==='ALZO AG'?'Transport ALZO AG':(supplier==='Soreval'?'Transport Soreval':(supplier==='BTest'?'Remise de volume BTest':(supplier==='LCBE'?'Forfait déplacement LCBE':(supplier==='Swisspor'?'Transport Swisspor':'Transport'))))))))); const transportPart=(supplier==='Canplast'||supplier==='CreaBeton')?(td.transport+td.crane):td.totalTransport; document.getElementById('transportTotal').textContent=transportIncluded()?fmt(transportPart):'Non inclus'; document.getElementById('grandTotal').textContent=fmt(effectiveOrderTotalInduni(sub,supplier));; toggleCanplastOptions();toggleCanplastZoneBlock();toggleSorevalZoneBlock();toggleSupplierFields();toggleBillingMerchant();updateRequiredSupplierFields();}
 const PREFA_BETON_PALETTE_SKIP_SOUS_INDUNI=new Set(['Outillage béton']);
 function cartPrefaBetonPaletteNoteHtml(){
   const hasPrefa=cart.some(i=>i.famille==='Préfa-béton'&&!PREFA_BETON_PALETTE_SKIP_SOUS_INDUNI.has(i.sousFamille));

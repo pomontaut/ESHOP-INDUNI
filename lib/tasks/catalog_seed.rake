@@ -160,6 +160,7 @@ namespace :catalog do
           image:             it["image"],
           equivalence_key:   it["equivalenceKey"].presence,
           qte_palette:       it["qtePalette"],
+          stock_status:      it["stockStatus"],
           poids_kg:          it["poids"],
           prix_m2:           it["prixM2"],
           prix_externe:      it["prixExterne"],
