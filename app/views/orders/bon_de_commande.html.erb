@@ -50,9 +50,6 @@ th:not(:first-child){text-align:right}
 td{padding:4px;font-size:9pt;vertical-align:top;border-bottom:1px solid #ddd}
 td:not(:first-child){text-align:right}
 .tr-total td{border-top:2px solid #111;border-bottom:none;font-weight:bold;font-size:11pt;padding-top:7px}
-.infos{margin-top:12px}
-.infos h3{font-size:11pt;font-weight:bold;margin:0 0 5px}
-.ig{display:grid;grid-template-columns:150px 1fr;gap:2px 8px;font-size:9.5pt}
 .factaddr{margin-top:10px;font-size:9.5pt;line-height:1.4}
 .sigrow{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:28px}
 .sigbox{border-top:1px solid #111;padding-top:3px;font-size:9pt}
@@ -132,23 +129,15 @@ td:not(:first-child){text-align:right}
     <tr class="tr-total">
       <td colspan="5">Montant total commande H.T.</td>
       <% if confidential_pricing %>
-      <td>—</td>
+      <td></td>
       <td>—</td>
       <% else %>
-      <td>CHF</td>
+      <td></td>
       <td>CHF <%= fmt.call(@order.total) %></td>
       <% end %>
     </tr>
   </tbody>
 </table>
-
-<div class="infos">
-  <h3>Informations complémentaires sur le chantier</h3>
-  <div class="ig">
-    <span>Contremaître :</span><span><%= chantier_record&.contremaitre.presence || contact_livraison %></span>
-    <span>Technicien :</span><span><%= chantier_record&.technicien.presence || "—" %></span>
-  </div>
-</div>
 
 <div class="factaddr">
   <strong>Adresse de facturation :</strong><br>

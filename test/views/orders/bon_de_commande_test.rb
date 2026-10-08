@@ -99,7 +99,7 @@ class BonDeCommandeTemplateTest < ActiveSupport::TestCase
     assert_no_match(/Annule et remplace/i, html)
   end
 
-  test "shows the chantier's own contremaître and technicien when a matching chantier exists" do
+  test "no longer shows the old 'Informations complémentaires sur le chantier' block, superseded by Contact chantier" do
     Chantier.create!(nom: "12601-Halle des Rouettes", contremaitre: "PESSOA FRANCISCO Joni", technicien: "Jean Dupont")
     supplier = Supplier.create!(name: "Fournisseur ouvert", email: "commandes@fournisseur.ch")
     product = Product.create!(supplier: supplier, reference: "ART-OUVERT", name: "Article ouvert", famille: "Voirie", unit_price: 10.0, unite: "PCE")
@@ -108,6 +108,18 @@ class BonDeCommandeTemplateTest < ActiveSupport::TestCase
 
     html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
 
-    assert_includes html, "Jean Dupont"
+    assert_no_match(/Informations complémentaires sur le chantier/, html)
+  end
+
+  test "shows a single total amount on the Montant total row, never a lone CHF in the Prix unit. column" do
+    supplier = Supplier.create!(name: "Fournisseur ouvert", email: "commandes@fournisseur.ch")
+    product = Product.create!(supplier: supplier, reference: "ART-OUVERT", name: "Article ouvert", famille: "Voirie", unit_price: 10.0, unite: "PCE")
+    order = Order.create!(supplier: supplier, user: users(:one), order_date: Date.current, notes: "Chantier: X | Délai: Y")
+    order.order_lines.create!(product: product, quantity: 3, unit_price: 10.0)
+
+    html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
+
+    assert_match(/<tr class="tr-total">.*?<td>CHF 30\.00<\/td>\s*<\/tr>/m, html)
+    assert_no_match(/<tr class="tr-total">.*?<td>CHF<\/td>/m, html)
   end
 end
