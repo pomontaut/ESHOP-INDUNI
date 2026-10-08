@@ -522,4 +522,81 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
   ensure
     User.find_by(email: "approver.test@induni.ch")&.destroy
   end
+
+  test "next_number returns a -V2 version number when modifies_order_id is provided" do
+    original = orders(:one)
+    original.update!(number: "ESHOP_INDUNI_38")
+
+    get next_number_api_orders_url, params: { modifies_order_id: original.id }
+    assert_response :success
+    assert_equal "ESHOP_INDUNI_38-V2", JSON.parse(response.body)["number"]
+  end
+
+  test "create modifying a previous order reuses its number suffixed -V2" do
+    original = orders(:one)
+    original.update!(number: "ESHOP_INDUNI_38")
+
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: original.supplier.name,
+      modifies_order_id: original.id,
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+    }
+    assert_response :success
+    assert_equal "ESHOP_INDUNI_38-V2", JSON.parse(response.body)["order_number"]
+  end
+
+  test "cancel notifies the supplier, marks the order cancelled and keeps it out of future cancellation" do
+    order = orders(:one)
+    order.update!(user: users(:one), sent_to: "fournisseur@example.ch")
+    ActionMailer::Base.deliveries.clear
+
+    post cancel_api_order_url(order)
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body["success"]
+    assert body["cancelledAt"].present?
+
+    order.reload
+    assert order.cancelled?
+    assert order.excluded_from_reporting?
+
+    mail = ActionMailer::Base.deliveries.last
+    assert_equal [ "fournisseur@example.ch" ], mail.to
+    assert_match(/Annulation/, mail.subject)
+    assert_includes mail.subject, order.number
+
+    post cancel_api_order_url(order)
+    assert_response :unprocessable_entity
+  end
+
+  test "cancel refuses to cancel another user's order for a non-admin" do
+    order = orders(:one)
+    order.update!(user: users(:one))
+    delete logout_url
+    post login_url, params: { email: users(:two).email, password: "password123" }
+
+    post cancel_api_order_url(order)
+    assert_response :not_found
+    assert_not order.reload.cancelled?
+  end
+
+  test "index flags a cancelled order and a superseded order as excluded from reporting" do
+    cancelled = orders(:one)
+    cancelled.update!(cancelled_at: Time.current)
+
+    original = orders(:two)
+    Order.create!(supplier: original.supplier, order_date: Date.current, modifies_order: original)
+
+    get api_orders_url
+    assert_response :success
+    rows = JSON.parse(response.body)
+
+    cancelled_row = rows.find { |o| o["id"] == cancelled.id }
+    assert cancelled_row["cancelled"]
+    assert cancelled_row["excludedFromReporting"]
+
+    superseded_row = rows.find { |o| o["id"] == original.id }
+    assert superseded_row["supersededByNumber"].present?
+    assert superseded_row["excludedFromReporting"]
+  end
 end

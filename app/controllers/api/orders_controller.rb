@@ -14,7 +14,8 @@ class Api::OrdersController < ApplicationController
   # Lets the client show/pre-fill the real order number in the "Vérifier et
   # envoyer" step before the order actually exists. See Order.next_number.
   def next_number
-    render json: { number: Order.next_number }
+    modifies_order = Order.find_by(id: params[:modifies_order_id]) if params[:modifies_order_id].present?
+    render json: { number: modifies_order ? Order.next_version_number(modifies_order) : Order.next_number }
   end
 
   # Manual fallback for the reception accusé — the automated e-mail button
@@ -33,7 +34,7 @@ class Api::OrdersController < ApplicationController
 
   def index
     orders = current_user&.admin? ? Order.all : Order.where(user: current_user)
-    orders = orders.includes(:supplier, :order_lines, :user).order(created_at: :desc).limit(100)
+    orders = orders.includes(:supplier, :order_lines, :user, :revisions, :modifies_order).order(created_at: :desc).limit(100)
     # Prix net confidentiel (fournisseur sous accord de confidentialité, ex.
     # Sika) : seule l'Analyse achat (accès restreint aux Achats) doit voir le
     # vrai montant. On le masque ici pour quiconque n'a pas ce droit, pour
@@ -60,6 +61,11 @@ class Api::OrdersController < ApplicationController
         user_sector:     o.user&.sector,
         receptionConfirmedAt: o.reception_confirmed_at&.strftime("%d.%m.%Y %H:%M"),
         emailSent:       o.email_sent_at.present?,
+        cancelled:       o.cancelled?,
+        cancelledAt:     o.cancelled_at&.strftime("%d.%m.%Y %H:%M"),
+        modifiesOrderNumber:  o.modifies_order&.number,
+        supersededByNumber:   o.revisions.max_by(&:created_at)&.number,
+        excludedFromReporting: o.excluded_from_reporting?,
         items:           o.order_lines.map { |l|
           { article: l.product&.reference, designation: l.product&.name, qty: l.quantity,
             prix: masked ? 0 : l.unit_price.to_f, catalogPrix: masked ? nil : l.catalog_price&.to_f }
@@ -249,7 +255,7 @@ class Api::OrdersController < ApplicationController
       # The order number itself is never user-editable content, so any
       # ESHOP_NN pattern found is corrected to the real one rather than left
       # to silently mismatch the attachment.
-      subject = subject.gsub(/ESHOP(?:_INDUNI)?_\d+/, order.number) if subject&.match?(/ESHOP(?:_INDUNI)?_\d+/)
+      subject = subject.gsub(/ESHOP(?:_INDUNI)?_\d+(?:-V\d+)?/, order.number) if subject&.match?(/ESHOP(?:_INDUNI)?_\d+(?:-V\d+)?/)
       body    = params[:body].to_s.strip.presence
       # Persisted so a failed send can be retried later (see #resend) with the
       # exact same recipients/message, instead of falling back to generic
@@ -341,6 +347,20 @@ class Api::OrdersController < ApplicationController
       OrderMailer.approval_refused(order).deliver_now rescue nil
     end
     render json: { success: true }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Commande introuvable" }, status: :not_found
+  end
+
+  # Annule une commande déjà envoyée : prévient le fournisseur par e-mail (il
+  # ne doit pas y donner suite) et la marque comme annulée pour que ses
+  # chiffres sortent des totaux du reporting/dashboard — elle reste visible
+  # dans l'historique complet, juste annotée.
+  def cancel
+    order = current_user&.admin? ? Order.find(params[:id]) : Order.find_by!(id: params[:id], user: current_user)
+    return render json: { error: "Cette commande est déjà annulée." }, status: :unprocessable_entity if order.cancelled?
+    order.update!(cancelled_at: Time.current)
+    OrderMailer.order_cancelled(order).deliver_now rescue nil
+    render json: { success: true, cancelledAt: order.cancelled_at.strftime("%d.%m.%Y %H:%M") }
   rescue ActiveRecord::RecordNotFound
     render json: { error: "Commande introuvable" }, status: :not_found
   end

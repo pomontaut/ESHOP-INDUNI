@@ -76,6 +76,29 @@ class BonDeCommandeTemplateTest < ActiveSupport::TestCase
     assert_includes html, "Conducteur de travaux : Paul Dupont"
   end
 
+  test "shows the ANNULE ET REMPLACE banner with the original order's number when modifying a previous order" do
+    supplier = Supplier.create!(name: "Fournisseur ouvert", email: "commandes@fournisseur.ch")
+    product = Product.create!(supplier: supplier, reference: "ART-OUVERT", name: "Article ouvert", famille: "Voirie", unit_price: 10.0, unite: "PCE")
+    original = Order.create!(supplier: supplier, user: users(:one), order_date: Date.current, notes: "Chantier: X | Délai: Y")
+    order = Order.create!(supplier: supplier, user: users(:one), order_date: Date.current, notes: "Chantier: X | Délai: Y", modifies_order: original)
+    order.order_lines.create!(product: product, quantity: 1, unit_price: 10.0)
+
+    html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
+
+    assert_match(/Annule et remplace la commande N°\s*#{Regexp.escape(original.number)}/i, html)
+  end
+
+  test "shows no ANNULE ET REMPLACE banner for a regular order" do
+    supplier = Supplier.create!(name: "Fournisseur ouvert", email: "commandes@fournisseur.ch")
+    product = Product.create!(supplier: supplier, reference: "ART-OUVERT", name: "Article ouvert", famille: "Voirie", unit_price: 10.0, unite: "PCE")
+    order = Order.create!(supplier: supplier, user: users(:one), order_date: Date.current, notes: "Chantier: X | Délai: Y")
+    order.order_lines.create!(product: product, quantity: 1, unit_price: 10.0)
+
+    html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
+
+    assert_no_match(/Annule et remplace/i, html)
+  end
+
   test "shows the chantier's own contremaître and technicien when a matching chantier exists" do
     Chantier.create!(nom: "12601-Halle des Rouettes", contremaitre: "PESSOA FRANCISCO Joni", technicien: "Jean Dupont")
     supplier = Supplier.create!(name: "Fournisseur ouvert", email: "commandes@fournisseur.ch")

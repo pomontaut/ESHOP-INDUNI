@@ -65,6 +65,12 @@ td:not(:first-child){text-align:right}
   <p>Du <%= l(@order.order_date, format: '%d/%m/%Y') if @order.order_date %></p>
 </div>
 
+<% if @order.modifies_order %>
+<div style="text-align:center;color:#c00000;font-weight:900;font-size:12pt;text-transform:uppercase;margin:-6px 0 12px;border:2px solid #c00000;padding:6px;border-radius:4px">
+  Annule et remplace la commande N° <%= @order.modifies_order.number %>
+</div>
+<% end %>
+
 <div class="hgrid">
   <div class="hcol">
     <div class="htitle">CLIENT</div>
