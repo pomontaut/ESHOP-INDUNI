@@ -73,6 +73,30 @@ class CatalogSeedTaskTest < ActiveSupport::TestCase
       "an already-existing Sika supplier must be corrected to confidential_pricing: true, not left as-is"
   end
 
+  test "catalog:seed sets magasin@induni.ch for Dépôt INDUNI suppliers still without an e-mail" do
+    [ "EFCO", "HILTI", "Matériel Induni" ].each do |name|
+      Supplier.where(name: name).delete_all
+      Supplier.create!(name: name)
+    end
+
+    run_seed
+
+    [ "EFCO", "HILTI", "Matériel Induni" ].each do |name|
+      assert_equal "magasin@induni.ch", Supplier.find_by!(name: name).email,
+        "#{name} must default to the internal magasin e-mail, not an external supplier address"
+    end
+  end
+
+  test "catalog:seed never overwrites a Dépôt INDUNI supplier's e-mail once an admin has customized it" do
+    efco = Supplier.where(name: "EFCO").first_or_create!
+    efco.update!(email: "admin-override@induni.ch")
+
+    run_seed
+
+    assert_equal "admin-override@induni.ch", efco.reload.email,
+      "an e-mail already set by an admin must never be silently overwritten"
+  end
+
   private
 
   def run_seed

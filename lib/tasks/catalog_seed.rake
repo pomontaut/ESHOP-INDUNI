@@ -72,22 +72,20 @@ namespace :catalog do
         email: "commandes@swisspor.com", phone: "+41 21 948 48 80",
         postal_code: "1618", city: "Châtel-St-Denis", country_code: "CH"
       },
-      # Coordonnées de commande non communiquées dans la liste de prix
-      # fournie : à compléter par un admin (fiche fournisseur) avant le
-      # premier envoi réel.
-      "EFCO" => {},
+      # Décision Achats : toute commande passée depuis le Dépôt INDUNI (EFCO,
+      # HILTI, Matériel Induni) part systématiquement à magasin@induni.ch,
+      # jamais directement au fournisseur externe — voir la correction
+      # explicite ci-dessous (ne s'applique qu'aux nouveaux enregistrements).
+      "EFCO" => { email: "magasin@induni.ch" },
       # Extrait de l'accord-cadre HILTI (onglet "BC Standard" du catalogue
       # BC Induni), prix nets déjà calculés (Bruttopreis - Rabatt %) : forets,
-      # burins, disques et lames couramment commandés. Coordonnées de
-      # commande non communiquées — à compléter par un admin avant le
-      # premier envoi réel.
-      "HILTI" => {},
+      # burins, disques et lames couramment commandés.
+      "HILTI" => { email: "magasin@induni.ch" },
       # Export ABACUS du dépôt Induni (997 articles, tous Type_categorie
       # "Vente" / dépôt 230) : matériel et équipement propre à Induni
       # (échelles, EPI, outillage, signalisation...), pas un fournisseur
-      # externe — pas de coordonnées de commande, c'est un transfert
-      # interne depuis le dépôt.
-      "Matériel Induni" => {}
+      # externe — c'est un transfert interne depuis le dépôt.
+      "Matériel Induni" => { email: "magasin@induni.ch" }
     }.freeze
 
     # "Alzo" (mauvaise casse/nom, remplacé par "ALZO AG") a été seedé par
@@ -138,6 +136,14 @@ namespace :catalog do
     # personnalisation admin légitime à préserver : Sika doit toujours être
     # confidentiel.
     Supplier.where(name: "Sika", confidential_pricing: false).update_all(confidential_pricing: true)
+
+    # Les 3 catalogues du Dépôt INDUNI (EFCO, HILTI, Matériel Induni) ont pu
+    # être auto-créés sans e-mail avant que ce seed ne tourne — contrairement
+    # à Sika ci-dessus, on ne force magasin@induni.ch que si l'e-mail est
+    # encore vide, pour ne jamais écraser une adresse qu'un admin aurait
+    # déjà personnalisée depuis (Admin > Fournisseurs).
+    Supplier.where(name: [ "EFCO", "HILTI", "Matériel Induni" ], email: [ nil, "" ])
+            .update_all(email: "magasin@induni.ch")
 
     catalog_path = Rails.root.join("db/seed_data/catalog_products.json")
     if File.exist?(catalog_path)
