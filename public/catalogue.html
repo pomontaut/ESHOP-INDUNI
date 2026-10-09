@@ -632,7 +632,12 @@ const CANPLAST_CONFIG = {
   },
 };
 
+const SWISSPOR_FAMILY_PHOTOS = {
+  'Isolation': '/images/categories/swisspor-isolation-generale.png'
+};
 const SUBFAMILY_PHOTOS = {
+  'Isolation|Accessoires pour chapes flottantes': '/images/categories/swisspor-accessoires-chapes-flottantes.png',
+  'Isolation|AIROFOM': '/images/categories/swisspor-airofom.png',
   'Ciments & Bétons|Accessoires béton/mortiers': '/images/products/hgc-caisse-mortier-plastique-200l.png',
   'Canalisations PVC|Tuyau compact drainage': '/images/categories/pvc-tuyau-drainage.png',
   'Canalisations PVC|Tuyaux compact standard': '/images/categories/pvc-tuyau-compact-standard.png',
@@ -954,7 +959,10 @@ function renderFamily(){
   if(state.catalog==='HGC'&&HGC_GROUP_FAMILIES[state.famille]) return renderFamilyGroupPage(state.famille);
   const items=PRODUCTS.filter(p=>p.catalog===state.catalog&&p.famille===state.famille), subs=group(items,'sousFamille');
   const famCfg=(CANPLAST_CONFIG[state.famille]||HGC_CONFIG[state.famille]||CREABETON_CONFIG[state.famille]||MBT_CONFIG[state.famille]||{});
-  const famPhoto=famCfg.photo||null;
+  // Swisspor n'a pas de config dédiée comme les autres catalogues ci-dessus
+  // : photo générique de secours pour les sous-familles Isolation qui n'ont
+  // pas encore leur propre photo dans SUBFAMILY_PHOTOS.
+  const famPhoto=famCfg.photo||(state.catalog==='Swisspor'?SWISSPOR_FAMILY_PHOTOS[state.famille]:null)||null;
   const parentGroup=state.catalog==='HGC'?hgcParentGroupOf(state.famille):null;
   const groupCrumb=parentGroup?` › <a onclick='state.view="family";state.famille=${jsAttr(parentGroup)};state.sous=null;render()'>${esc(parentGroup)}</a>`:'';
   app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a>${groupCrumb} › ${esc(state.famille)}</div><div class="banner"><div style="font-size:70px">${esc(items[0]?.icone||'📦')}</div><div><h2>${esc(state.famille)}</h2><p>${items.length} articles · ${Object.keys(subs).length} sous-familles</p></div>${renderFunnelWidget(state.catalog,state.famille)}</div><div class="sectionTitle">Sommaire intermédiaire des sous-familles</div><div class="subgrid">${Object.entries(subs).sort((a,b)=>subFamilySortInduni(a[0],b[0])).map(([s,it])=>{const photo=SUBFAMILY_PHOTOS[state.famille+'|'+s]||famPhoto;return `<div class="sub" onclick='state.view="subfamily";state.sous=${jsAttr(s)};state.sous2=null;render()'>${photo?`<div class="subPhoto" style="background-image:url(${photo})"></div>`:''}<b>${esc(s)}</b><p class="muted">${it.length} articles<span class="sub2Badge">${hasLevel2Induni(it)?'détaillé':''}</span></p></div>`;}).join('')}</div>`}
@@ -1152,6 +1160,12 @@ function hasLevel2Induni(items){
 }
 
 const LEVEL2_PHOTOS={
+  'Isolation|AIROFOM|AIROFOM Bandes de rive': '/images/categories/swisspor-airofom-bandes-de-rive.png',
+  'Isolation|AIROFOM|AIROFOM Bandes de rive pré-découpées, avec feuille autocollante': '/images/categories/swisspor-airofom-bandes-de-rive-predecoupees-autocollante.png',
+  'Isolation|AIROFOM|AIROFOM Nattes de protection': '/images/categories/swisspor-airofom-nattes-de-protection.png',
+  'Isolation|AIROFOM|AIROFOM Nattes de protection béton': '/images/categories/swisspor-airofom-nattes-de-protection-beton.png',
+  'Isolation|AIROFOM|AIROFOM TDZ': '/images/categories/swisspor-airofom-tdz.png',
+  'Isolation|AIROFOM|Bandes de rive pré-découpées grises, avec feuille autocollante': '/images/categories/swisspor-bandes-de-rive-predecoupees-grises-autocollante.png',
   'Préfa-béton|Bordures & pavés|Bordure îlot': '/images/categories/creabeton-bordures-ilot.png',
   'Ciments & Bétons|Mortiers|Mortier Ecologique': '/images/categories/hgc-eco-responsable.png',
   'Ciments & Bétons|Ciments en sac|CEM II 42.5': '/images/categories/hgc-ciments-cem2.png',
