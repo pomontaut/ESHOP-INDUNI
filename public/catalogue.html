@@ -3827,8 +3827,8 @@ function fillChantierContact(){
   const contactEl=document.getElementById('contact');
   const phoneEl=document.getElementById('phone');
   if(adresseEl) adresseEl.value=[c.adresse,[c.npa,c.ville].filter(Boolean).join(' ')].filter(Boolean).join('\n');
-  if(contactEl && c.contact) contactEl.value=c.contact;
-  if(phoneEl && c.telephone) phoneEl.value=c.telephone;
+  if(contactEl && (c.contactLivraison||c.contact)) contactEl.value=c.contactLivraison||c.contact;
+  if(phoneEl && (c.telephoneLivraison||c.telephone)) phoneEl.value=c.telephoneLivraison||c.telephone;
   applyChantierVilleToCanplast(c.ville);
   applyChantierVilleToSoreval(c.ville);
 }

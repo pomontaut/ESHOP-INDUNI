@@ -69,7 +69,8 @@ class Admin::ChantiersController < ApplicationController
       :technicien, :natel_technicien, :email_technicien,
       :contremaitre, :natel_contremaitre, :email_contremaitre,
       :chef_equipe, :natel_chef_equipe, :email_chef_equipe,
-      :conducteur_travaux, :natel_conducteur_travaux, :email_conducteur_travaux
+      :conducteur_travaux, :natel_conducteur_travaux, :email_conducteur_travaux,
+      :contact_livraison, :natel_livraison, :email_livraison
     )
   end
 end

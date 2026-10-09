@@ -44,6 +44,8 @@ class Api::SessionsController < ApplicationController
             ville:       c.ville,
             contact:     c.contremaitre,
             telephone:   c.natel_contremaitre,
+            contactLivraison:   c.contact_livraison,
+            telephoneLivraison: c.natel_livraison,
             emailTechnicien: c.email_technicien,
             consortium:  c.consortium,
             canton:      c.canton
