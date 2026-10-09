@@ -2820,6 +2820,144 @@ function loadBrentPrices(){
   if(BRENT_PRICES) return Promise.resolve(BRENT_PRICES);
   return fetch('/brent_prices.json').then(r=>r.json()).then(d=>{BRENT_PRICES=d;return d}).catch(()=>({dates:[],values:[]}));
 }
+// ── Brent et surcharge Canplast superposés (Intelligence Buying) ───────────
+// Valeur Brent connue à la date la plus proche ≤ la date visée : les dates
+// d'effet Canplast ne tombent jamais pile sur un relevé Brent hebdomadaire.
+function brentValueOnOrBefore(dates,values,targetDate){
+  let result=null;
+  for(let i=0;i<dates.length;i++){
+    if(dates[i]>targetDate) break;
+    if(values[i]!=null) result=values[i];
+  }
+  return result;
+}
+// Régression linéaire simple (moindres carrés) : surcharge% = a×Brent + b.
+function linearRegressionV1(points){
+  const n=points.length;
+  if(n<2) return null;
+  const sumX=points.reduce((s,p)=>s+p[0],0), sumY=points.reduce((s,p)=>s+p[1],0);
+  const meanX=sumX/n, meanY=sumY/n;
+  let num=0,den=0;
+  points.forEach(([x,y])=>{ num+=(x-meanX)*(y-meanY); den+=(x-meanX)*(x-meanX); });
+  if(den===0) return null;
+  const a=num/den, b=meanY-a*meanX;
+  return {a,b};
+}
+// "Surcharge logique" (courbe jaune) : ce que donnerait une indexation
+// symétrique et continue sur le Brent, à comparer à la réalité du palier
+// Canplast (hausse rapide, baisse lente — effet "rockets and feathers").
+// Ajustée par régression sur les couples (Brent à la date d'effet,
+// surcharge annoncée) de l'historique connu — un modèle statistique
+// indicatif, jamais une donnée officielle Canplast.
+function canplastTheoreticalFit(cpTimeline,brentDates,brentValues){
+  const points=(cpTimeline||[]).map(r=>{
+    const b=brentValueOnOrBefore(brentDates,brentValues,r.effectiveDate);
+    return b!=null?[b,r.surchargePct]:null;
+  }).filter(Boolean);
+  return linearRegressionV1(points);
+}
+const BRENT_CP_RANGE_OPTIONS=[52,104,208,0];
+const DEFAULT_BRENT_CP_RANGE=104;
+function setBrentCpRange(n){ window._brentCpRange=n; renderIntelligenceBuyingDetail(); }
+function resetBrentCpRange(){ setBrentCpRange(DEFAULT_BRENT_CP_RANGE); }
+function brentCpRangeButtonsHtml(current){
+  return BRENT_CP_RANGE_OPTIONS.map(n=>{
+    const active=current===n;
+    const label=n===0?'Tout':(n>=104?Math.round(n/52)+' ans':n+' sem.');
+    return `<button class="miniBtn" style="${active?'background:#0b4f9c;color:white':'background:#eef2f7;color:#10233e'}" onclick="setBrentCpRange(${n})">${label}</button>`;
+  }).join(' ')+` <button class="miniBtn gray" onclick="resetBrentCpRange()">↺ Réinitialiser</button>`;
+}
+function onIntelCanplastGroupChange(codes){
+  window._selectedCanplastGroup=codes;
+  renderIntelligenceBuyingDetail();
+}
+// Position X d'une date ISO quelconque sur l'échelle temporelle du Brent
+// (interpolation calendaire continue, pas par index) — les dates d'effet
+// Canplast ne tombent jamais sur un relevé hebdomadaire Brent.
+function dateToFracV1(dateIso,startIso,endIso){
+  const toTime=s=>new Date(s+'T00:00:00Z').getTime();
+  const t=toTime(dateIso), t0=toTime(startIso), t1=toTime(endIso);
+  return t1>t0?(t-t0)/(t1-t0):0;
+}
+function svgBrentCanplastOverlayChart(brentDates,brentValues,cpTimeline,fit){
+  const w=700,h=300,padL=50,padR=58,padT=34,padB=28;
+  if(!brentDates.length) return '<p class="muted">Aucune donnée Brent chargée.</p>';
+  const startIso=brentDates[0], endIso=brentDates[brentDates.length-1];
+  const px=dateIso=>padL+(w-padL-padR)*dateToFracV1(dateIso,startIso,endIso);
+
+  const bNums=brentValues.filter(v=>v!=null);
+  if(!bNums.length) return '<p class="muted">Aucune donnée Brent chargée.</p>';
+  const bMin=Math.min(...bNums), bMax=Math.max(...bNums);
+  const bSpan=(bMax-bMin)||1, bLo=bMin-bSpan*0.08, bHi=bMax+bSpan*0.08;
+  const pyBrent=v=>padT+(h-padT-padB)*(1-(v-bLo)/((bHi-bLo)||1));
+
+  const cpValues=(cpTimeline||[]).map(r=>r.surchargePct);
+  const theoValues=fit?bNums.map(v=>fit.a*v+fit.b):[];
+  const allCp=[...cpValues,...theoValues];
+  const cMin=allCp.length?Math.min(...allCp):0, cMax=allCp.length?Math.max(...allCp):1;
+  const cSpan=(cMax-cMin)||1, cLo=cMin-cSpan*0.15, cHi=cMax+cSpan*0.15;
+  const pyCp=v=>padT+(h-padT-padB)*(1-(v-cLo)/((cHi-cLo)||1));
+
+  let brentPath='',started=false;
+  brentDates.forEach((d,i)=>{
+    const v=brentValues[i]; if(v==null) return;
+    const cx=px(d), cy=pyBrent(v);
+    brentPath+=(started?'L':'M')+cx.toFixed(1)+' '+cy.toFixed(1)+' ';
+    started=true;
+  });
+
+  // Courbe "surcharge logique" (jaune) : appliquée sur toute la période
+  // affichée à partir du Brent réel, pas seulement aux dates de hausse.
+  let theoPath='';
+  if(fit){
+    started=false;
+    brentDates.forEach((d,i)=>{
+      const v=brentValues[i]; if(v==null) return;
+      const cx=px(d), cy=pyCp(fit.a*v+fit.b);
+      theoPath+=(started?'L':'M')+cx.toFixed(1)+' '+cy.toFixed(1)+' ';
+      started=true;
+    });
+  }
+
+  // Surcharge réelle Canplast : paliers (plat puis saut vertical à chaque
+  // nouvelle date d'effet), échelle droite.
+  let cpPath='', cpDots='';
+  if(cpTimeline&&cpTimeline.length){
+    const firstX=Math.max(padL,px(cpTimeline[0].effectiveDate));
+    cpPath=`M ${padL.toFixed(1)} ${pyCp(cpTimeline[0].surchargePct).toFixed(1)} L ${firstX.toFixed(1)} ${pyCp(cpTimeline[0].surchargePct).toFixed(1)} `;
+    for(let i=0;i<cpTimeline.length;i++){
+      const r=cpTimeline[i];
+      const cx=px(r.effectiveDate), cy=pyCp(r.surchargePct);
+      cpPath+=`L ${cx.toFixed(1)} ${cy.toFixed(1)} `;
+      const nextX=(i+1<cpTimeline.length)?px(cpTimeline[i+1].effectiveDate):(w-padR);
+      cpPath+=`L ${nextX.toFixed(1)} ${cy.toFixed(1)} `;
+      cpDots+=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="9" fill="transparent"><title>${esc(dateFR(r.effectiveDate))} : ${r.surchargePct.toFixed(1)}%</title></circle><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3.5" fill="#1e3a8a"></circle>`;
+    }
+  }
+
+  const gridN=5; let grid='';
+  for(let g=0;g<=gridN;g++){
+    const bv=bLo+(bHi-bLo)*g/gridN, cv=cLo+(cHi-cLo)*g/gridN;
+    const y=pyBrent(bv);
+    grid+=`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-padR}" y2="${y.toFixed(1)}" stroke="#eef1f5" stroke-width="1"></line><text x="${padL-6}" y="${(y+3).toFixed(1)}" font-size="10" fill="#8994a3" text-anchor="end">${bv.toFixed(0)}</text><text x="${w-padR+6}" y="${(y+3).toFixed(1)}" font-size="10" fill="#1e3a8a" text-anchor="start">${cv.toFixed(0)}%</text>`;
+  }
+
+  let axisLabels=''; const seenYears=new Set();
+  brentDates.forEach((d,i)=>{
+    const year=d.slice(0,4);
+    if(seenYears.has(year)) return;
+    seenYears.add(year);
+    axisLabels+=`<text x="${px(d).toFixed(1)}" y="${h-8}" font-size="10" fill="#8994a3" text-anchor="middle">${esc(year)}</text>`;
+  });
+
+  const legend=`<g font-size="10" font-weight="800">
+    <line x1="${padL}" y1="18" x2="${padL+16}" y2="18" stroke="#c2410c" stroke-width="2.5"></line><text x="${padL+20}" y="21" fill="#8a3b12">Brent (USD/baril, gauche)</text>
+    <line x1="${padL+165}" y1="18" x2="${padL+181}" y2="18" stroke="#1e3a8a" stroke-width="2.5"></line><text x="${padL+185}" y="21" fill="#1e3a8a">Surcharge Canplast (%, droite)</text>
+    ${fit?`<line x1="${padL+375}" y1="18" x2="${padL+391}" y2="18" stroke="#eab308" stroke-width="2.5" stroke-dasharray="5,3"></line><text x="${padL+395}" y="21" fill="#92660a">Surcharge logique (modèle)</text>`:''}
+  </g>`;
+
+  return `<svg class="svgChart" viewBox="0 0 ${w} ${h}" role="img">${grid}${legend}<path d="${brentPath}" fill="none" stroke="#c2410c" stroke-width="2"></path>${theoPath?`<path d="${theoPath}" fill="none" stroke="#eab308" stroke-width="2.5" stroke-dasharray="6,4"></path>`:''}<path d="${cpPath}" fill="none" stroke="#1e3a8a" stroke-width="2.5"></path>${cpDots}${axisLabels}</svg>`;
+}
 function renderMarketIndices(){
   const crumbs='<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Indicateurs de marché</div>';
   app.innerHTML=crumbs+'<p class="muted">Chargement des indices…</p>';
@@ -2922,7 +3060,7 @@ function toggleCorrOverlay(){
 }
 function setEurChfRange(n){
   window._eurChfRange=n;
-  renderIntelligenceBuyingDetail(window._eurChfRates);
+  renderIntelligenceBuyingDetail();
 }
 function resetEurChfRange(){ setEurChfRange(DEFAULT_RANGE); }
 // Aligne deux séries hebdomadaires (dates ISO) sur leurs dates communes.
@@ -3243,13 +3381,17 @@ function loadUsdChfRates(){
 function renderIntelligenceBuying(){
   const crumbs='<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Intelligence Buying</div>';
   app.innerHTML=crumbs+'<p class="muted">Chargement…</p>';
-  loadEurChfRates().then(eurchf=>{
+  Promise.all([loadEurChfRates(),loadBrentPrices(),loadCanplastSurcharges()]).then(([eurchf,brent,canplast])=>{
     window._eurChfRates=eurchf;
-    renderIntelligenceBuyingDetail(eurchf);
+    window._brentPrices=brent;
+    window._canplastSurcharges=canplast;
+    renderIntelligenceBuyingDetail();
   });
 }
-function renderIntelligenceBuyingDetail(eurchf){
-  eurchf=eurchf||window._eurChfRates||{dates:[],values:[]};
+function renderIntelligenceBuyingDetail(){
+  const eurchf=window._eurChfRates||{dates:[],values:[]};
+  const brent=window._brentPrices||{dates:[],values:[]};
+  const canplast=window._canplastSurcharges||[];
   const crumbs='<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Intelligence Buying</div>';
   const defaultTransport=intelBuyingDefaultTransportPct();
   const presetOptions=Object.keys(INTEL_BUYING_PRESETS).map(k=>`<option value="${esc(k)}">${esc(k)}</option>`).join('');
@@ -3269,9 +3411,31 @@ function renderIntelligenceBuyingDetail(eurchf){
   const eurChfBlock=eValues.length?`<div class="analysisBlock"><h3>💱 Taux de change EUR/CHF</h3><p class="muted">Cours hebdomadaire (clôture du dernier jour de bourse).</p><div class="dashboardCards">${genericChangeTile('Évolution 1 semaine',eWeek,'')}${genericChangeTile('Évolution 4 semaines',eMonth,'')}${genericChangeTile('Évolution 1 an',eYear,'')}<div class="kpi"><small>Cours actuel</small><b style="font-size:22px">${eCurrent!=null?eCurrent.toFixed(4):'n/d'}</b><small class="muted">EUR/CHF</small></div></div><div class="chartCard" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">EUR/CHF — ${eRangeLabel}</h3><div style="display:flex;gap:6px;flex-wrap:wrap">${eRangeButtons}</div></div>${eChart}</div></div>`
     :`<div class="analysisBlock"><h3>💱 Taux de change EUR/CHF</h3><p class="muted">Aucun historique chargé pour l'instant — envoie-moi un export (date + taux, comme pour le Brent) et j'intègre le suivi automatique ici, avec application directe dans le calcul ci-dessous pour les matières facturées en EUR.</p></div>`;
 
+  // Brent et surcharge Canplast superposés : toujours recalculé depuis les
+  // données live (Brent + /api/canplast_surcharges), jamais une image figée
+  // — se met donc à jour de lui-même dès qu'une nouvelle hausse est
+  // enregistrée ou que le Brent est mis à jour.
+  const bpGroups=canplastGroups(canplast);
+  const bpCurrent=(window._selectedCanplastGroup && bpGroups.some(g=>g.codes===window._selectedCanplastGroup)) ? window._selectedCanplastGroup : (bpGroups[0]&&bpGroups[0].codes);
+  window._selectedCanplastGroup=bpCurrent;
+  const bpTimeline=canplastTimelineFor(canplast,bpCurrent);
+  const bpOptions=bpGroups.map(g=>`<option value="${esc(g.codes)}"${g.codes===bpCurrent?' selected':''}>${esc(g.label)} (${esc(g.codes)})</option>`).join('');
+  const brentDatesAll2=brent.dates||[], brentValuesAll2=brent.values||[];
+  const bpRange=(window._brentCpRange!=null)?window._brentCpRange:DEFAULT_BRENT_CP_RANGE;
+  const bpSliceDates=bpRange>0?brentDatesAll2.slice(-bpRange):brentDatesAll2;
+  const bpSliceValues=bpRange>0?brentValuesAll2.slice(-bpRange):brentValuesAll2;
+  const bpFit=canplastTheoreticalFit(bpTimeline,brentDatesAll2,brentValuesAll2);
+  const bpRangeLabel=bpRange>0?(bpRange+' dernières semaines'):'depuis 2016';
+  const bpRangeButtons=brentCpRangeButtonsHtml(bpRange);
+  const bpChart=brentDatesAll2.length?svgBrentCanplastOverlayChart(bpSliceDates,bpSliceValues,bpTimeline,bpFit):'<p class="muted">Aucune donnée Brent chargée.</p>';
+  const brentCpBlock=bpGroups.length?`<div class="analysisBlock"><h3>📊 Brent et surcharge Canplast, superposés</h3><p class="muted">Compare le cours du Brent à la surcharge Canplast réellement appliquée (en paliers, à chaque avis de hausse) et à une "surcharge logique" calculée par régression linéaire sur l'historique — ce que donnerait une indexation symétrique et continue sur le Brent. L'écart entre les deux illustre l'effet "rockets and feathers" : les hausses suivent vite le Brent, les baisses beaucoup plus lentement.</p><div style="max-width:560px;margin:10px 0"><label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:4px">Famille d'articles Canplast</label><select onchange="onIntelCanplastGroupChange(this.value)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:9px">${bpOptions}</select></div>${bpFit?`<p class="muted"><small>Modèle ajusté sur ${bpTimeline.filter(r=>brentValueOnOrBefore(brentDatesAll2,brentValuesAll2,r.effectiveDate)!=null).length} hausse(s)/baisse(s) connue(s) : surcharge logique ≈ ${bpFit.a.toFixed(3)} × Brent ${bpFit.b>=0?'+':'−'} ${Math.abs(bpFit.b).toFixed(1)} (indicatif, pas une donnée officielle Canplast).</small></p>`:''}<div class="chartCard" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">${esc(bpGroups.find(g=>g.codes===bpCurrent)?.label||'')} — ${bpRangeLabel}</h3><div style="display:flex;gap:6px;flex-wrap:wrap">${bpRangeButtons}</div></div>${bpChart}</div></div>`
+    :`<div class="analysisBlock"><h3>📊 Brent et surcharge Canplast, superposés</h3><p class="muted">Aucun historique de surrenchérissement Canplast enregistré pour l'instant (voir Indicateurs de marché › Canplast pour en ajouter) — ce graphique se complètera automatiquement dès qu'une hausse/baisse y sera saisie.</p></div>`;
+
   app.innerHTML=`${crumbs}<div class="toolbar"><h2>🧠 Intelligence Buying</h2><p class="muted">Vérifie si une hausse annoncée par un fournisseur est justifiée par les coûts réels documentés, plutôt que d'accepter un pourcentage global appliqué au tarif catalogue. Règle appliquée : une hausse n'est retenue que si le mouvement réel dépasse ±5% ; en dessous, elle est refusée ; une baisse réelle de plus de 5% doit au contraire déclencher une demande de réduction.</p></div>
 
   ${eurChfBlock}
+
+  ${brentCpBlock}
 
   <div class="analysisBlock"><h3>🧪 Indice Polyéthylène (PE)</h3><p class="muted">Reçu sous forme de graphique (image) uniquement pour l'instant — je ne peux pas en extraire des valeurs numériques fiables en lisant les pixels d'une courbe (ça donnerait des chiffres approximatifs présentés comme précis, ce qui serait trompeur pour un outil de décision). Pour l'activer ici comme les autres indicateurs : soit un export chiffré (CSV/xlsx) depuis businessanalytiq si disponible, soit simplement la valeur actuelle et les valeurs à 1/3/12 mois pour la courbe "Europe actual" (la plus pertinente pour un fournisseur basé en Italie/Rép. tchèque) — je les intègre comme points de référence.</p></div>
 
