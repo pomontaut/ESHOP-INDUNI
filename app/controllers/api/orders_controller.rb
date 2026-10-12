@@ -11,6 +11,13 @@ class Api::OrdersController < ApplicationController
   # User::JOB_FUNCTIONS).
   SITE_LEAD_JOB_FUNCTIONS = [ "CONTREMAITRE", "CHEF D'EQUIPE" ].freeze
 
+  # Plafond imposé à tous les profils Contremaître/Chef d'équipe, quel que
+  # soit leur order_limit personnel configuré en admin : un plafond
+  # personnel plus bas reste prioritaire (règle la plus stricte l'emporte),
+  # mais aucun profil de ce type ne peut jamais dépasser ce montant sans
+  # validation du conducteur de travaux.
+  SITE_LEAD_ORDER_LIMIT = 3000
+
   # Lets the client show/pre-fill the real order number in the "Vérifier et
   # envoyer" step before the order actually exists. See Order.next_number.
   def next_number
@@ -157,9 +164,15 @@ class Api::OrdersController < ApplicationController
     #  2. Seuil général de CHF 5'000 -> le conducteur de travaux du chantier.
     #  3. Plafond personnel de l'utilisateur -> son approbateur N+1 habituel,
     #     sauf pour un profil Contremaître/Chef d'équipe, dont le N+1 est
-    #     toujours le conducteur de travaux du chantier de la commande.
+    #     toujours le conducteur de travaux du chantier de la commande, et
+    #     dont le plafond ne peut de toute façon jamais dépasser
+    #     SITE_LEAD_ORDER_LIMIT (CHF 3'000), quelle que soit la valeur
+    #     configurée en admin.
     total = items.sum { |item| resolved_price.call(item) * item[:qty].to_i }
     limit = current_user&.order_limit
+    if SITE_LEAD_JOB_FUNCTIONS.include?(current_user&.job_function)
+      limit = [ limit, SITE_LEAD_ORDER_LIMIT ].compact.min
+    end
     chantier_conducteur_email = chantier_record&.email_conducteur_travaux.presence
 
     supplier_threshold_exceeded = supplier.approval_threshold.present? && total > supplier.approval_threshold.to_f

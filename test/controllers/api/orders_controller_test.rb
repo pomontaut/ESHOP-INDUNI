@@ -410,6 +410,49 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_equal "conducteur@induni.ch", order.approver_email
   end
 
+  test "create requires approval above CHF 3'000 for a contremaître with no personal order_limit set" do
+    users(:one).update!(job_function: "CONTREMAITRE", order_limit: nil)
+    Chantier.create!(nom: "12345-Chantier Test", email_conducteur_travaux: "conducteur@induni.ch")
+
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 3_500 } ]
+    }
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body["needs_approval"]
+    order = Order.find(body["order_id"])
+    assert_equal "conducteur@induni.ch", order.approver_email
+  end
+
+  test "create still blocks a chef d'équipe at CHF 3'000 even if their personal order_limit is set higher" do
+    users(:one).update!(job_function: "CHEF D'EQUIPE", order_limit: 4_500, approver_email: "someone.else@induni.ch")
+    Chantier.create!(nom: "12345-Chantier Test", email_conducteur_travaux: "conducteur@induni.ch")
+
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 3_500 } ]
+    }
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body["needs_approval"], "a Chef d'équipe must never be able to raise their own cap above CHF 3'000"
+    order = Order.find(body["order_id"])
+    assert_equal "conducteur@induni.ch", order.approver_email
+  end
+
+  test "create lets a contremaître order up to CHF 3'000 without approval" do
+    users(:one).update!(job_function: "CONTREMAITRE", order_limit: nil)
+    Chantier.create!(nom: "12345-Chantier Test", email_conducteur_travaux: "conducteur@induni.ch")
+
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 3_000 } ]
+    }
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_not body["needs_approval"]
+  end
+
   test "create keeps a non-site-lead user's own approver_email for a personal-limit approval" do
     users(:one).update!(job_function: "ACHETEUR", order_limit: 100, approver_email: "someone.else@induni.ch")
     Chantier.create!(nom: "12345-Chantier Test", email_conducteur_travaux: "conducteur@induni.ch")
