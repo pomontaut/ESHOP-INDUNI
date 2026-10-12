@@ -50,8 +50,6 @@ th:not(:first-child){text-align:right}
 td{padding:4px;font-size:9pt;vertical-align:top;border-bottom:1px solid #ddd}
 td:not(:first-child){text-align:right}
 .tr-total td{border-top:2px solid #111;border-bottom:none;font-weight:bold;font-size:11pt;padding-top:7px;white-space:nowrap}
-.sigrow{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:28px}
-.sigbox{border-top:1px solid #111;padding-top:3px;font-size:9pt}
 </style></head><body>
 
 <% unless is_consortium %><img src="data:image/png;base64,<%= logo_b64 %>" class="logo" alt="INDUNI"><% end %>
@@ -137,11 +135,6 @@ td:not(:first-child){text-align:right}
     </tr>
   </tbody>
 </table>
-
-<div class="sigrow">
-  <div class="sigbox"><%= redacteur_nom %></div>
-  <div class="sigbox">&nbsp;</div>
-</div>
 
 
 <% unless is_consortium %>
