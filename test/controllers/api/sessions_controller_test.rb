@@ -56,4 +56,20 @@ class Api::SessionsControllerTest < ActionDispatch::IntegrationTest
     chantier = body["chantiers"].find { |c| c["nom"] == "12601-Halle des Rouettes" }
     assert_equal "GENEVE", chantier["canton"]
   end
+
+  test "me exposes a chantier's dedicated delivery contact, distinct from its contremaître" do
+    Chantier.create!(
+      nom: "12601-Halle des Rouettes", contremaitre: "GAILLARD Cédric", natel_contremaitre: "+41790000000",
+      contact_livraison: "PINTO Pedro", natel_livraison: "+41763656892", email_livraison: "ppinto@induni.ch"
+    )
+    post login_url, params: { email: users(:one).email, password: "password123" }
+
+    get api_me_url
+    body = JSON.parse(response.body)
+
+    chantier = body["chantiers"].find { |c| c["nom"] == "12601-Halle des Rouettes" }
+    assert_equal "GAILLARD Cédric", chantier["contact"]
+    assert_equal "PINTO Pedro", chantier["contactLivraison"]
+    assert_equal "+41763656892", chantier["telephoneLivraison"]
+  end
 end

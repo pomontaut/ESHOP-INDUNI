@@ -8,6 +8,11 @@ class Api::ProductsController < ApplicationController
     products = Product.joins(:supplier).includes(:supplier)
       .where.not(famille: nil)
       .where(suppliers: { name: visible })
+      # Décision Achats : seule la famille Isolation de Swisspor est ouverte
+      # à la commande pour l'instant. Le reste du catalogue Swisspor (déjà
+      # tarifé) est gardé en base, masqué ici plutôt que supprimé, le temps
+      # qu'il soit éventuellement réactivé.
+      .where.not("suppliers.name = ? AND products.famille != ?", "Swisspor", "Isolation")
       .order(:id)
     render json: products.map { |p|
       confidential = p.supplier&.confidential_pricing?
@@ -30,6 +35,7 @@ class Api::ProductsController < ApplicationController
         image:            p.image,
         equivalenceKey:   p.equivalence_key,
         qtePalette:       p.qte_palette,
+        stockStatus:      p.stock_status,
         poids:            p.poids_kg&.to_f,
         prixM2:           p.prix_m2&.to_f,
         prixExterne:      p.prix_externe&.to_f

@@ -38,6 +38,22 @@ class Api::ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 0.0, product["prix"]
   end
 
+  test "index only exposes Swisspor's Isolation famille, masking the rest of its catalog" do
+    swisspor = Supplier.create!(name: "Swisspor")
+    Product.create!(supplier: swisspor, reference: "SWI-ISO", name: "Panneau isolant", famille: "Isolation")
+    Product.create!(supplier: swisspor, reference: "SWI-ETA", name: "Membrane étanchéité", famille: "Étanchéité")
+    Product.create!(supplier: swisspor, reference: "SWI-TOI", name: "Substrat toiture végétalisée", famille: "Toitures végétalisées")
+
+    post login_url, params: { email: users(:one).email, password: "password123" }
+    get api_products_url
+    assert_response :success
+
+    articles = JSON.parse(response.body).select { |p| p["catalog"] == "Swisspor" }.map { |p| p["article"] }
+    assert_includes articles, "SWI-ISO"
+    assert_not_includes articles, "SWI-ETA"
+    assert_not_includes articles, "SWI-TOI"
+  end
+
   test "index responds with Cache-Control: no-store so no browser ever serves a stale catalog" do
     # Confirmed on production: the same account, same data, could show an
     # empty or outdated catalog on one browser but not another — some

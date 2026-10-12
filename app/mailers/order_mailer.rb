@@ -40,6 +40,19 @@ class OrderMailer < ApplicationMailer
     mail(to: admin_emails, subject: "Commande #{original_order.number} modifiée par #{editor&.full_name || 'un utilisateur'} — nouvelle commande #{new_order.number}")
   end
 
+  # Commande déjà envoyée au fournisseur, puis annulée : l'avertit de ne pas y
+  # donner suite — le rédacteur reste en copie pour avoir la preuve que
+  # l'annulation est bien partie.
+  def order_cancelled(order)
+    @order = order
+    @user  = order.user
+    mail(
+      to:      order.sent_to.presence || order.supplier&.email,
+      cc:      @user&.email,
+      subject: "Annulation de la commande N° #{order.number}"
+    )
+  end
+
   def approval_request(order)
     @order       = order
     @user        = order.user

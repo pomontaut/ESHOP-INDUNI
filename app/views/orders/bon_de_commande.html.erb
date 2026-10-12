@@ -11,13 +11,16 @@
   # Chantier en consortium : gabarit sans notre logo ni nos CGA (pas de
   # visibilité sur le partenaire), le bloc CLIENT affiche juste "CONSORTIUM".
   is_consortium  = chantier_record&.consortium? || false
-  # Nom de la personne Induni ayant passé la commande (le compte connecté au
-  # moment de l'envoi, sauf saisie manuelle différente dans le formulaire) et
-  # coordonnées du contact sur site pour la livraison — ces deux informations
-  # n'étaient auparavant jamais reportées sur le document (toujours "Pierre-
-  # Olivier MONTAUT" en dur, quel que soit qui commande / livre réellement).
-  conducteur_travaux = @order.conducteur_travaux.presence || @order.user&.full_name.presence || "—"
-  conducteur_email   = @order.user&.email
+  # Rédacteur de la commande (le compte connecté qui l'a envoyée) — toujours
+  # la vraie personne qui a rédigé la commande, jamais un champ modifiable du
+  # formulaire, pour qu'on sache toujours qui contacter côté Induni si le
+  # fournisseur a une question. Distinct du conducteur de travaux, qui est un
+  # rôle chantier (saisi dans le formulaire, potentiellement une tout autre
+  # personne) et du contact de réception sur site pour la livraison.
+  redacteur_nom   = @order.user&.full_name.presence || "—"
+  redacteur_email = @order.user&.email
+  redacteur_tel   = @order.user&.phone
+  conducteur_travaux = @order.conducteur_travaux.presence || chantier_record&.conducteur_travaux.presence || "—"
   contact_livraison  = @order.contact.presence || "—"
   delivery_address_html = (@order.delivery_address.presence || "INDUNI & Cie SA\nAvenue des Grandes-Communes 6\n1213 Petit-Lancy").gsub("\n", "<br>")
   # Prix nets confidentiels (ex. Sika, accord-cadre marqué CONFIDENTIAL) :
@@ -30,7 +33,7 @@
 @page{size:A4;margin:14mm 15mm 18mm 15mm}
 *{box-sizing:border-box}
 body{font-family:Arial,sans-serif;font-size:10pt;color:#111;margin:0}
-.logo{width:120px;margin-bottom:6px}
+.logo{width:84px;margin-bottom:6px}
 .title-box{text-align:center;border:1.5px solid #111;padding:7px 0;margin:8px 0 12px}
 .title-box h1{font-size:14pt;font-weight:bold;margin:0 0 2px}
 .title-box p{font-size:10pt;margin:0}
@@ -47,9 +50,6 @@ th:not(:first-child){text-align:right}
 td{padding:4px;font-size:9pt;vertical-align:top;border-bottom:1px solid #ddd}
 td:not(:first-child){text-align:right}
 .tr-total td{border-top:2px solid #111;border-bottom:none;font-weight:bold;font-size:11pt;padding-top:7px}
-.infos{margin-top:12px}
-.infos h3{font-size:11pt;font-weight:bold;margin:0 0 5px}
-.ig{display:grid;grid-template-columns:150px 1fr;gap:2px 8px;font-size:9.5pt}
 .factaddr{margin-top:10px;font-size:9.5pt;line-height:1.4}
 .sigrow{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:28px}
 .sigbox{border-top:1px solid #111;padding-top:3px;font-size:9pt}
@@ -62,16 +62,24 @@ td:not(:first-child){text-align:right}
   <p>Du <%= l(@order.order_date, format: '%d/%m/%Y') if @order.order_date %></p>
 </div>
 
+<% if @order.modifies_order %>
+<div style="text-align:center;color:#c00000;font-weight:900;font-size:12pt;text-transform:uppercase;margin:-6px 0 12px;border:2px solid #c00000;padding:6px;border-radius:4px">
+  Annule et remplace la commande N° <%= @order.modifies_order.number %>
+</div>
+<% end %>
+
 <div class="hgrid">
   <div class="hcol">
     <div class="htitle">CLIENT</div>
     <div class="cname"><%= is_consortium ? 'CONSORTIUM' : 'INDUNI &amp; CIE SA'.html_safe %></div>
-    <div class="ir"><span class="il">Conducteur de travaux :</span> <%= conducteur_travaux %><%= conducteur_email.present? ? " — #{conducteur_email}" : "" %></div>
+    <div class="ir"><span class="il">Contact rédacteur de la commande :</span> <%= redacteur_nom %><%= redacteur_email.present? ? " — #{redacteur_email}" : "" %><%= redacteur_tel.present? ? " — #{redacteur_tel}" : "" %></div>
     <div class="ir"><span class="il">Chantier :</span> <%= chantier_val %></div>
     <div class="ir"><span class="il">Délai livraison :</span> <%= delai_val %></div>
     <div class="ir"><span class="il">Adresse de livraison :</span></div>
     <div class="ir" style="padding-left:10px"><%= delivery_address_html.html_safe %></div>
-    <div class="ir"><span class="il">Contact pour la livraison :</span> <%= contact_livraison %><%= @order.phone.present? ? " — #{@order.phone}" : "" %></div>
+    <div class="ir" style="margin-top:6px"><span class="il">Contact chantier :</span></div>
+    <div class="ir" style="padding-left:10px">Conducteur de travaux : <%= conducteur_travaux %></div>
+    <div class="ir" style="padding-left:10px">Contact réception livraison : <%= contact_livraison %><%= @order.phone.present? ? " — #{@order.phone}" : "" %></div>
   </div>
   <div class="hcol">
     <div class="htitle">FOURNISSEUR</div>
@@ -121,23 +129,15 @@ td:not(:first-child){text-align:right}
     <tr class="tr-total">
       <td colspan="5">Montant total commande H.T.</td>
       <% if confidential_pricing %>
-      <td>—</td>
+      <td></td>
       <td>—</td>
       <% else %>
-      <td>CHF</td>
+      <td></td>
       <td>CHF <%= fmt.call(@order.total) %></td>
       <% end %>
     </tr>
   </tbody>
 </table>
-
-<div class="infos">
-  <h3>Informations complémentaires sur le chantier</h3>
-  <div class="ig">
-    <span>Contremaître :</span><span><%= chantier_record&.contremaitre.presence || contact_livraison %></span>
-    <span>Technicien :</span><span><%= chantier_record&.technicien.presence || "—" %></span>
-  </div>
-</div>
 
 <div class="factaddr">
   <strong>Adresse de facturation :</strong><br>
@@ -148,7 +148,7 @@ td:not(:first-child){text-align:right}
 </div>
 
 <div class="sigrow">
-  <div class="sigbox"><%= conducteur_travaux %></div>
+  <div class="sigbox"><%= redacteur_nom %></div>
   <div class="sigbox">&nbsp;</div>
 </div>
 

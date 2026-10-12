@@ -8,6 +8,8 @@ class Api::SessionsController < ApplicationController
         logged_in:         true,
         admin:             current_user.admin?,
         full_name:         current_user.full_name,
+        email:             current_user.email,
+        phone:             current_user.phone,
         sector:            current_user.sector,
         can_create_users:  current_user.effective_can_create_users?,
         can_create_orders: current_user.effective_can_create_orders?,
@@ -42,6 +44,8 @@ class Api::SessionsController < ApplicationController
             ville:       c.ville,
             contact:     c.contremaitre,
             telephone:   c.natel_contremaitre,
+            contactLivraison:   c.contact_livraison,
+            telephoneLivraison: c.natel_livraison,
             emailTechnicien: c.email_technicien,
             consortium:  c.consortium,
             canton:      c.canton

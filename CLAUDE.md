@@ -85,6 +85,15 @@ catalog silently invisible to users with any manual restriction.
   (`ApplicationController#prevent_api_caching`) — some browsers (observed:
   Edge, not Firefox) heuristically cache JSON GETs with no explicit header,
   serving stale/empty catalogs indefinitely.
+- **`equivalence_key` (HGC ↔ Canplast, etc.)**: every time new HGC reference
+  data is added or updated (new tariff, new products), re-check whether it
+  should be linked to/unlinked from its Canplast (or other supplier)
+  equivalent. Only an EXACT diameter match is a valid equivalence — never a
+  nominal/rounded DN-to-OD approximation (e.g. DN100 ≠ Ø110mm). This was
+  explicitly corrected once already after 16 mismatched links were seeded by
+  mistake (see the `unlink_coude_equivalences_with_mismatched_diameter`
+  migration) — always verify the real diameter on both sides before setting a
+  shared `equivalence_key`, not just the product family/designation.
 
 ## Deploy workflow (always follow this exact sequence)
 

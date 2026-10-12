@@ -46,7 +46,7 @@ class BonDeCommandeTemplateTest < ActiveSupport::TestCase
     assert_not_includes html, "Pierre-Olivier MONTAUT" # l'ancien texte figé, casse différente
   end
 
-  test "falls back to the ordering user's name when no conducteur de travaux was entered, and to the Induni depot address" do
+  test "falls back to the Induni depot address, and shows an em-dash for conducteur de travaux when none was entered and no chantier matches" do
     supplier = Supplier.create!(name: "Fournisseur ouvert", email: "commandes@fournisseur.ch")
     product = Product.create!(supplier: supplier, reference: "ART-OUVERT", name: "Article ouvert", famille: "Voirie", unit_price: 10.0, unite: "PCE")
     order = Order.create!(supplier: supplier, user: users(:one), order_date: Date.current, notes: "Chantier: X | Délai: Y")
@@ -54,11 +54,52 @@ class BonDeCommandeTemplateTest < ActiveSupport::TestCase
 
     html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
 
-    assert_includes html, users(:one).full_name
     assert_includes html, "Avenue des Grandes-Communes 6"
+    assert_includes html, "Conducteur de travaux : —"
   end
 
-  test "shows the chantier's own contremaître and technicien when a matching chantier exists" do
+  test "always shows the ordering user as the contact rédacteur de la commande, regardless of the conducteur de travaux" do
+    supplier = Supplier.create!(name: "Fournisseur ouvert", email: "commandes@fournisseur.ch")
+    product = Product.create!(supplier: supplier, reference: "ART-OUVERT", name: "Article ouvert", famille: "Voirie", unit_price: 10.0, unite: "PCE")
+    order = Order.create!(
+      supplier: supplier, user: users(:one), order_date: Date.current, notes: "Chantier: X | Délai: Y",
+      conducteur_travaux: "Paul Dupont"
+    )
+    order.order_lines.create!(product: product, quantity: 1, unit_price: 10.0)
+
+    html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
+
+    assert_includes html, "Contact rédacteur de la commande :"
+    assert_includes html, users(:one).full_name
+    assert_includes html, users(:one).email
+    assert_includes html, "Contact chantier :"
+    assert_includes html, "Conducteur de travaux : Paul Dupont"
+  end
+
+  test "shows the ANNULE ET REMPLACE banner with the original order's number when modifying a previous order" do
+    supplier = Supplier.create!(name: "Fournisseur ouvert", email: "commandes@fournisseur.ch")
+    product = Product.create!(supplier: supplier, reference: "ART-OUVERT", name: "Article ouvert", famille: "Voirie", unit_price: 10.0, unite: "PCE")
+    original = Order.create!(supplier: supplier, user: users(:one), order_date: Date.current, notes: "Chantier: X | Délai: Y")
+    order = Order.create!(supplier: supplier, user: users(:one), order_date: Date.current, notes: "Chantier: X | Délai: Y", modifies_order: original)
+    order.order_lines.create!(product: product, quantity: 1, unit_price: 10.0)
+
+    html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
+
+    assert_match(/Annule et remplace la commande N°\s*#{Regexp.escape(original.number)}/i, html)
+  end
+
+  test "shows no ANNULE ET REMPLACE banner for a regular order" do
+    supplier = Supplier.create!(name: "Fournisseur ouvert", email: "commandes@fournisseur.ch")
+    product = Product.create!(supplier: supplier, reference: "ART-OUVERT", name: "Article ouvert", famille: "Voirie", unit_price: 10.0, unite: "PCE")
+    order = Order.create!(supplier: supplier, user: users(:one), order_date: Date.current, notes: "Chantier: X | Délai: Y")
+    order.order_lines.create!(product: product, quantity: 1, unit_price: 10.0)
+
+    html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
+
+    assert_no_match(/Annule et remplace/i, html)
+  end
+
+  test "no longer shows the old 'Informations complémentaires sur le chantier' block, superseded by Contact chantier" do
     Chantier.create!(nom: "12601-Halle des Rouettes", contremaitre: "PESSOA FRANCISCO Joni", technicien: "Jean Dupont")
     supplier = Supplier.create!(name: "Fournisseur ouvert", email: "commandes@fournisseur.ch")
     product = Product.create!(supplier: supplier, reference: "ART-OUVERT", name: "Article ouvert", famille: "Voirie", unit_price: 10.0, unite: "PCE")
@@ -67,6 +108,18 @@ class BonDeCommandeTemplateTest < ActiveSupport::TestCase
 
     html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
 
-    assert_includes html, "Jean Dupont"
+    assert_no_match(/Informations complémentaires sur le chantier/, html)
+  end
+
+  test "shows a single total amount on the Montant total row, never a lone CHF in the Prix unit. column" do
+    supplier = Supplier.create!(name: "Fournisseur ouvert", email: "commandes@fournisseur.ch")
+    product = Product.create!(supplier: supplier, reference: "ART-OUVERT", name: "Article ouvert", famille: "Voirie", unit_price: 10.0, unite: "PCE")
+    order = Order.create!(supplier: supplier, user: users(:one), order_date: Date.current, notes: "Chantier: X | Délai: Y")
+    order.order_lines.create!(product: product, quantity: 3, unit_price: 10.0)
+
+    html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
+
+    assert_match(/<tr class="tr-total">.*?<td>CHF 30\.00<\/td>\s*<\/tr>/m, html)
+    assert_no_match(/<tr class="tr-total">.*?<td>CHF<\/td>/m, html)
   end
 end

@@ -109,7 +109,7 @@
         </div>
       </div>
 
-      <div class="row g-3">
+      <div class="row g-3 mb-3">
         <div class="col-4">
           <%= f.label :chef_equipe, "Chef d'équipe", class: "form-label fw-semibold" %>
           <%= f.text_field :chef_equipe, class: "form-control" %>
@@ -121,6 +121,22 @@
         <div class="col-4">
           <%= f.label :email_chef_equipe, "E-mail", class: "form-label fw-semibold" %>
           <%= f.email_field :email_chef_equipe, class: "form-control" %>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-4">
+          <%= f.label :contact_livraison, "Contact réception livraison", class: "form-label fw-semibold" %>
+          <%= f.text_field :contact_livraison, class: "form-control" %>
+          <div class="form-text">Pré-remplit le contact de livraison du bon de commande pour ce chantier, s'il diffère du contremaître.</div>
+        </div>
+        <div class="col-4">
+          <%= f.label :natel_livraison, "Natel", class: "form-label fw-semibold" %>
+          <%= f.text_field :natel_livraison, class: "form-control" %>
+        </div>
+        <div class="col-4">
+          <%= f.label :email_livraison, "E-mail", class: "form-label fw-semibold" %>
+          <%= f.email_field :email_livraison, class: "form-control" %>
         </div>
       </div>
     </div>

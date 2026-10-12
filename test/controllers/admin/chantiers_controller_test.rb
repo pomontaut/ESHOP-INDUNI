@@ -12,6 +12,17 @@ class Admin::ChantiersControllerTest < ActionDispatch::IntegrationTest
     assert_equal "GC", chantier.secteur
   end
 
+  test "create persists the dedicated delivery contact" do
+    post admin_chantiers_url, params: {
+      chantier: { nom: "Nouveau chantier", contact_livraison: "PINTO Pedro", natel_livraison: "+41763656892", email_livraison: "ppinto@induni.ch" }
+    }
+
+    chantier = Chantier.find_by!(nom: "Nouveau chantier")
+    assert_equal "PINTO Pedro", chantier.contact_livraison
+    assert_equal "+41763656892", chantier.natel_livraison
+    assert_equal "ppinto@induni.ch", chantier.email_livraison
+  end
+
   test "update persists a change of secteur" do
     chantier = Chantier.create!(nom: "Chantier existant", secteur: "GC")
 
