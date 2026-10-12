@@ -2212,9 +2212,9 @@ ${_modifyingOrderNumber?`<div style="text-align:center;color:#c00000;font-weight
   </div>
   <div class="hcol">
     <div class="htitle">FOURNISSEUR</div>
-    <div class="cname">${esc(supplier)}</div>
+    <div class="cname">${esc(supplier==='HGC'?'HG Commerciale':supplier)}</div>
     ${(()=>{const info=SUPPLIER_INFO[supplier]||{}; const realEmail=(window._userPerms&&window._userPerms.supplierDefaultEmails&&window._userPerms.supplierDefaultEmails[supplier])||info.email; const addr=[info.address,[info.postal_code,info.city].filter(Boolean).join(' ')].filter(Boolean).join('<br>'); return `${addr?`<div class="ir"><span class="il">Adresse :</span></div><div class="ir" style="padding-left:10px">${addr}</div>`:''}${realEmail?`<div class="ir"><span class="il">Mail :</span> ${esc(realEmail)}</div>`:''}${info.phone?`<div class="ir"><span class="il">Tél :</span> ${esc(info.phone)}</div>`:''}`;})()}
-    ${supplier==='HGC'?`<div class="ir"><span class="il">Marchand :</span> HGC</div>`:''}
+    ${supplier==='HGC'?`<div class="ir"><span class="il">Marchand :</span> HG Commerciale</div>`:''}
   </div>
 </div>
 

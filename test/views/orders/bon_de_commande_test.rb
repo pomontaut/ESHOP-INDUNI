@@ -119,7 +119,7 @@ class BonDeCommandeTemplateTest < ActiveSupport::TestCase
 
     html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
 
-    assert_match(/<tr class="tr-total">.*?<td>CHF 30\.00<\/td>\s*<\/tr>/m, html)
-    assert_no_match(/<tr class="tr-total">.*?<td>CHF<\/td>/m, html)
+    assert_match(/<tr class="tr-total">.*?<td colspan="2">CHF 30\.00<\/td>\s*<\/tr>/m, html)
+    assert_no_match(/<tr class="tr-total">.*?<td><\/td>/m, html)
   end
 end
