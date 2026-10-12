@@ -1812,6 +1812,9 @@ function setQty(k,v){
     const sub=cart.reduce((s,i)=>s+i.prix*i.qty,0);
     if(sub<CANPLAST_FRANCO) alert(`Cette commande Canplast est inférieure à CHF ${CANPLAST_FRANCO.toLocaleString('fr-CH')} : des frais de livraison s'appliquent (franco dès ce montant). Pensez à vérifier qu'un autre fournisseur ne serait pas plus avantageux avant de valider.`);
   }
+  const delaiEl=document.getElementById('delai'); if(delaiEl) delaiEl.value='';
+  const delaiPickerEl=document.getElementById('delaiPicker'); if(delaiPickerEl) delaiPickerEl.value='';
+  const remarksEl=document.getElementById('remarks'); if(remarksEl) remarksEl.value='';
   openModal('orderModal')
 }
 function addGeneric(e){e.preventDefault(); const p={catalog:state.catalog||'Libre',article:document.getElementById('genArticle').value||'GEN-'+Date.now(),designation:document.getElementById('genDesc').value,descriptif:'Article générique',prix:parseFloat(document.getElementById('genPrice').value),unite:'PCE',famille:'Article générique',sousFamille:'Libre',icone:'＋',image:'construction material'}; cart.push({...p,qty:1}); closeModal('genericModal'); save(); openCart();}
