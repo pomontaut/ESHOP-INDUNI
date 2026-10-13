@@ -111,7 +111,7 @@ class BonDeCommandeTemplateTest < ActiveSupport::TestCase
     assert_no_match(/Informations complémentaires sur le chantier/, html)
   end
 
-  test "shows a single total amount on the Montant total row, never a lone CHF in the Prix unit. column" do
+  test "shows a single total amount in the totals box, never a lone CHF in the Prix unit. column" do
     supplier = Supplier.create!(name: "Fournisseur ouvert", email: "commandes@fournisseur.ch")
     product = Product.create!(supplier: supplier, reference: "ART-OUVERT", name: "Article ouvert", famille: "Voirie", unit_price: 10.0, unite: "PCE")
     order = Order.create!(supplier: supplier, user: users(:one), order_date: Date.current, notes: "Chantier: X | Délai: Y")
@@ -119,7 +119,42 @@ class BonDeCommandeTemplateTest < ActiveSupport::TestCase
 
     html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
 
-    assert_match(/<tr class="tr-total">.*?<td colspan="2">CHF 30\.00<\/td>\s*<\/tr>/m, html)
-    assert_no_match(/<tr class="tr-total">.*?<td><\/td>/m, html)
+    assert_match(/<div class="sum total">\s*<span>TOTAL H\.T\.<\/span>\s*<b>CHF 30\.00<\/b>\s*<\/div>/m, html)
+    assert_no_match(/<td>CHF <\/td>|<td><\/td>/m, html)
+  end
+
+  test "persists and shows the per-supplier delivery/transport extra charges computed client-side, and adds them to the grand total" do
+    supplier = Supplier.create!(name: "Canplast", email: "commandes@canplast.ch")
+    product = Product.create!(supplier: supplier, reference: "ART-CANPLAST", name: "Tuyau PVC", famille: "Drainage", unit_price: 100.0, unite: "PCE")
+    order = Order.create!(
+      supplier: supplier, user: users(:one), order_date: Date.current, notes: "Chantier: X | Délai: Y",
+      extra_charges: [ { "label" => "Conditions cadre — RPLP 2.2%", "amount" => 2.20 }, { "label" => "Livraison Canplast — Zone 2", "amount" => 210.0 } ]
+    )
+    order.order_lines.create!(product: product, quantity: 1, unit_price: 100.0)
+
+    assert_equal 312.20, order.grand_total
+
+    html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
+
+    assert_includes html, "Conditions cadre — RPLP 2.2%"
+    assert_includes html, "CHF 2.20"
+    assert_includes html, "Livraison Canplast — Zone 2"
+    assert_includes html, "CHF 210.00"
+    assert_match(/<div class="sum total">\s*<span>TOTAL H\.T\.<\/span>\s*<b>CHF 312\.20<\/b>\s*<\/div>/m, html)
+  end
+
+  test "never shows the extra charges breakdown for a confidential-pricing supplier" do
+    supplier = Supplier.create!(name: "Fournisseur confidentiel", confidential_pricing: true, email: "commandes@fournisseur.ch")
+    product = Product.create!(supplier: supplier, reference: "ART-CONF", name: "Article confidentiel", famille: "Adjuvants", unit_price: 1200.0, unite: "PCE")
+    order = Order.create!(
+      supplier: supplier, user: users(:one), order_date: Date.current, notes: "Chantier: X | Délai: Y",
+      extra_charges: [ { "label" => "Transport fixe", "amount" => 50.0 } ]
+    )
+    order.order_lines.create!(product: product, quantity: 1, unit_price: 1200.0)
+
+    html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
+
+    assert_not_includes html, "Transport fixe"
+    assert_not_includes html, "CHF 50.00"
   end
 end

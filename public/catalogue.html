@@ -358,6 +358,43 @@ function transportHtmlInduni(sub,supplier,included){
   }
   return `<div class="sum"><span>Transport</span><b>${fmt(t.totalTransport)}</b></div>`;
 }
+// Pendant structuré (hors HTML) des mêmes frais annexes que transportHtmlInduni,
+// envoyé au serveur avec la commande pour que le bon de commande PDF
+// (app/views/orders/bon_de_commande.html.erb, qui ne réimplémente pas cette
+// logique tarifaire par fournisseur) puisse les afficher sans les recalculer.
+function transportLineItemsInduni(sub,supplier,included){
+  if(included===false) return [];
+  const t=transportDetailsInduni(sub,supplier);
+  if(!supplier) return [];
+  if(supplier==='HGC') return [{label:'Transport HGC fixe',amount:t.totalTransport}];
+  if(supplier==='Canplast'){
+    const items=[{label:'Conditions cadre — RPLP 2.2%',amount:t.rplp},
+      {label:`Livraison Canplast${sub>=CANPLAST_FRANCO?' franco dès CHF 2’000':(canplastResolvedZone?` — ${canplastResolvedZone.z}`:' chantier semi-remorque')}`,amount:t.transport}];
+    if(t.crane) items.push({label:'Déchargement grue Canplast',amount:t.crane});
+    return items;
+  }
+  if(supplier==='Leuba HIAG') return [{label:'Leuba HIAG franco dépôt/chantiers GE',amount:0}];
+  if(supplier==='MBT') return [{label:`Livraison MBT${sub>MBT_FRANCO?' franco dès CHF 3’000':(sub>=MBT_TIER2_MIN?' — CHF 1’500 à 3’000':' — moins de CHF 1’500')}`,amount:t.transport}];
+  if(supplier==='CreaBeton'){
+    const zoneLabel=t.weight<=CREABETON_TIER1_MAX?'jusqu’à 3t':(t.weight<=CREABETON_TIER2_MAX?'3 à 8t':'8 à 14t');
+    const items=[{label:`Participation transport CreaBeton — ${zoneLabel} (${Math.round(t.weight).toLocaleString('fr-CH')} kg)`,amount:t.transport}];
+    if(t.crane) items.push({label:'Déchargement grue CreaBeton',amount:t.crane});
+    return items;
+  }
+  if(supplier==='ALZO AG') return [{label:'Transport ALZO AG',amount:t.totalTransport}];
+  if(supplier==='Soreval'){
+    if(!t.zone||t.zone.outOfZone) return [];
+    return [{label:`Transport Soreval — Zone ${t.zone.zone} (${t.essieu4?'4 essieux':'5 essieux'}/malaxeur)`,amount:t.totalTransport}];
+  }
+  if(supplier==='BTest') return [{label:`Remise de volume BTest${t.rate?` (${Math.round(t.rate*100)}%)`:''}`,amount:t.totalTransport}];
+  if(supplier==='LCBE') return [{label:'Forfait déplacement LCBE',amount:t.totalTransport}];
+  if(supplier==='GANAMAT SA') return [{label:'Participation transport GANAMAT',amount:t.totalTransport}];
+  if(supplier==='Swisspor') return [
+    {label:'Supplément transport routier (STR) — 0.95%',amount:t.rplp},
+    {label:`Livraison Swisspor${sub>=SWISSPOR_FRANCO?' franco chantier dès CHF 3’500':' — commande < CHF 3’500'}`,amount:t.transport}
+  ];
+  return t.totalTransport?[{label:t.label||'Transport',amount:t.totalTransport}]:[];
+}
 const fmt=n=>'CHF '+Number(n||0).toLocaleString('fr-CH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const CONFIDENTIAL_PRICE_LABEL='🔒 Prix confidentiel';
 function priceHtml(prix,confidential,unite){return confidential?`<span class="confidentialPrice" title="Prix net confidentiel — visible uniquement dans l'Analyse achat">${CONFIDENTIAL_PRICE_LABEL}</span>`:`${fmt(prix)}${unite?` <span class="unit">/ ${esc(unite)}</span>`:''}`;}
@@ -3791,10 +3828,11 @@ async function sendOrderByEmail(e) {
   const sub = cart.reduce((s, i) => s + effectivePriceInduni(i, chantier) * i.qty, 0);
   const tdet = transportDetailsInduni(sub, supplier);
   const total = effectiveOrderTotalInduni(sub, supplier);
+  const extraCharges = transportLineItemsInduni(sub, supplier, transportIncluded());
   const rows = cart.map((i, k) => `<tr><td>${k+1}</td><td><b>${esc(i.designation)}</b><br><small>${esc(i.descriptif)}</small></td><td>${esc(i.article)}</td><td>${i.qty}<br><small>${esc(i.unite)}</small></td><td>${i.confidential?'—':fmt(effectivePriceInduni(i,chantier))}</td><td><b>${amountOrConfidential(effectivePriceInduni(i,chantier)*i.qty,i.confidential)}</b></td></tr>`).join('');
   const html = buildOrderHtml(no, today, chantier, delai, null, supplier, rows, sub, tdet, total);
 
-  _pendingOrder = { chantier, delai, adresse, contact, phone, conducteur, remarks, supplier, no, html,
+  _pendingOrder = { chantier, delai, adresse, contact, phone, conducteur, remarks, supplier, no, html, extraCharges,
     modifiesOrderId: _modifyingOrderId,
     items: cart.map(i => ({ article: i.article, designation: i.designation, descriptif: i.descriptif || '', qty: i.qty, prix: effectivePriceInduni(i, chantier), catalogPrix: i.catalogPrix ?? null, unite: i.unite || 'PCE', catalog: i.catalog || '' }))
   };
@@ -3877,7 +3915,7 @@ async function confirmSendOrder() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chantier: p.chantier, delai: p.delai, adresse: p.adresse, contact: p.contact, phone: p.phone, conducteur: p.conducteur, remarks: p.remarks,
-        supplier: p.supplier, to, cc, subject, body, items: p.items, modifies_order_id: p.modifiesOrderId || null
+        supplier: p.supplier, to, cc, subject, body, items: p.items, extra_charges: p.extraCharges || [], modifies_order_id: p.modifiesOrderId || null
       })
     });
     const text = await res.text();

@@ -1,4 +1,11 @@
 class Order < ApplicationRecord
+  # Frais annexes (transport, RPLP, grue, remise de volume...) calculés côté
+  # client (voir transportDetailsInduni dans catalogue.html) au moment de
+  # l'envoi, et persistés tels quels — [{ "label" => ..., "amount" => ... }, ...]
+  # — pour que le bon de commande PDF les reprenne sans avoir à redupliquer
+  # cette logique tarifaire par fournisseur côté serveur.
+  serialize :extra_charges, coder: JSON, type: Array
+
   belongs_to :supplier
   belongs_to :user, optional: true
   belongs_to :modifies_order, class_name: "Order", optional: true
@@ -26,6 +33,18 @@ class Order < ApplicationRecord
 
   def total
     order_lines.sum(&:subtotal)
+  end
+
+  # Somme des frais annexes (peut être négative, ex. remise de volume BTest).
+  # Ne vaut jamais 0 par confusion avec "aucun frais" : grand_total reste
+  # correct même si extra_charges est vide ou absent (commandes antérieures à
+  # l'ajout de cette colonne).
+  def extra_charges_total
+    (extra_charges || []).sum { |c| c["amount"].to_f }
+  end
+
+  def grand_total
+    total + extra_charges_total
   end
 
   private
