@@ -1143,8 +1143,12 @@ const NO_DIAMETER_SPLIT_INDUNI=new Set([
   'Coffrage|Clous|null',
   'Fixations, outillage & consommables|Feuille de poncage|null',
 ]);
+function extractUnivWmInduni(designation){const t=normEqText(designation); if(t.endsWith('w m'))return'W/M'; if(t.endsWith('univ'))return'Universel'; return null;}
 function level4KindInduni(sous,sous2,items){
-  if(state.catalog==='HILTI') return null;
+  if(state.catalog==='HILTI'){
+    if(sous==='Lame'&&/^Lame scie sabre /.test(sous2||''))return'univWm';
+    return null;
+  }
   if(isAngleContextInduni(sous,sous2)) return 'angle';
   if(NO_DIAMETER_SPLIT_INDUNI.has(state.famille+'|'+sous+'|'+sous2)) return null;
   if(items.length>10) return 'diameterRange';
@@ -1153,6 +1157,7 @@ function level4KindInduni(sous,sous2,items){
 function level4KeyInduni(kind,p){
   if(kind==='angle') return extractAngleInduni(p.designation)||'Sans angle';
   if(kind==='diameterRange'){const d=extractDiamInduni(p.designation); if(d==null)return 'Diamètre non précisé'; return d>200?'> 200 mm':'≤ 200 mm';}
+  if(kind==='univWm') return extractUnivWmInduni(p.designation)||'Autre';
   return '__ALL__';
 }
 function groupByFnInduni(items,fn){const out={}; items.forEach(p=>{const k=fn(p); (out[k]??=[]).push(p);}); return out;}
@@ -1161,6 +1166,7 @@ function level4SortInduni(kind,a,b){
   if(b==='Sans angle'||b==='Diamètre non précisé') return -1;
   if(kind==='angle') return parseFloat(a)-parseFloat(b);
   if(kind==='diameterRange') return a==='≤ 200 mm'?-1:(b==='≤ 200 mm'?1:0);
+  if(kind==='univWm') return a==='Universel'?-1:(b==='Universel'?1:0);
   return String(a).localeCompare(String(b),'fr');
 }
 function matchesSous3Induni(p,val,kind){
@@ -1169,6 +1175,7 @@ function matchesSous3Induni(p,val,kind){
   if(kind==='diameterRange'){const d=extractDiamInduni(p.designation); const range=(d==null)?'Diamètre non précisé':(d>200?'> 200 mm':'≤ 200 mm'); return range===val;}
   if(kind==='diameter') return extractDiamInduni(p.designation)===Number(val);
   if(kind==='length') return extractLongInduni(p.designation)===Number(val);
+  if(kind==='univWm') return (extractUnivWmInduni(p.designation)||'Autre')===val;
   return true;
 }
 function renderLevel4(){
@@ -1176,7 +1183,7 @@ function renderLevel4(){
   const kind=level4KindInduni(state.sous,state.sous2==='__ALL__'?null:state.sous2,base)||'diameterRange';
   const groups=groupByFnInduni(base,p=>level4KeyInduni(kind,p));
   const label=state.sous2&&state.sous2!=='__ALL__'?state.sous2:state.sous;
-  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a> › <a onclick='state.view="family";render()'>${esc(state.famille)}</a> › <a onclick='state.view="subfamily";state.sous2=null;state.sous3=null;render()'>${esc(state.sous)}</a> › <b>${esc(label)}</b></div><div class="banner"><div style="font-size:70px">${esc(base[0]?.icone||'📦')}</div><div><h2>${esc(label)}</h2><p>${base.length} articles</p></div></div><div class="sectionTitle">${kind==='angle'?'Choisissez un angle':'Choisissez une plage de diamètre'}</div><div class="subgrid">${Object.entries(groups).sort((a,b)=>level4SortInduni(kind,a[0],b[0])).map(([k,it])=>`<div class="sub level4Tile" onclick='state.view="products";state.sous3=${jsAttr(k)};state.sous3Kind=${jsAttr(kind)};render()'><b class="level4Big">${esc(k)}</b><p class="muted">${it.length} articles</p></div>`).join('')}<div class="sub" onclick='state.view="products";state.sous3=null;render()'><b>Voir tout</b><p class="muted">${base.length} articles</p></div></div>`;
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a> › <a onclick='state.view="family";render()'>${esc(state.famille)}</a> › <a onclick='state.view="subfamily";state.sous2=null;state.sous3=null;render()'>${esc(state.sous)}</a> › <b>${esc(label)}</b></div><div class="banner"><div style="font-size:70px">${esc(base[0]?.icone||'📦')}</div><div><h2>${esc(label)}</h2><p>${base.length} articles</p></div></div><div class="sectionTitle">${kind==='angle'?'Choisissez un angle':(kind==='univWm'?'Choisissez un type':'Choisissez une plage de diamètre')}</div><div class="subgrid">${Object.entries(groups).sort((a,b)=>level4SortInduni(kind,a[0],b[0])).map(([k,it])=>`<div class="sub level4Tile" onclick='state.view="products";state.sous3=${jsAttr(k)};state.sous3Kind=${jsAttr(kind)};render()'><b class="level4Big">${esc(k)}</b><p class="muted">${it.length} articles</p></div>`).join('')}<div class="sub" onclick='state.view="products";state.sous3=null;render()'><b>Voir tout</b><p class="muted">${base.length} articles</p></div></div>`;
 }
 function hasLevel2Induni(items){
   const vals=[...new Set(items.map(p=>p.sousSousFamille).filter(x=>x&&x!=='__DIRECT__'))];
