@@ -1144,9 +1144,11 @@ const NO_DIAMETER_SPLIT_INDUNI=new Set([
   'Fixations, outillage & consommables|Feuille de poncage|null',
 ]);
 function extractUnivWmInduni(designation){const t=normEqText(designation); if(t.endsWith('w m'))return'W/M'; if(t.endsWith('univ'))return'Universel'; return null;}
+function extractHiltiDiscSeriesInduni(designation){const d=String(designation||''); if(d.includes('SPX'))return'SPX'; if(d.includes('SP'))return'SP'; if(/\bP\b/.test(d))return'P'; return'Autre';}
 function level4KindInduni(sous,sous2,items){
   if(state.catalog==='HILTI'){
     if(sous==='Lame'&&/^Lame scie sabre /.test(sous2||''))return'univWm';
+    if(sous==='Disques'&&(sous2==='Disque diamant'||sous2==='Kit disques'))return'hiltiDiscSeries';
     return null;
   }
   if(isAngleContextInduni(sous,sous2)) return 'angle';
@@ -1158,21 +1160,24 @@ function level4KeyInduni(kind,p){
   if(kind==='angle') return extractAngleInduni(p.designation)||'Sans angle';
   if(kind==='diameterRange'){const d=extractDiamInduni(p.designation); if(d==null)return 'Diamètre non précisé'; return d>200?'> 200 mm':'≤ 200 mm';}
   if(kind==='univWm') return extractUnivWmInduni(p.designation)||'Autre';
+  if(kind==='hiltiDiscSeries') return extractHiltiDiscSeriesInduni(p.designation);
   return '__ALL__';
 }
 function groupByFnInduni(items,fn){const out={}; items.forEach(p=>{const k=fn(p); (out[k]??=[]).push(p);}); return out;}
 function level4SortInduni(kind,a,b){
-  if(a==='Sans angle'||a==='Diamètre non précisé') return 1;
-  if(b==='Sans angle'||b==='Diamètre non précisé') return -1;
+  if(a==='Sans angle'||a==='Diamètre non précisé'||a==='Autre') return 1;
+  if(b==='Sans angle'||b==='Diamètre non précisé'||b==='Autre') return -1;
   if(kind==='angle') return parseFloat(a)-parseFloat(b);
   if(kind==='diameterRange') return a==='≤ 200 mm'?-1:(b==='≤ 200 mm'?1:0);
   if(kind==='univWm') return a==='Universel'?-1:(b==='Universel'?1:0);
+  if(kind==='hiltiDiscSeries'){const order=['P','SP','SPX']; return order.indexOf(a)-order.indexOf(b);}
   return String(a).localeCompare(String(b),'fr');
 }
 function matchesSous3Induni(p,val,kind){
   if(!val) return true;
   if(kind==='angle') return (extractAngleInduni(p.designation)||'Sans angle')===val;
   if(kind==='diameterRange'){const d=extractDiamInduni(p.designation); const range=(d==null)?'Diamètre non précisé':(d>200?'> 200 mm':'≤ 200 mm'); return range===val;}
+  if(kind==='hiltiDiscSeries') return extractHiltiDiscSeriesInduni(p.designation)===val;
   if(kind==='diameter') return extractDiamInduni(p.designation)===Number(val);
   if(kind==='length') return extractLongInduni(p.designation)===Number(val);
   if(kind==='univWm') return (extractUnivWmInduni(p.designation)||'Autre')===val;
@@ -1183,7 +1188,7 @@ function renderLevel4(){
   const kind=level4KindInduni(state.sous,state.sous2==='__ALL__'?null:state.sous2,base)||'diameterRange';
   const groups=groupByFnInduni(base,p=>level4KeyInduni(kind,p));
   const label=state.sous2&&state.sous2!=='__ALL__'?state.sous2:state.sous;
-  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a> › <a onclick='state.view="family";render()'>${esc(state.famille)}</a> › <a onclick='state.view="subfamily";state.sous2=null;state.sous3=null;render()'>${esc(state.sous)}</a> › <b>${esc(label)}</b></div><div class="banner"><div style="font-size:70px">${esc(base[0]?.icone||'📦')}</div><div><h2>${esc(label)}</h2><p>${base.length} articles</p></div></div><div class="sectionTitle">${kind==='angle'?'Choisissez un angle':(kind==='univWm'?'Choisissez un type':'Choisissez une plage de diamètre')}</div><div class="subgrid">${Object.entries(groups).sort((a,b)=>level4SortInduni(kind,a[0],b[0])).map(([k,it])=>`<div class="sub level4Tile" onclick='state.view="products";state.sous3=${jsAttr(k)};state.sous3Kind=${jsAttr(kind)};render()'><b class="level4Big">${esc(k)}</b><p class="muted">${it.length} articles</p></div>`).join('')}<div class="sub" onclick='state.view="products";state.sous3=null;render()'><b>Voir tout</b><p class="muted">${base.length} articles</p></div></div>`;
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a> › <a onclick='state.view="family";render()'>${esc(state.famille)}</a> › <a onclick='state.view="subfamily";state.sous2=null;state.sous3=null;render()'>${esc(state.sous)}</a> › <b>${esc(label)}</b></div><div class="banner"><div style="font-size:70px">${esc(base[0]?.icone||'📦')}</div><div><h2>${esc(label)}</h2><p>${base.length} articles</p></div></div><div class="sectionTitle">${kind==='angle'?'Choisissez un angle':(kind==='univWm'?'Choisissez un type':(kind==='hiltiDiscSeries'?'Choisissez une série':'Choisissez une plage de diamètre'))}</div><div class="subgrid">${Object.entries(groups).sort((a,b)=>level4SortInduni(kind,a[0],b[0])).map(([k,it])=>`<div class="sub level4Tile" onclick='state.view="products";state.sous3=${jsAttr(k)};state.sous3Kind=${jsAttr(kind)};render()'><b class="level4Big">${esc(k)}</b><p class="muted">${it.length} articles</p></div>`).join('')}<div class="sub" onclick='state.view="products";state.sous3=null;render()'><b>Voir tout</b><p class="muted">${base.length} articles</p></div></div>`;
 }
 function hasLevel2Induni(items){
   const vals=[...new Set(items.map(p=>p.sousSousFamille).filter(x=>x&&x!=='__DIRECT__'))];
