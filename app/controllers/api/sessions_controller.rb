@@ -21,7 +21,9 @@ class Api::SessionsController < ApplicationController
         can_view_market_indices:      current_user.effective_can_view_market_indices?,
         can_view_intelligence_buying: current_user.effective_can_view_intelligence_buying?,
         can_view_nomenclature: current_user.effective_can_view_nomenclature?,
-        catalogLastUpdated: File.mtime(Rails.root.join("public/catalogue.html")).strftime("%d.%m.%Y"),
+        # Date réelle de la dernière modification d'un article (tarif, prix…),
+        # et non la date du fichier catalogue.html (= date du dernier déploiement).
+        catalogLastUpdated: (Product.maximum(:updated_at) || File.mtime(Rails.root.join("public/catalogue.html"))).strftime("%d.%m.%Y"),
         vapidPublicKey:    Rails.application.config.x.vapid_public_key,
         pushSubscribed:    current_user.push_subscriptions.exists?,
         supplierEmailsByCanton: Supplier.all.each_with_object({}) { |s, h|
