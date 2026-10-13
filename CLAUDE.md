@@ -94,6 +94,29 @@ catalog silently invisible to users with any manual restriction.
   mistake (see the `unlink_coude_equivalences_with_mismatched_diameter`
   migration) — always verify the real diameter on both sides before setting a
   shared `equivalence_key`, not just the product family/designation.
+- **Delivery/transport fees (RPLP, zones, forfaits, HILTI, Matériel Induni...)
+  are computed ONLY client-side, in `catalogue.html`** — there is no
+  server-side re-derivation of this pricing logic, by design (one source of
+  truth instead of duplicating per-supplier tariffs in Ruby). The pipeline is:
+  `transportDetailsInduni(sub,supplier,weightOverride,chantierNom)` (raw
+  numbers) → `transportHtmlInduni(...)` (cart/preview display) and
+  `transportLineItemsInduni(...)` (the same fees as a plain `[{label,
+  amount}]` array) → `sendOrderByEmail` sends that array as `extra_charges` in
+  the `/api/orders` POST body → `Api::OrdersController#create` persists it
+  verbatim to `Order#extra_charges` (JSON column, no recomputation) →
+  `Order#grand_total` and the "totals" box in `orders/bon_de_commande.html.erb`
+  (the real emailed PDF) render it. **Adding a new supplier fee (or changing
+  an existing one) means updating all three of `transportDetailsInduni`,
+  `transportHtmlInduni` AND `transportLineItemsInduni`** — the ERB template
+  and `Order` model never need touching since they're generic over
+  `extra_charges`, but forgetting `transportLineItemsInduni` specifically
+  (easy to do, since the cart/preview UI already looks correct via
+  `transportHtmlInduni` and nothing locally signals the gap) silently drops
+  the fee from the real PDF sent to the supplier — exactly how the Canplast
+  delivery-fee bug happened (fee computed and shown everywhere in the
+  browser, but never sent to the backend at all, for every supplier with
+  transport logic, not just Canplast). Confidential-pricing suppliers must
+  keep masking `extra_charges` the same way as the merchandise total.
 
 ## Deploy workflow (always follow this exact sequence)
 

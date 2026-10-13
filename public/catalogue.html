@@ -144,6 +144,12 @@ const GANAMAT_TRANSPORT=105;
 // supplément fixe CHF 150 ; supplément de transport routier (STR/majoration RPLP) de
 // 0.95% de la valeur nette, facturé dans tous les cas (même franco).
 const SWISSPOR_FRANCO=3500, SWISSPOR_SUPPLEMENT=150, SWISSPOR_STR_RATE=0.0095;
+// Frais de livraison en dur HILTI (même montant quel que soit le chantier).
+const HILTI_TRANSPORT=34;
+// Frais de livraison Dépôt INDUNI, catalogue "Matériel Induni" UNIQUEMENT (ni
+// EFCO ni HILTI, qui ont leur propre tarif/logique) — selon le canton du
+// chantier commandé, pas de frais pour les autres cantons (non communiqué).
+const MATERIEL_INDUNI_TRANSPORT_VAUD=93, MATERIEL_INDUNI_TRANSPORT_GENEVE=73;
 
 /* ============================================================
    ZONES DE LIVRAISON SOREVAL — calculées par temps de trajet routier
@@ -275,18 +281,24 @@ let cart=JSON.parse(localStorage.getItem('induni_panier_v3')||'[]');
 const app=document.getElementById('app');
 
 function transportIncluded(){const el=document.getElementById('transportIncludedToggle');return !el||el.checked;}
-function transportChargePartsInduni(sub,supplier){
-  const t=transportDetailsInduni(sub,supplier);
+function transportChargePartsInduni(sub,supplier,chantierNom){
+  const t=transportDetailsInduni(sub,supplier,undefined,chantierNom);
   const rplp=supplier==='Canplast'?t.rplp:0;
   const transportPart=(supplier==='Canplast'||supplier==='CreaBeton')?(t.transport+t.crane):t.totalTransport;
   return {t,rplp,transportPart};
 }
-function effectiveOrderTotalInduni(sub,supplier){
-  const {rplp,transportPart}=transportChargePartsInduni(sub,supplier);
+function effectiveOrderTotalInduni(sub,supplier,chantierNom){
+  const {rplp,transportPart}=transportChargePartsInduni(sub,supplier,chantierNom);
   return sub+(transportIncluded()?(rplp+transportPart):0);
 }
-function transportDetailsInduni(sub,supplier,weightOverride){
+function transportDetailsInduni(sub,supplier,weightOverride,chantierNom){
   if(!supplier) return {transport:0,rplp:0,crane:0,prep:0,totalTransport:0,total:sub,label:'Transport'};
+  if(supplier==='HILTI') return {transport:HILTI_TRANSPORT,rplp:0,crane:0,prep:0,totalTransport:HILTI_TRANSPORT,total:sub+HILTI_TRANSPORT,label:'Frais de livraison HILTI'};
+  if(supplier==='Matériel Induni'){
+    const canton=chantierCanton(chantierNom);
+    const base=canton==='VAUD'?MATERIEL_INDUNI_TRANSPORT_VAUD:(canton==='GENEVE'?MATERIEL_INDUNI_TRANSPORT_GENEVE:0);
+    return {transport:base,rplp:0,crane:0,prep:0,totalTransport:base,total:sub+base,label:'Frais de livraison Matériel Induni',canton:canton};
+  }
   if(supplier==='HGC') return {transport:TRANSPORT_HGC,rplp:0,crane:0,prep:0,totalTransport:TRANSPORT_HGC,total:sub+TRANSPORT_HGC,label:'Transport HGC fixe'};
   if(supplier==='Canplast'){
     const craneEl=document.getElementById('canplastCrane');
@@ -329,13 +341,15 @@ function transportDetailsInduni(sub,supplier,weightOverride){
   }
   return {transport:0,rplp:0,crane:0,prep:0,totalTransport:0,total:sub,label:'Transport'};
 }
-function transportHtmlInduni(sub,supplier,included){
+function transportHtmlInduni(sub,supplier,included,chantierNom){
   if(included===false){
     return `${supplier==='Canplast'?`<div class="sum"><span>Conditions cadre — RPLP 2.2%</span><b>Non inclus</b></div>`:''}<div class="sum"><span>Transport</span><b>Non inclus</b></div>`;
   }
-  const t=transportDetailsInduni(sub,supplier);
+  const t=transportDetailsInduni(sub,supplier,undefined,chantierNom);
   if(!supplier) return `<div class="sum"><span>Transport</span><b>${fmt(0)}</b></div>`;
   if(supplier==='HGC') return `<div class="sum"><span>Transport HGC fixe</span><b>${fmt(t.totalTransport)}</b></div>`;
+  if(supplier==='HILTI') return `<div class="sum"><span>Frais de livraison HILTI</span><b>${fmt(t.totalTransport)}</b></div>`;
+  if(supplier==='Matériel Induni') return t.canton?`<div class="sum"><span>Frais de livraison Matériel Induni — ${esc(t.canton)}</span><b>${fmt(t.totalTransport)}</b></div>`:`<div class="sum"><span>Frais de livraison Matériel Induni</span><b style="color:#b45309">à déterminer (canton du chantier inconnu)</b></div>`;
   if(supplier==='Canplast') return `<div class="sum"><span>Conditions cadre — RPLP 2.2%</span><b>${fmt(t.rplp)}</b></div><div class="sum"><span>Livraison Canplast${sub>=CANPLAST_FRANCO?' franco dès CHF 2’000':(canplastResolvedZone?` — ${esc(canplastResolvedZone.z)}`:' chantier semi-remorque')}</span><b>${fmt(t.transport)}</b></div>${t.crane?`<div class="sum"><span>Déchargement grue Canplast</span><b>${fmt(t.crane)}</b></div>`:''}`;
   if(supplier==='Leuba HIAG') return `<div class="sum"><span>Leuba HIAG franco dépôt/chantiers GE</span><b>${fmt(0)}</b></div>`;
   if(supplier==='MBT') return `<div class="sum"><span>Livraison MBT${sub>MBT_FRANCO?' franco dès CHF 3’000':(sub>=MBT_TIER2_MIN?' — CHF 1’500 à 3’000':' — moins de CHF 1’500')}</span><b>${fmt(t.transport)}</b></div>`;
@@ -362,11 +376,13 @@ function transportHtmlInduni(sub,supplier,included){
 // envoyé au serveur avec la commande pour que le bon de commande PDF
 // (app/views/orders/bon_de_commande.html.erb, qui ne réimplémente pas cette
 // logique tarifaire par fournisseur) puisse les afficher sans les recalculer.
-function transportLineItemsInduni(sub,supplier,included){
+function transportLineItemsInduni(sub,supplier,included,chantierNom){
   if(included===false) return [];
-  const t=transportDetailsInduni(sub,supplier);
+  const t=transportDetailsInduni(sub,supplier,undefined,chantierNom);
   if(!supplier) return [];
   if(supplier==='HGC') return [{label:'Transport HGC fixe',amount:t.totalTransport}];
+  if(supplier==='HILTI') return [{label:'Frais de livraison HILTI',amount:t.totalTransport}];
+  if(supplier==='Matériel Induni') return t.canton?[{label:`Frais de livraison Matériel Induni — ${t.canton}`,amount:t.totalTransport}]:[];
   if(supplier==='Canplast'){
     const items=[{label:'Conditions cadre — RPLP 2.2%',amount:t.rplp},
       {label:`Livraison Canplast${sub>=CANPLAST_FRANCO?' franco dès CHF 2’000':(canplastResolvedZone?` — ${canplastResolvedZone.z}`:' chantier semi-remorque')}`,amount:t.transport}];
@@ -1765,7 +1781,7 @@ function updateCartWeightInduni(){
   const truckLabel=trucks>1?`${trucks} camions de ${TRUCK_CAPACITY_KG_INDUNI/1000}t (${pct}% du dernier)`:`${pct}% d'un camion ${TRUCK_CAPACITY_KG_INDUNI/1000}t`;
   document.getElementById('weightTotal').innerHTML=`${totalWeight.toLocaleString('fr-CH')} kg <span style="font-size:11px;color:${trucks>1||pct>=100?'#b91c1c':'#546273'}">(${truckLabel})</span>`;
 }
-function updateCart(){document.getElementById('cartCount').textContent=cart.length?`(${cart.length})`:''; const box=document.getElementById('cartItems'); const supplier=cartSupplier(); const chantierVal=(document.getElementById('chantier')||{}).value||''; box.innerHTML=cart.length?`<div style="padding:10px 12px;margin-bottom:8px;border-radius:10px;background:#eef5ff;color:#0b4f9c;font-weight:900">Panier fournisseur : ${esc(supplier)}</div>`+cart.map((i,k)=>`<div class="cartRow"><div class="thumb" style="${photoUrl(i)?`background-image:url('${photoUrl(i)}')`:`background-color:${tileColor(i.famille)}`}">${photoUrl(i)?'':`<span class="thumbGlyph">${esc(i.icone||'📦')}</span>`}</div><div><b>${esc(i.designation)}</b><div class="muted">${esc(i.article)} · ${esc(i.unite)}</div>${estimatedDeliveryLabel(i)?`<div class="muted" style="font-size:11px">${estimatedDeliveryLabel(i)}</div>`:""}<div class="qty"><button onclick="qty(${k},-1)">−</button><input type="number" min="0" step="any" value="${i.qty}" onchange="setQty(${k},this.value)" style="width:56px;text-align:center;border:1px solid #ddd;border-radius:6px;height:28px"><span class="muted" style="font-size:12px">${esc(i.unite)}</span><button onclick="qty(${k},1)">+</button></div></div><div style="text-align:right"><b>${amountOrConfidential(effectivePriceInduni(i,chantierVal)*i.qty,i.confidential)}</b><button onclick="removeItem(${k})" style="margin-top:8px;border:0;background:white;color:#999;font-size:20px">×</button></div></div>`).join('')+(cart.some(i=>i.confidential)?'<div class="muted" style="padding:6px 4px;font-size:11.5px">🔒 Le prix des article(s) confidentiel(s) n\'est pas affiché ici (visible uniquement dans l\'Analyse achat) et n\'est pas inclus dans les totaux ci-dessous.</div>':'')+cartPrefaBetonPaletteNoteHtml()+cartComparatifTriggerHtml():'<p class="muted">Panier vide.</p>'; const sub=cart.reduce((s,i)=>s+effectivePriceInduni(i,chantierVal)*i.qty,0); document.getElementById('subTotal').textContent=fmt(sub); updateCartWeightInduni(); const td=transportDetailsInduni(sub,supplier); const rplpLine=document.getElementById('rplpLine'); if(supplier==='Canplast'){rplpLine.style.display='';document.getElementById('rplpTotal').textContent=transportIncluded()?fmt(td.rplp):'Non inclus';}else{rplpLine.style.display='none';} document.getElementById('transportLineLabel').textContent=supplier==='HGC'?'Transport HGC fixe':(supplier==='Canplast'?'Livraison Canplast':(supplier==='Leuba HIAG'?'Leuba HIAG franco':(supplier==='MBT'?'Livraison MBT':(supplier==='CreaBeton'?'Transport CreaBeton':(supplier==='ALZO AG'?'Transport ALZO AG':(supplier==='Soreval'?'Transport Soreval':(supplier==='BTest'?'Remise de volume BTest':(supplier==='LCBE'?'Forfait déplacement LCBE':(supplier==='Swisspor'?'Transport Swisspor':'Transport'))))))))); const transportPart=(supplier==='Canplast'||supplier==='CreaBeton')?(td.transport+td.crane):td.totalTransport; document.getElementById('transportTotal').textContent=transportIncluded()?fmt(transportPart):'Non inclus'; document.getElementById('grandTotal').textContent=fmt(effectiveOrderTotalInduni(sub,supplier));; toggleCanplastOptions();toggleCanplastZoneBlock();toggleSorevalZoneBlock();toggleSupplierFields();toggleBillingMerchant();updateRequiredSupplierFields();}
+function updateCart(){document.getElementById('cartCount').textContent=cart.length?`(${cart.length})`:''; const box=document.getElementById('cartItems'); const supplier=cartSupplier(); const chantierVal=(document.getElementById('chantier')||{}).value||''; box.innerHTML=cart.length?`<div style="padding:10px 12px;margin-bottom:8px;border-radius:10px;background:#eef5ff;color:#0b4f9c;font-weight:900">Panier fournisseur : ${esc(supplier)}</div>`+cart.map((i,k)=>`<div class="cartRow"><div class="thumb" style="${photoUrl(i)?`background-image:url('${photoUrl(i)}')`:`background-color:${tileColor(i.famille)}`}">${photoUrl(i)?'':`<span class="thumbGlyph">${esc(i.icone||'📦')}</span>`}</div><div><b>${esc(i.designation)}</b><div class="muted">${esc(i.article)} · ${esc(i.unite)}</div>${estimatedDeliveryLabel(i)?`<div class="muted" style="font-size:11px">${estimatedDeliveryLabel(i)}</div>`:""}<div class="qty"><button onclick="qty(${k},-1)">−</button><input type="number" min="0" step="any" value="${i.qty}" onchange="setQty(${k},this.value)" style="width:56px;text-align:center;border:1px solid #ddd;border-radius:6px;height:28px"><span class="muted" style="font-size:12px">${esc(i.unite)}</span><button onclick="qty(${k},1)">+</button></div></div><div style="text-align:right"><b>${amountOrConfidential(effectivePriceInduni(i,chantierVal)*i.qty,i.confidential)}</b><button onclick="removeItem(${k})" style="margin-top:8px;border:0;background:white;color:#999;font-size:20px">×</button></div></div>`).join('')+(cart.some(i=>i.confidential)?'<div class="muted" style="padding:6px 4px;font-size:11.5px">🔒 Le prix des article(s) confidentiel(s) n\'est pas affiché ici (visible uniquement dans l\'Analyse achat) et n\'est pas inclus dans les totaux ci-dessous.</div>':'')+cartPrefaBetonPaletteNoteHtml()+cartComparatifTriggerHtml():'<p class="muted">Panier vide.</p>'; const sub=cart.reduce((s,i)=>s+effectivePriceInduni(i,chantierVal)*i.qty,0); document.getElementById('subTotal').textContent=fmt(sub); updateCartWeightInduni(); const td=transportDetailsInduni(sub,supplier,undefined,chantierVal); const rplpLine=document.getElementById('rplpLine'); if(supplier==='Canplast'){rplpLine.style.display='';document.getElementById('rplpTotal').textContent=transportIncluded()?fmt(td.rplp):'Non inclus';}else{rplpLine.style.display='none';} document.getElementById('transportLineLabel').textContent=supplier==='HGC'?'Transport HGC fixe':(supplier==='Canplast'?'Livraison Canplast':(supplier==='Leuba HIAG'?'Leuba HIAG franco':(supplier==='MBT'?'Livraison MBT':(supplier==='CreaBeton'?'Transport CreaBeton':(supplier==='ALZO AG'?'Transport ALZO AG':(supplier==='Soreval'?'Transport Soreval':(supplier==='BTest'?'Remise de volume BTest':(supplier==='LCBE'?'Forfait déplacement LCBE':(supplier==='Swisspor'?'Transport Swisspor':(supplier==='HILTI'?'Frais de livraison HILTI':(supplier==='Matériel Induni'?'Frais de livraison Matériel Induni':'Transport'))))))))))); const transportPart=(supplier==='Canplast'||supplier==='CreaBeton')?(td.transport+td.crane):td.totalTransport; document.getElementById('transportTotal').textContent=transportIncluded()?fmt(transportPart):'Non inclus'; document.getElementById('grandTotal').textContent=fmt(effectiveOrderTotalInduni(sub,supplier,chantierVal));; toggleCanplastOptions();toggleCanplastZoneBlock();toggleSorevalZoneBlock();toggleSupplierFields();toggleBillingMerchant();updateRequiredSupplierFields();}
 const PREFA_BETON_PALETTE_SKIP_SOUS_INDUNI=new Set(['Outillage béton']);
 function cartPrefaBetonPaletteNoteHtml(){
   const hasPrefa=cart.some(i=>i.famille==='Préfa-béton'&&!PREFA_BETON_PALETTE_SKIP_SOUS_INDUNI.has(i.sousFamille));
@@ -2191,6 +2207,12 @@ function chantierTechnicienEmail(nomChantier){
   return (c&&c.emailTechnicien)||'';
 }
 function isChantierConsortium(nom){return (window._chantiers||[]).some(x=>x.nom===nom&&x.consortium);}
+// Canton du chantier (GENEVE/VAUD/VALAIS/FRIBOURG/JURA, cf. Supplier::CANTONS),
+// pour les frais de livraison Matériel Induni qui en dépendent.
+function chantierCanton(nom){
+  const c=(window._chantiers||[]).find(x=>x.nom===nom);
+  return (c&&c.canton)||null;
+}
 // "Matériel Induni" (dépôt interne) a deux tarifs par article (prix vente
 // interne / externe) : externe pour un chantier consortium, interne pour un
 // chantier Induni en propre. N'affecte que ce catalogue — tous les autres
@@ -2284,7 +2306,7 @@ ${_modifyingOrderNumber?`<div style="text-align:center;color:#c00000;font-weight
 
 <div class="totals">
   <div class="sum"><span>Sous-total marchandises</span><b>${fmt(sub)}</b></div>
-  ${transportHtmlInduni(sub,cartSupplier(),transportIncluded())}
+  ${transportHtmlInduni(sub,cartSupplier(),transportIncluded(),chantier)}
   <div class="sum total"><span>TOTAL TTC</span><b>${fmt(total)}</b></div>
 </div>
 
@@ -3782,8 +3804,8 @@ async function previewOrder(e) {
   const no = 'BC-' + Math.floor(100000 + Math.random() * 900000);
   const today = new Date().toLocaleDateString('fr-CH');
   const sub = cart.reduce((s, i) => s + effectivePriceInduni(i, chantier) * i.qty, 0);
-  const tdet = transportDetailsInduni(sub, supplier);
-  const total = effectiveOrderTotalInduni(sub, supplier);
+  const tdet = transportDetailsInduni(sub, supplier, undefined, chantier);
+  const total = effectiveOrderTotalInduni(sub, supplier, chantier);
   const rows = cart.map((i, k) => `<tr><td>${k+1}</td><td><b>${esc(i.designation)}</b><br><small>${esc(i.descriptif)}</small></td><td>${esc(i.article)}</td><td>${i.qty}<br><small>${esc(i.unite)}</small></td><td>${i.confidential?'—':fmt(effectivePriceInduni(i,chantier))}</td><td><b>${amountOrConfidential(effectivePriceInduni(i,chantier)*i.qty,i.confidential)}</b></td></tr>`).join('');
   const orderHtml = buildOrderHtml(no, today, chantier, delai, null, supplier, rows, sub, tdet, total);
   const blob = new Blob([orderHtml], { type: 'text/html;charset=utf-8' });
@@ -3826,9 +3848,9 @@ async function sendOrderByEmail(e) {
 
   const today = new Date().toLocaleDateString('fr-CH');
   const sub = cart.reduce((s, i) => s + effectivePriceInduni(i, chantier) * i.qty, 0);
-  const tdet = transportDetailsInduni(sub, supplier);
-  const total = effectiveOrderTotalInduni(sub, supplier);
-  const extraCharges = transportLineItemsInduni(sub, supplier, transportIncluded());
+  const tdet = transportDetailsInduni(sub, supplier, undefined, chantier);
+  const total = effectiveOrderTotalInduni(sub, supplier, chantier);
+  const extraCharges = transportLineItemsInduni(sub, supplier, transportIncluded(), chantier);
   const rows = cart.map((i, k) => `<tr><td>${k+1}</td><td><b>${esc(i.designation)}</b><br><small>${esc(i.descriptif)}</small></td><td>${esc(i.article)}</td><td>${i.qty}<br><small>${esc(i.unite)}</small></td><td>${i.confidential?'—':fmt(effectivePriceInduni(i,chantier))}</td><td><b>${amountOrConfidential(effectivePriceInduni(i,chantier)*i.qty,i.confidential)}</b></td></tr>`).join('');
   const html = buildOrderHtml(no, today, chantier, delai, null, supplier, rows, sub, tdet, total);
 
