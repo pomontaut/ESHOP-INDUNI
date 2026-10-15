@@ -108,6 +108,16 @@ class Api::OrdersController < ApplicationController
     phone              = params[:phone].to_s.strip.presence
     delivery_address   = params[:adresse].to_s.strip.presence
     conducteur_travaux = params[:conducteur].to_s.strip.presence
+    # Frais annexes (transport, RPLP, grue, remise de volume...) déjà calculés
+    # et affichés côté client (transportLineItemsInduni dans catalogue.html) :
+    # repris tels quels, pas recalculés ici, pour éviter de dupliquer cette
+    # logique tarifaire par fournisseur côté serveur. Seule la forme est
+    # validée (label/amount), jamais le montant, qui reste purement informatif
+    # et n'entre dans aucun calcul de seuil d'approbation.
+    extra_charges = Array(params[:extra_charges]).filter_map { |c|
+      amount = c[:amount].to_f
+      { "label" => c[:label].to_s.presence || "Frais annexes", "amount" => amount } unless amount.zero?
+    }
 
     return render json: { error: "Panier vide" }, status: :unprocessable_entity if items.blank?
 
@@ -211,7 +221,8 @@ class Api::OrdersController < ApplicationController
       contact:            contact,
       phone:              phone,
       delivery_address:   delivery_address,
-      conducteur_travaux: conducteur_travaux
+      conducteur_travaux: conducteur_travaux,
+      extra_charges:      extra_charges
     )
 
     items.each do |item|
