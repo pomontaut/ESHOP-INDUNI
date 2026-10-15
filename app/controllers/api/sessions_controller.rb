@@ -4,8 +4,14 @@ class Api::SessionsController < ApplicationController
 
   def me
     if current_user
+      test_profile = Api::TestProfilesController.active_profile(session, current_user)
+      # Environnement test (admin) : on ne montre que le bandeau d'un profil
+      # chantier (contremaître / conducteur de travaux), sans droits admin.
+      return render json: test_profile_payload(test_profile) if test_profile
+
       render json: {
         logged_in:         true,
+        real_admin:        current_user.admin?,
         admin:             current_user.admin?,
         full_name:         current_user.full_name,
         email:             current_user.email,
@@ -57,5 +63,44 @@ class Api::SessionsController < ApplicationController
     else
       render json: { logged_in: false, admin: false, allowed_suppliers: [] }
     end
+  end
+
+  private
+
+  def test_profile_payload(profile)
+    {
+      logged_in:         true,
+      real_admin:        true,
+      test_profile:      profile,
+      admin:             false,
+      full_name:         current_user.full_name,
+      email:             current_user.email,
+      phone:             current_user.phone,
+      sector:            current_user.sector,
+      can_create_users:  false,
+      can_create_orders: true,
+      can_modify_orders: false,
+      can_import_quote:  false,
+      can_generic_order: false,
+      can_view_dashboard:    false,
+      can_view_analysis:     false,
+      can_view_market_indices:      false,
+      can_view_intelligence_buying: false,
+      can_view_nomenclature: false,
+      catalogLastUpdated: (Product.maximum(:updated_at) || File.mtime(Rails.root.join("public/catalogue.html"))).strftime("%d.%m.%Y"),
+      vapidPublicKey:    Rails.application.config.x.vapid_public_key,
+      pushSubscribed:    current_user.push_subscriptions.exists?,
+      supplierEmailsByCanton: {},
+      supplierDefaultEmails: Supplier.where.not(email: [ nil, "" ]).pluck(:name, :email).to_h,
+      allowed_suppliers: current_user.effective_visible_suppliers,
+      chantiers:         Chantier.visible_to(current_user).order(:nom).map { |c|
+        {
+          nom: c.nom, adresse: c.adresse, npa: c.npa, ville: c.ville,
+          contact: c.contremaitre, telephone: c.natel_contremaitre,
+          contactLivraison: c.contact_livraison, telephoneLivraison: c.natel_livraison,
+          emailTechnicien: c.email_technicien, consortium: c.consortium, canton: c.canton
+        }
+      }
+    }
   end
 end

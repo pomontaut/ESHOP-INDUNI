@@ -72,4 +72,27 @@ class Api::SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "PINTO Pedro", chantier["contactLivraison"]
     assert_equal "+41763656892", chantier["telephoneLivraison"]
   end
+
+  test "admin test environment shows only the site-lead banner, and can be left" do
+    post login_url, params: { email: users(:one).email, password: "password123" }
+
+    post api_test_profile_url, params: { profile: "Contremaître" }
+    assert_response :success
+    body = JSON.parse(get(api_me_url) && response.body)
+    assert_equal false, body["admin"]
+    assert_equal true, body["real_admin"]
+    assert_equal "Contremaître", body["test_profile"]
+    assert_equal false, body["can_view_dashboard"]
+    assert_equal false, body["can_create_users"]
+
+    delete api_test_profile_url
+    get api_me_url
+    assert_equal true, JSON.parse(response.body)["admin"]
+  end
+
+  test "non-admin cannot start the test environment" do
+    post login_url, params: { email: users(:two).email, password: "password123" }
+    post api_test_profile_url, params: { profile: "Contremaître" }
+    assert_response :forbidden
+  end
 end
