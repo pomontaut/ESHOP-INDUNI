@@ -97,6 +97,15 @@ class CatalogSeedTaskTest < ActiveSupport::TestCase
       "an e-mail already set by an admin must never be silently overwritten"
   end
 
+  test "catalog:seed mirrors Leuba HIAG's Bois & Coffrage references at HG COMMERCIALE" do
+    run_seed
+
+    leuba = Product.joins(:supplier).where(suppliers: { name: "Leuba HIAG" }, famille: "Bois & Coffrage").pluck(:reference)
+    hgc   = Product.joins(:supplier).where(suppliers: { name: "HG COMMERCIALE" }, famille: "Bois & Coffrage").pluck(:reference)
+    assert leuba.any?
+    assert_empty leuba - hgc
+  end
+
   private
 
   def run_seed
