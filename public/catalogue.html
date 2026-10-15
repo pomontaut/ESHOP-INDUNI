@@ -4133,6 +4133,7 @@ Promise.all([
     document.getElementById('adminDropdownToggle').style.display='inline-flex';
   }
   if(perms.test_profile){
+    var approvalsBtn=document.getElementById('orderApprovalsNavLink'); if(approvalsBtn) approvalsBtn.style.display='none';
     document.getElementById('testProfileLabel').textContent='🧪 Environnement test — vue '+perms.test_profile;
     document.getElementById('testProfileBanner').style.display='block';
   }
