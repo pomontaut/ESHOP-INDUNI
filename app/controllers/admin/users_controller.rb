@@ -1,6 +1,7 @@
 class Admin::UsersController < ApplicationController
   before_action :require_admin
   before_action :set_user, only: [ :edit, :update, :destroy, :resend_welcome ]
+  before_action :load_chantiers_for_form, only: [ :new, :create, :edit, :update ]
 
   def index
     @users = User.order(:last_name, :first_name)
@@ -8,6 +9,13 @@ class Admin::UsersController < ApplicationController
 
   def new
     @user = User.new
+  end
+
+  # Suggestions de chantiers pour le formulaire utilisateur : chantiers où le
+  # prénom + nom saisis figurent comme technicien, contremaître ou chef d'équipe.
+  def chantier_matches
+    matches = Chantier.matching_person(params[:first_name], params[:last_name])
+    render json: matches.map { |m| { id: m[:chantier].id, nom: m[:chantier].nom, roles: m[:roles] } }
   end
 
   def create
@@ -67,6 +75,10 @@ class Admin::UsersController < ApplicationController
 
   private
 
+  def load_chantiers_for_form
+    @all_chantiers = Chantier.order(:nom).pluck(:id, :nom)
+  end
+
   def set_user
     @user = User.find(params[:id])
   end
@@ -103,7 +115,8 @@ class Admin::UsersController < ApplicationController
       :can_view_nomenclature,
       :order_limit, :approver_email,
       :chantier_access_scope,
-      allowed_suppliers: []
+      allowed_suppliers: [],
+      assigned_chantier_ids: []
     )
     # The form always submits a hidden "" alongside the checkboxes so an
     # all-unchecked submission still sends the param — strip it, or an admin

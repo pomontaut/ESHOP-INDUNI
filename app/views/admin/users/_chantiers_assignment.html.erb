@@ -1,0 +1,73 @@
+<%# Champ « Chantiers » : pré-rempli avec les chantiers où le prénom + nom saisis
+    figurent comme technicien / contremaître / chef d'équipe ; le bouton + permet
+    d'affecter n'importe quel autre chantier, sans limite. %>
+<%
+  selected = @user.assigned_chantiers.order(:nom).pluck(:id, :nom)
+  chantier_names = @all_chantiers.to_h
+%>
+<div id="chantierAssignment" class="mt-3" data-matches-url="<%= chantier_matches_admin_users_path %>">
+  <label class="form-label fw-semibold">Chantiers</label>
+  <div class="form-text mb-2">Se remplit automatiquement avec les chantiers où ce prénom + nom figure comme technicien, contremaître ou chef d'équipe. Si le nom n'est pas trouvé, utilisez + pour affecter les chantiers souhaités.</div>
+  <%= hidden_field_tag "user[assigned_chantier_ids][]", "", id: nil %>
+  <div id="chantierChips" class="d-flex flex-wrap gap-2 mb-2">
+    <% selected.each do |id, nom| %>
+      <span class="badge text-bg-secondary d-inline-flex align-items-center gap-2 py-2 px-3" data-chantier-id="<%= id %>">
+        <%= nom %>
+        <input type="hidden" name="user[assigned_chantier_ids][]" value="<%= id %>">
+        <button type="button" class="btn-close btn-close-white" style="font-size:9px" aria-label="Retirer" data-remove-chantier></button>
+      </span>
+    <% end %>
+  </div>
+  <div id="chantierAutoNote" class="form-text mb-2" style="display:none"></div>
+  <button type="button" id="chantierAddToggle" class="btn btn-outline-primary btn-sm" title="Ajouter un chantier">＋ Ajouter un chantier</button>
+  <div id="chantierAddRow" class="input-group mt-2" style="display:none">
+    <input type="text" id="chantierAddInput" class="form-control" list="chantierAddList" placeholder="Rechercher un chantier par nom ou numéro…" autocomplete="off">
+    <button type="button" id="chantierAddBtn" class="btn btn-primary">Ajouter</button>
+  </div>
+  <datalist id="chantierAddList">
+    <% @all_chantiers.each do |_id, nom| %><option value="<%= nom %>"></option><% end %>
+  </datalist>
+  <script type="application/json" id="chantierNamesData"><%= raw(@all_chantiers.map { |id, nom| { id: id, nom: nom } }.to_json.gsub("</", "<\\/")) %></script>
+</div>
+<script>
+(function(){
+  var root=document.getElementById('chantierAssignment'); if(!root) return;
+  var chips=document.getElementById('chantierChips');
+  var all=JSON.parse(document.getElementById('chantierNamesData').textContent);
+  var note=document.getElementById('chantierAutoNote');
+  function has(id){ return !!chips.querySelector('[data-chantier-id="'+id+'"]'); }
+  function addChip(id,nom,roles){
+    if(has(id)) return false;
+    var span=document.createElement('span');
+    span.className='badge text-bg-secondary d-inline-flex align-items-center gap-2 py-2 px-3';
+    span.setAttribute('data-chantier-id',id);
+    span.appendChild(document.createTextNode(nom+(roles&&roles.length?' ('+roles.join(', ')+')':'')+' '));
+    var input=document.createElement('input'); input.type='hidden'; input.name='user[assigned_chantier_ids][]'; input.value=id; span.appendChild(input);
+    var btn=document.createElement('button'); btn.type='button'; btn.className='btn-close btn-close-white'; btn.style.fontSize='9px'; btn.setAttribute('aria-label','Retirer'); btn.setAttribute('data-remove-chantier',''); span.appendChild(btn);
+    chips.appendChild(span); return true;
+  }
+  chips.addEventListener('click',function(e){ var b=e.target.closest('[data-remove-chantier]'); if(b) b.parentNode.remove(); });
+  document.getElementById('chantierAddToggle').addEventListener('click',function(){
+    var row=document.getElementById('chantierAddRow'); row.style.display=row.style.display==='none'?'flex':'none';
+    if(row.style.display==='flex') document.getElementById('chantierAddInput').focus();
+  });
+  function addTyped(){
+    var input=document.getElementById('chantierAddInput'); var v=input.value.trim().toLowerCase(); if(!v) return;
+    var found=all.find(function(c){return c.nom.toLowerCase()===v;})||all.filter(function(c){return c.nom.toLowerCase().indexOf(v)!==-1;})[0];
+    if(found){ addChip(found.id,found.nom); input.value=''; input.focus(); } else { input.setCustomValidity('Chantier introuvable'); input.reportValidity(); input.setCustomValidity(''); }
+  }
+  document.getElementById('chantierAddBtn').addEventListener('click',addTyped);
+  document.getElementById('chantierAddInput').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); addTyped(); } });
+  function suggest(){
+    var f=document.getElementById('user_first_name'), l=document.getElementById('user_last_name'); if(!f||!l||!f.value.trim()||!l.value.trim()) return;
+    fetch(root.getAttribute('data-matches-url')+'?first_name='+encodeURIComponent(f.value)+'&last_name='+encodeURIComponent(l.value),{headers:{Accept:'application/json'}})
+      .then(function(r){return r.json();}).then(function(list){
+        var added=0; list.forEach(function(m){ if(addChip(m.id,m.nom,m.roles)) added++; });
+        note.style.display='block';
+        note.textContent=list.length?(added+' chantier(s) ajouté(s) automatiquement ('+list.length+' trouvé(s) pour ce nom).'):'Aucun chantier trouvé pour ce nom : utilisez « Ajouter un chantier ».';
+      }).catch(function(){});
+  }
+  ['user_first_name','user_last_name'].forEach(function(id){ var el=document.getElementById(id); if(el) el.addEventListener('change',suggest); });
+  if(!chips.children.length) suggest();
+})();
+</script>

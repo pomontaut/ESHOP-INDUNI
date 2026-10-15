@@ -2,6 +2,8 @@ class User < ApplicationRecord
   has_secure_password
   serialize :allowed_suppliers, coder: JSON, type: Array
   has_many :push_subscriptions, dependent: :destroy
+  has_many :chantier_assignments, dependent: :destroy
+  has_many :assigned_chantiers, through: :chantier_assignments, source: :chantier
 
   SECTORS = [
     "BAT GE", "BAT VD", "GC", "EG VS", "EG VD", "EG GE", "DEPOT",
@@ -88,7 +90,7 @@ class User < ApplicationRecord
       return sector.present? ? "Tous les chantiers du secteur #{sector}" : "Secteur non défini — repli sur ses propres chantiers uniquement"
     end
 
-    "Uniquement ses propres chantiers (e-mail renseigné comme technicien, contremaître ou chef d'équipe dans la fiche chantier)"
+    "Uniquement ses propres chantiers (e-mail renseigné comme technicien, contremaître ou chef d'équipe dans la fiche chantier) et les chantiers qui lui sont affectés"
   end
 
   # Combines the manual per-user override above (allowed_suppliers) with the

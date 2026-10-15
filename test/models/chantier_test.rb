@@ -45,4 +45,25 @@ class ChantierTest < ActiveSupport::TestCase
     result = Chantier.visible_to(user)
     assert_equal [ mine ], result.to_a
   end
+
+  test "visible_to also includes chantiers explicitly assigned to the user" do
+    user = users(:two)
+    user.update!(admin: false, chantier_access_scope: "own")
+    assigned = Chantier.create!(nom: "Assigned")
+    Chantier.create!(nom: "Other")
+    ChantierAssignment.create!(user: user, chantier: assigned)
+
+    assert_equal [ assigned ], Chantier.visible_to(user).to_a
+  end
+
+  test "matching_person finds chantiers by name in any order, ignoring accents and case" do
+    a = Chantier.create!(nom: "A", technicien: "Jean-Luc Dupont")
+    b = Chantier.create!(nom: "B", contremaitre: "DUPONT Jean-Luc", chef_equipe: "Autre Personne")
+    Chantier.create!(nom: "C", technicien: "Jean Martin")
+
+    found = Chantier.matching_person("Jean-Luc", "Dupont")
+    assert_equal [ a, b ], found.map { |m| m[:chantier] }
+    assert_equal [ [ "Technicien" ], [ "Contremaître" ] ], found.map { |m| m[:roles] }
+    assert_empty Chantier.matching_person("Zoé", "Inconnue")
+  end
 end

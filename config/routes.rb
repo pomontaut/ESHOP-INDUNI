@@ -37,6 +37,7 @@ Rails.application.routes.draw do
   namespace :admin do
     resources :users, only: [ :index, :new, :create, :edit, :update, :destroy ] do
       member { post :resend_welcome }
+      collection { get :chantier_matches }
     end
     resources :chantiers, only: [ :index, :new, :create, :edit, :update, :destroy ]
     resources :suppliers, only: [ :index, :edit, :update ]

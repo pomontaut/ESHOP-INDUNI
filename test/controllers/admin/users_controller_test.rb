@@ -123,4 +123,36 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
   ensure
     ENV.delete("ADMIN_PROMOTION_CODE")
   end
+
+  test "chantier_matches suggests the chantiers where the typed name is technicien, contremaître or chef d'équipe" do
+    chantier = Chantier.create!(nom: "12345-Test", chef_equipe: "Marie Curie")
+    Chantier.create!(nom: "99999-Autre", technicien: "Pierre Curie")
+
+    get chantier_matches_admin_users_url, params: { first_name: "Marie", last_name: "Curie" }
+
+    body = JSON.parse(response.body)
+    assert_equal [ chantier.id ], body.map { |m| m["id"] }
+    assert_equal [ "Chef d'équipe" ], body.first["roles"]
+  end
+
+  test "create assigns the chosen chantiers to the new user" do
+    c1 = Chantier.create!(nom: "C1")
+    c2 = Chantier.create!(nom: "C2")
+
+    assert_difference "User.count", 1 do
+      post admin_users_url, params: {
+        user: { first_name: "Nouveau", last_name: "Venu", email: "nouveau.venu@induni.ch", password: "password123",
+                assigned_chantier_ids: [ "", c1.id.to_s, c2.id.to_s ] }
+      }
+    end
+
+    assert_equal [ c1, c2 ].sort_by(&:id), User.find_by!(email: "nouveau.venu@induni.ch").assigned_chantiers.sort_by(&:id)
+  end
+
+  test "new and edit forms render the chantier assignment field" do
+    get new_admin_user_url
+    assert_select "#chantierAssignment"
+    get edit_admin_user_url(users(:two))
+    assert_select "#chantierAssignment"
+  end
 end

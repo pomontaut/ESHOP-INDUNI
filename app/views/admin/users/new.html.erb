@@ -183,6 +183,7 @@
                        [ [ "Uniquement ses propres chantiers", "own" ], [ "Tous les chantiers de son secteur", "secteur" ] ],
                        {}, class: "form-select" %>
           <div class="form-text">"Ses propres chantiers" = ceux où son e-mail est renseigné comme technicien, contremaître ou chef d'équipe. "Son secteur" se base sur le champ Secteur/Service ci-dessus et sur le Secteur réglé par chantier (Admin &gt; Chantiers). Sans effet si le compte est administrateur (accès à tous les chantiers Induni).</div>
+          <%= render "chantiers_assignment" %>
         </div>
       </div>
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_15_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_15_110000) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -20,6 +20,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_15_100000) do
     t.decimal "surcharge_pct", precision: 6, scale: 2, null: false
     t.datetime "updated_at", null: false
     t.index ["codes", "effective_date"], name: "index_canplast_surcharges_on_codes_and_effective_date", unique: true
+  end
+
+  create_table "chantier_assignments", force: :cascade do |t|
+    t.integer "chantier_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["chantier_id"], name: "index_chantier_assignments_on_chantier_id"
+    t.index ["user_id", "chantier_id"], name: "index_chantier_assignments_on_user_id_and_chantier_id", unique: true
+    t.index ["user_id"], name: "index_chantier_assignments_on_user_id"
   end
 
   create_table "chantiers", force: :cascade do |t|
@@ -234,6 +244,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_15_100000) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  add_foreign_key "chantier_assignments", "chantiers"
+  add_foreign_key "chantier_assignments", "users"
   add_foreign_key "order_lines", "orders"
   add_foreign_key "order_lines", "products"
   add_foreign_key "orders", "orders", column: "modifies_order_id", on_delete: :nullify
