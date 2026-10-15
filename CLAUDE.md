@@ -118,6 +118,23 @@ catalog silently invisible to users with any manual restriction.
   transport logic, not just Canplast). Confidential-pricing suppliers must
   keep masking `extra_charges` the same way as the merchandise total.
 
+## Sélection multi-fournisseurs (environnement test uniquement)
+
+Dernier `<script>` de `public/catalogue.html` (préfixe `smart*`), activé par
+`smartBuyInit()` seulement si `perms.test_profile` (vue Contremaître/Conducteur
+de l'environnement test admin). Cases « Ajouter à la sélection » sur les fiches
+(`productCard`/`productCardFast` enveloppées), panier flottant 🧺, optimiseur
+client-side : chaque besoin = ses équivalents (`equivalenceKey` + même unité),
+coût d'un groupe fournisseur = `transportLineItemsInduni` (donc toute nouvelle
+règle de transport y est reprise automatiquement), recherche exhaustive
+(≤ 20'000 combinaisons) sinon recherche locale. Envoi = un `POST /api/orders`
+par fournisseur (le serveur recalcule seuils d'approbation/numérotation), seule
+saisie : date de livraison (+ conducteur si non déductible du chantier).
+Règles : catalogue dépôt (EFCO, HILTI, Matériel Induni) exclu ; fournisseurs à
+prix confidentiel jamais comparés (fournisseur imposé, prix 🔒) ; prix
+re-téléchargés (`/api/products`) avant calcul et avant envoi ; zones Canplast/
+Soreval inconnues = hypothèse prudente signalée ET envoi bloqué.
+
 ## Deploy workflow (always follow this exact sequence)
 
 1. Edit, then run the full test suite: `bin/rails test` (must be 0

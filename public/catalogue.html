@@ -4136,6 +4136,7 @@ Promise.all([
     var approvalsBtn=document.getElementById('orderApprovalsNavLink'); if(approvalsBtn) approvalsBtn.style.display='none'; var pushBtn=document.getElementById('pushNotifBtn'); if(pushBtn) pushBtn.style.display='none'; window._hidePushBtn=true;
     document.getElementById('testProfileLabel').textContent='🧪 Environnement test — vue '+perms.test_profile;
     document.getElementById('testProfileBanner').style.display='block';
+    if(typeof smartBuyInit==='function') smartBuyInit();
   }
   if(perms.admin||perms.can_create_users) document.getElementById('adminNavLink').style.display='inline-flex';
   if(perms.admin) document.getElementById('adminChantiersNavLink').style.display='inline-flex';
@@ -4302,6 +4303,378 @@ function maybeOpenChantierPickerOnLoad(){
   } else {
     openChantierPickerModal();
   }
+}
+</script>
+<script>
+/* ============================================================
+   SÉLECTION MULTI-ARTICLES / MULTI-FOURNISSEURS — ENVIRONNEMENT TEST UNIQUEMENT
+   (actif seulement si perms.test_profile, voir smartBuyInit).
+   À la manière d'un panier Amazon : on coche des articles de n'importe
+   quel catalogue, l'outil répartit chaque article chez le fournisseur
+   « mieux-disant, transport inclus » (méthode de l'agent Acheteur senior :
+   TCO HT, périmètre homogène, aucune invention, hypothèses signalées),
+   puis génère UNE commande par fournisseur — le contremaître n'a qu'à
+   indiquer la date de livraison.
+   Règles reprises de l'agent : équivalence stricte (equivalenceKey + même
+   unité), jamais de prix confidentiel comparé ou affiché, toute donnée
+   manquante est signalée ([H] hypothèse) plutôt qu'inventée.
+   Le catalogue dépôt (EFCO, HILTI, Matériel Induni) est exclu dans un
+   premier temps.
+   ============================================================ */
+const SMART_KEY='induni_selection_v1';
+const SMART_EXCLUDED_CATALOGS=['EFCO','HILTI','Matériel Induni'];
+let SMART_ON=false;
+let SMART_SEL=[];
+let SMART_FRESH=null; // Map "catalogue|article" -> produit frais (prix, unité, confidentialité)
+let SMART_PLAN=null;
+function smartLoad(){try{SMART_SEL=JSON.parse(localStorage.getItem(SMART_KEY)||'[]');if(!Array.isArray(SMART_SEL))SMART_SEL=[];}catch(e){SMART_SEL=[];}}
+function smartSave(){try{localStorage.setItem(SMART_KEY,JSON.stringify(SMART_SEL));}catch(e){}smartRefreshBar();}
+function smartKeyOf(p){return p.catalog+'|'+p.article;}
+function smartEligible(p){return p&&!SMART_EXCLUDED_CATALOGS.includes(p.catalog);}
+function smartInSel(p){const k=smartKeyOf(p);return SMART_SEL.some(s=>s.key===k);}
+function smartBaseProduct(key){return PRODUCTS.find(p=>smartKeyOf(p)===key)||null;}
+function smartDefaultQty(p){const len=(typeof tubeLengthOfCartItem==='function')?tubeLengthOfCartItem(p):null;return len||1;}
+
+/* ---------- Boutons sur les fiches produit ---------- */
+function smartBtnHtml(p){
+  if(!SMART_ON||!smartEligible(p)) return '';
+  const on=smartInSel(p);
+  return `<button class="add smartSelBtn ${on?'ok':''}" data-smkey="${esc(smartKeyOf(p))}" style="margin-bottom:6px;background:${on?'#176b28':'#fff'};color:${on?'#fff':'#0b4f9c'};border:2px solid ${on?'#176b28':'#0b4f9c'}" onclick='smartToggle(${jsAttr(smartKeyOf(p))})'>${on?'☑ Dans la sélection':'☐ Ajouter à la sélection'}</button>`;
+}
+function smartInject(html,p){
+  const b=smartBtnHtml(p); if(!b) return html;
+  const i=html.lastIndexOf('<button class="add');
+  return i<0?html:html.slice(0,i)+b+html.slice(i);
+}
+const _smartOrigCard=productCard, _smartOrigCardFast=productCardFast;
+productCard=function(p){return smartInject(_smartOrigCard(p),p);};
+productCardFast=function(p,s){return smartInject(_smartOrigCardFast(p,s),p);};
+function smartToggle(key){
+  const i=SMART_SEL.findIndex(s=>s.key===key);
+  if(i>=0) SMART_SEL.splice(i,1);
+  else{const p=smartBaseProduct(key);if(!p)return;SMART_SEL.push({key,qty:smartDefaultQty(p)});}
+  smartSave();
+  document.querySelectorAll('.smartSelBtn').forEach(b=>{
+    if(b.getAttribute('data-smkey')!==key) return;
+    const on=SMART_SEL.some(s=>s.key===key);
+    b.textContent=on?'☑ Dans la sélection':'☐ Ajouter à la sélection';
+    b.style.background=on?'#176b28':'#fff';b.style.color=on?'#fff':'#0b4f9c';b.style.borderColor=on?'#176b28':'#0b4f9c';
+  });
+}
+
+/* ---------- Barre flottante ---------- */
+function smartRefreshBar(){
+  const bar=document.getElementById('smartBar'); if(!bar) return;
+  bar.style.display=SMART_ON?'flex':'none';
+  const n=document.getElementById('smartBarCount'); if(n) n.textContent=SMART_SEL.length;
+}
+function smartBuildBar(){
+  if(document.getElementById('smartBar')) return;
+  const bar=document.createElement('div');
+  bar.id='smartBar';
+  bar.style.cssText='position:fixed;left:16px;bottom:16px;z-index:900;display:none;align-items:center;gap:10px;background:#0b4f9c;color:#fff;border-radius:14px;padding:10px 16px;box-shadow:0 8px 22px #0b1e3555;cursor:pointer;font-weight:800';
+  bar.innerHTML='🧺 Sélection multi-fournisseurs <span id="smartBarCount" style="background:#f1642a;border-radius:999px;padding:2px 9px">0</span>';
+  bar.onclick=smartOpen;
+  document.body.appendChild(bar);
+  const ov=document.createElement('div');
+  ov.id='smartOverlay';
+  ov.style.cssText='display:none;position:fixed;inset:0;z-index:1200;background:rgba(11,30,53,.55);overflow:auto;padding:20px 12px';
+  ov.innerHTML='<div id="smartBox" style="max-width:980px;margin:0 auto;background:#fff;border-radius:16px;padding:18px 20px;box-shadow:0 20px 60px #0008"></div>';
+  document.body.appendChild(ov);
+}
+function smartInit(){
+  SMART_ON=true; smartLoad(); smartBuildBar(); smartRefreshBar(); render();
+}
+function smartBuyInit(){ try{smartInit();}catch(e){console.error('smartBuyInit',e);} }
+
+/* ---------- Données fraîches (anti-prix périmé, cf. refreshCartFromCatalog) ---------- */
+async function smartFetchFresh(){
+  try{
+    const r=await fetch('/api/products'); const list=await r.json();
+    if(Array.isArray(list)&&list.length){SMART_FRESH=new Map(list.map(p=>[smartKeyOf(p),p]));}
+  }catch(e){console.error('smartFetchFresh',e);}
+}
+function smartLive(p){const f=SMART_FRESH&&SMART_FRESH.get(smartKeyOf(p));return f?Object.assign({},p,{prix:f.prix,unite:f.unite,confidential:f.confidential,stockStatus:f.stockStatus,poids:f.poids}):p;}
+
+/* ---------- Contexte chantier ---------- */
+function smartChantierNom(){
+  const el=document.getElementById('chantier'); const ch=(typeof getChantierChoice==='function')?getChantierChoice():null;
+  return (el&&el.value)||(ch&&ch.nom)||'';
+}
+function smartChantierObj(){const nom=smartChantierNom();return (window._chantiers||[]).find(c=>c.nom===nom)||null;}
+function smartChantierCanton(){const c=smartChantierObj();return c&&c.canton?c.canton:null;}
+
+/* ---------- Coût d'un groupe fournisseur (transport inclus) ---------- */
+// transportDetailsInduni dépend d'états globaux (panier, zones, cases « grue ») :
+// on les fixe le temps du calcul puis on les restaure. Grue : jamais incluse.
+function smartWithContext(lines,fn){
+  const savedCart=cart, savedCp=canplastResolvedZone, savedSo=sorevalResolvedZone;
+  const crane=['hgcCrane','canplastCrane','creabetonCrane'].map(id=>{const e=document.getElementById(id);return e?[e,e.checked]:null;}).filter(Boolean);
+  try{
+    cart=lines;
+    crane.forEach(([e])=>{e.checked=false;});
+    // Zones inconnues : hypothèse prudente (signalée dans « points à clarifier »).
+    if(!canplastResolvedZone) canplastResolvedZone={c:'zone inconnue',n:'',z:'zone inconnue (hypothèse)',t:CANPLAST_COMPARATIF_TRANSPORT};
+    if(!sorevalResolvedZone||sorevalResolvedZone.outOfZone) sorevalResolvedZone=Object.assign({minutes:0,commune:'zone inconnue (hypothèse)'},SOREVAL_ZONES[SOREVAL_ZONES.length-1]);
+    return fn();
+  } finally {
+    cart=savedCart; canplastResolvedZone=savedCp; sorevalResolvedZone=savedSo;
+    crane.forEach(([e,v])=>{e.checked=v;});
+  }
+}
+function smartGroupCost(supplier,lines,chantier){
+  const sub=lines.reduce((s,l)=>s+(Number(l.prix)||0)*l.qty,0);
+  const cartLines=lines.map(l=>Object.assign({},l.product,{prix:l.prix,qty:l.qty}));
+  return smartWithContext(cartLines,()=>{
+    const extra=transportLineItemsInduni(sub,supplier,true,chantier);
+    const transport=extra.reduce((s,c)=>s+(Number(c.amount)||0),0);
+    return {sub,extra,transport,total:sub+transport};
+  });
+}
+
+/* ---------- Construction des besoins et des options ---------- */
+function smartBuildNeeds(){
+  const chantier=smartChantierNom();
+  const notes=[];
+  const needs=[];
+  for(const s of SMART_SEL){
+    const base0=smartBaseProduct(s.key); if(!base0) continue;
+    const base=smartLive(base0);
+    const need={key:s.key,qty:Number(s.qty)||0,base,options:[],fixed:false};
+    if(!(need.qty>0)) continue;
+    const baseUnit=unitKey(base);
+    const bySupplier=new Map();
+    const addOpt=p=>{
+      const lp=smartLive(p);
+      if(!smartEligible(lp)) return;
+      const price=Number(lp.prix)||0;
+      const prev=bySupplier.get(lp.catalog);
+      if(!prev||price<prev.price) bySupplier.set(lp.catalog,{product:lp,price,supplier:lp.catalog});
+    };
+    if(base.confidential){
+      addOpt(base0);
+      notes.push({sev:'info',msg:`« ${base.designation} » (${base.catalog}) : prix confidentiel — fournisseur imposé, hors comparaison (conformément aux accords cadre).`});
+    } else if(base.equivalenceKey){
+      for(const m of PRODUCTS){
+        if(m.equivalenceKey!==base.equivalenceKey) continue;
+        const lm=smartLive(m);
+        if(lm.confidential||!smartEligible(lm)) continue;
+        if(unitKey(lm)!==baseUnit){notes.push({sev:'warn',msg:`« ${lm.designation} » (${lm.catalog}) écarté : unité ${lm.unite} ≠ ${base.unite} — comparaison impossible sans donnée de conversion.`});continue;}
+        addOpt(m);
+      }
+      if(!bySupplier.has(base.catalog)) addOpt(base0);
+    } else {
+      addOpt(base0);
+      notes.push({sev:'info',msg:`« ${base.designation} » : aucun équivalent référencé — fournisseur imposé (${base.catalog}).`});
+    }
+    need.options=[...bySupplier.values()];
+    if(need.options.length===0) continue;
+    if(need.options.length===1) need.fixed=true;
+    needs.push(need);
+  }
+  return {needs,notes,chantier};
+}
+
+/* ---------- Optimiseur ---------- */
+function smartEvaluate(needs,assign,chantier,cache){
+  const groups=new Map();
+  needs.forEach((n,i)=>{
+    const o=n.options[assign[i]];
+    if(!groups.has(o.supplier)) groups.set(o.supplier,[]);
+    groups.get(o.supplier).push({need:n,product:o.product,prix:o.price,qty:n.qty});
+  });
+  let total=0; const out=[];
+  for(const [supplier,lines] of groups){
+    const ck=supplier+'|'+lines.map(l=>smartKeyOf(l.product)+'x'+l.qty).join(',');
+    let c=cache.get(ck);
+    if(!c){c=smartGroupCost(supplier,lines,chantier);cache.set(ck,c);}
+    total+=c.total; out.push({supplier,lines,cost:c});
+  }
+  return {total,groups:out,nSuppliers:groups.size};
+}
+function smartBetter(a,b){ // a meilleur que b ? (total, puis moins de fournisseurs à égalité)
+  if(a.total<b.total-0.005) return true;
+  return Math.abs(a.total-b.total)<=0.005&&a.nSuppliers<b.nSuppliers;
+}
+function smartCheapestIdx(n){return n.options.reduce((bi,o,i)=>o.price<n.options[bi].price?i:bi,0);}
+function smartOptimize(needs,chantier){
+  const cache=new Map();
+  const ev=a=>smartEvaluate(needs,a,chantier,cache);
+  const combos=needs.reduce((p,n)=>p*n.options.length,1);
+  let best=null;
+  if(combos<=20000){
+    const a=needs.map(()=>0);
+    for(let c=0;c<combos;c++){
+      let x=c; for(let i=0;i<needs.length;i++){const k=needs[i].options.length;a[i]=x%k;x=Math.floor(x/k);}
+      const r=ev(a); if(!best||smartBetter(r,best.r)) best={a:a.slice(),r};
+    }
+  } else {
+    const suppliers=[...new Set(needs.flatMap(n=>n.options.map(o=>o.supplier)))];
+    const starts=[needs.map(smartCheapestIdx)];
+    suppliers.forEach(S=>starts.push(needs.map(n=>{const i=n.options.findIndex(o=>o.supplier===S);return i>=0?i:smartCheapestIdx(n);})));
+    for(const st of starts){
+      let cur={a:st.slice(),r:ev(st)}, improved=true, guard=0;
+      while(improved&&guard++<200){
+        improved=false;
+        for(let i=0;i<needs.length;i++){
+          for(let j=0;j<needs[i].options.length;j++){
+            if(j===cur.a[i]) continue;
+            const a2=cur.a.slice(); a2[i]=j; const r2=ev(a2);
+            if(smartBetter(r2,cur.r)){cur={a:a2,r:r2};improved=true;}
+          }
+        }
+        for(const A of suppliers) for(const B of suppliers){ // déplacement groupé A -> B
+          if(A===B) continue;
+          const a2=cur.a.slice(); let moved=false;
+          needs.forEach((n,i)=>{if(n.options[cur.a[i]].supplier===A){const j=n.options.findIndex(o=>o.supplier===B);if(j>=0){a2[i]=j;moved=true;}}});
+          if(!moved) continue;
+          const r2=ev(a2); if(smartBetter(r2,cur.r)){cur={a:a2,r:r2};improved=true;}
+        }
+      }
+      if(!best||smartBetter(cur.r,best.r)) best=cur;
+    }
+  }
+  const naive=ev(needs.map(smartCheapestIdx));
+  const singles=[];
+  [...new Set(needs.flatMap(n=>n.options.map(o=>o.supplier)))].forEach(S=>{
+    const a=[];let ok=true;
+    needs.forEach(n=>{const i=n.options.findIndex(o=>o.supplier===S);if(i<0)ok=false;a.push(i);});
+    if(ok) singles.push({supplier:S,r:ev(a)});
+  });
+  singles.sort((x,y)=>x.r.total-y.r.total);
+  return {best:best.r,assign:best.a,naive,singles,combos};
+}
+
+/* ---------- Plan complet + points à clarifier ---------- */
+function smartComputePlan(){
+  const {needs,notes,chantier}=smartBuildNeeds();
+  if(!needs.length) return {needs,notes,chantier,empty:true};
+  const opt=smartOptimize(needs,chantier);
+  const canton=smartChantierCanton();
+  const used=new Set(opt.best.groups.map(g=>g.supplier));
+  if(used.has('Canplast')&&!canplastResolvedZone) notes.push({sev:'warn',block:true,msg:`Canplast : zone de livraison inconnue (commune du chantier absente de la liste Canplast) — transport estimé à CHF ${CANPLAST_COMPARATIF_TRANSPORT} [H]. Renseignez la zone avant envoi.`});
+  if(used.has('Soreval')&&(!sorevalResolvedZone||sorevalResolvedZone.outOfZone)) notes.push({sev:'warn',block:true,msg:'Soreval : zone de livraison non déterminée — tarif de la zone la plus éloignée retenu par prudence [H]. Renseignez la commune du chantier avant envoi.'});
+  if(used.has('Leuba HIAG')&&canton&&canton!=='GENEVE') notes.push({sev:'warn',msg:`Leuba HIAG : franco annoncé pour dépôt/chantiers GE uniquement — canton du chantier : ${canton}. Transport possiblement dû, non chiffré [H].`});
+  if(used.has('Leuba HIAG')&&!canton) notes.push({sev:'warn',msg:'Leuba HIAG : canton du chantier inconnu, franco GE supposé [H].'});
+  opt.best.groups.forEach(g=>g.lines.forEach(l=>{if(l.product.stockStatus==='sur_demande') notes.push({sev:'warn',msg:`« ${l.product.designation} » (${g.supplier}) : sur demande — délai à confirmer par le fournisseur.`});}));
+  notes.push({sev:'info',msg:'Montants HT, sans TVA. Transport selon les conditions cadre de chaque fournisseur ; déchargement grue non inclus ; quantités commandées = quantités saisies (aucun palier/minimum fournisseur autre que ceux déjà modélisés).'});
+  return {needs,notes,chantier,opt,empty:false};
+}
+
+/* ---------- Interface ---------- */
+function smartClose(){document.getElementById('smartOverlay').style.display='none';}
+async function smartOpen(){
+  document.getElementById('smartOverlay').style.display='block';
+  document.getElementById('smartBox').innerHTML='<p style="padding:20px">⏳ Chargement des prix à jour…</p>';
+  await smartFetchFresh();
+  smartRender();
+}
+function smartSetQty(key,v){
+  const n=parseFloat(String(v).replace(',','.'));
+  const s=SMART_SEL.find(x=>x.key===key); if(!s) return;
+  if(!isFinite(n)||n<=0){SMART_SEL=SMART_SEL.filter(x=>x.key!==key);} else s.qty=n;
+  smartSave(); smartRender(true);
+}
+function smartRemove(key){SMART_SEL=SMART_SEL.filter(x=>x.key!==key);smartSave();smartRender(true);}
+function smartClear(){if(!confirm('Vider toute la sélection ?'))return;SMART_SEL=[];smartSave();smartRender();render();}
+function smartRender(keepForm){
+  const box=document.getElementById('smartBox');
+  const keep=keepForm?{date:(document.getElementById('smartDate')||{}).value||'',cond:(document.getElementById('smartCond')||{}).value,rem:(document.getElementById('smartRem')||{}).value||''}:null;
+  const plan=smartComputePlan(); SMART_PLAN=plan;
+  const head=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0;font-size:20px">🧺 Sélection multi-fournisseurs <span style="font-size:12px;background:#fff4de;color:#9a5b00;border-radius:999px;padding:2px 9px">🧪 test</span></h2><button onclick="smartClose()" style="border:0;background:#eef2f7;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:800">✕ Fermer</button></div>`;
+  if(!SMART_SEL.length||plan.empty){
+    box.innerHTML=head+'<p class="muted" style="margin:18px 0">Votre sélection est vide. Cochez « ☐ Ajouter à la sélection » sur les articles de n’importe quel catalogue (hors dépôt), puis revenez ici : chaque article sera réparti chez le mieux-disant, transport inclus.</p>';
+    return;
+  }
+  const o=plan.opt, chantier=plan.chantier;
+  const th=x=>`style="text-align:left;padding:4px 6px;border-bottom:1px solid #dde3ec;font-size:12px;color:#697386;${x||''}"`;
+  const td=x=>`style="padding:5px 6px;border-bottom:1px solid #eef2f7;font-size:13px;vertical-align:top;${x||''}"`;
+  const selRows=SMART_SEL.map(s=>{const p=smartBaseProduct(s.key);if(!p)return '';return `<tr><td ${td()}><b>${esc(p.designation)}</b><div class="muted" style="font-size:11px">${esc(p.catalog)} · N° ${esc(p.article)}</div></td><td ${td('white-space:nowrap')}><input type="number" min="0" step="any" value="${s.qty}" style="width:80px" onchange='smartSetQty(${jsAttr(s.key)},this.value)'> ${esc(p.unite||'')}</td><td ${td()}><button onclick='smartRemove(${jsAttr(s.key)})' style="border:0;background:none;cursor:pointer;color:#b91c1c">✕</button></td></tr>`;}).join('');
+  const groupsHtml=o.best.groups.slice().sort((a,b)=>a.supplier.localeCompare(b.supplier,'fr')).map(g=>{
+    const conf=g.lines.some(l=>l.product.confidential);
+    const lines=g.lines.map(l=>{
+      const alts=l.need.options.filter(x=>x.supplier!==g.supplier).map(x=>`${esc(x.supplier)} ${fmt(x.price)}`).join(' · ');
+      return `<tr><td ${td()}>${esc(l.product.designation)}<div class="muted" style="font-size:11px">N° ${esc(l.product.article)}${alts?` · autres : ${alts}`:''}</div></td><td ${td('white-space:nowrap')}>${l.qty} ${esc(l.product.unite||'')}</td><td ${td('text-align:right;white-space:nowrap')}>${conf?'🔒':fmt(l.prix)}</td><td ${td('text-align:right;white-space:nowrap')}><b>${conf?'🔒':fmt(l.prix*l.qty)}</b></td></tr>`;}).join('');
+    const tr=g.cost.extra.map(c=>`<div style="display:flex;justify-content:space-between;font-size:12px"><span>${esc(c.label)}</span><b>${fmt(c.amount)}</b></div>`).join('');
+    return `<div class="smartGroup" data-supplier="${esc(g.supplier)}" style="border:1px solid #cfd8e6;border-radius:12px;padding:10px 12px;margin-top:10px"><div style="display:flex;justify-content:space-between"><b style="font-size:15px">📦 ${esc(g.supplier)}</b><b style="color:#f1642a">${conf?'🔒 Prix confidentiel':fmt(g.cost.total)}</b></div><table style="width:100%;border-collapse:collapse;margin-top:6px"><tr><th ${th()}>Article</th><th ${th()}>Qté</th><th ${th('text-align:right')}>PU HT</th><th ${th('text-align:right')}>Total HT</th></tr>${lines}</table><div style="margin-top:6px">${conf?'<div style="font-size:12px">Conformément à nos accords cadre</div>':`<div style="display:flex;justify-content:space-between;font-size:12px"><span>Sous-total marchandise</span><b>${fmt(g.cost.sub)}</b></div>${tr}`}</div></div>`;}).join('');
+  const gain=o.naive.total-o.best.total;
+  const refRows=[];
+  refRows.push(`<div style="display:flex;justify-content:space-between"><span>✅ <b>Répartition recommandée</b> (${o.best.nSuppliers} commande${o.best.nSuppliers>1?'s':''})</span><b>${fmt(o.best.total)}</b></div>`);
+  refRows.push(`<div style="display:flex;justify-content:space-between;color:#697386"><span>Chaque article au prix unitaire le plus bas, sans regroupement</span><b>${fmt(o.naive.total)}${gain>0.005?` (+${fmt(gain)})`:''}</b></div>`);
+  o.singles.slice(0,3).forEach(s=>refRows.push(`<div style="display:flex;justify-content:space-between;color:#697386"><span>Tout chez ${esc(s.supplier)}</span><b>${fmt(s.r.total)}${s.r.total-o.best.total>0.005?` (+${fmt(s.r.total-o.best.total)})`:''}</b></div>`));
+  const anyConf=o.best.groups.some(g=>g.lines.some(l=>l.product.confidential));
+  const noteHtml=plan.notes.map(n=>`<li style="color:${n.sev==='warn'?'#b45309':'#555'}">${n.sev==='warn'?'⚠️ ':''}${esc(n.msg)}</li>`).join('');
+  const ch=smartChantierObj();
+  const techs=[...new Set((window._chantiers||[]).filter(x=>x.nom===chantier).map(x=>String(x.technicien||'').trim()).filter(n=>n&&!isForbiddenConducteurInduni(n)))];
+  const cond=keep&&keep.cond!=null?keep.cond:(techs.length===1?techs[0]:'');
+  const today=new Date().toISOString().slice(0,10);
+  box.innerHTML=head+
+   `<div style="margin:10px 0;padding:8px 12px;background:#eef5ff;border-radius:10px;font-size:13px">Chantier : <b>${esc(chantier||'— non choisi —')}</b>${ch&&ch.ville?` · ${esc(ch.adresse||'')} ${esc(ch.npa||'')} ${esc(ch.ville)}`:''}</div>`+
+   `<h3 style="margin:14px 0 4px;font-size:15px">Ma sélection (${SMART_SEL.length})</h3><table style="width:100%;border-collapse:collapse">${selRows}</table><button onclick="smartClear()" style="margin-top:6px;border:0;background:none;color:#b91c1c;cursor:pointer;font-size:12px">Vider la sélection</button>`+
+   `<h3 style="margin:16px 0 0;font-size:15px">Répartition optimisée — mieux-disant, transport inclus</h3>${groupsHtml}`+
+   `<div style="margin-top:12px;padding:10px 12px;background:#f8faff;border-radius:10px;font-size:13px">${refRows.join('')}${anyConf?'<div style="font-size:11px;color:#697386;margin-top:4px">Les articles à prix confidentiel sont exclus des totaux.</div>':''}</div>`+
+   `<details style="margin-top:10px" open><summary style="cursor:pointer;font-weight:800;font-size:13px">Points à clarifier / hypothèses</summary><ul style="font-size:12px;margin:6px 0 0 18px;padding:0">${noteHtml}</ul></details>`+
+   `<div style="margin-top:16px;padding:12px;border:2px solid #0b4f9c;border-radius:12px"><b>Livraison</b><div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;align-items:end"><label style="font-size:12px">Date de livraison souhaitée *<br><input type="date" id="smartDate" min="${today}" value="${esc(keep?keep.date:'')}" style="padding:6px"></label><label style="font-size:12px">Conducteur de travaux *<br><input id="smartCond" list="smartCondList" value="${esc(cond)}" style="padding:6px;min-width:200px"><datalist id="smartCondList">${techs.map(n=>`<option value="${esc(n)}">`).join('')}</datalist></label><label style="font-size:12px;flex:1;min-width:200px">Remarques<br><input id="smartRem" value="${esc(keep?keep.rem:'')}" style="padding:6px;width:100%"></label></div>`+
+   `<button id="smartSendBtn" onclick="smartSend()" class="add" style="margin-top:12px">📧 Envoyer ${o.best.nSuppliers} commande${o.best.nSuppliers>1?'s':''} aux fournisseurs</button><div id="smartResult" style="margin-top:8px;font-size:13px"></div></div>`;
+}
+
+/* ---------- Envoi : une commande par fournisseur ---------- */
+async function smartSend(){
+  const chantier=smartChantierNom();
+  const dateIso=(document.getElementById('smartDate')||{}).value;
+  const conducteur=((document.getElementById('smartCond')||{}).value||'').trim();
+  const remarks=((document.getElementById('smartRem')||{}).value||'').trim();
+  if(!chantier){alert('Choisissez d’abord un chantier (fenêtre « chantier du jour »).');return;}
+  if(!dateIso){alert('Veuillez indiquer la date de livraison.');return;}
+  if(!conducteur){alert('Veuillez indiquer le conducteur de travaux.');return;}
+  if(isForbiddenConducteurInduni(conducteur)){alert('Ce nom ne peut pas être indiqué comme conducteur de travaux : choisissez un technicien du chantier dans la liste.');return;}
+  const btn=document.getElementById('smartSendBtn'); btn.disabled=true; btn.textContent='⏳ Recalcul avec les prix à jour…';
+  const resetBtn=()=>{btn.disabled=false;smartRender(true);};
+  await smartFetchFresh();
+  const plan=smartComputePlan(); SMART_PLAN=plan;
+  const blockers=plan.empty?[]:plan.notes.filter(n=>n.block);
+  if(plan.empty||blockers.length){
+    alert(plan.empty?'Sélection vide.':'Envoi impossible :\n- '+blockers.map(b=>b.msg).join('\n- '));
+    resetBtn(); return;
+  }
+  const c=smartChantierObj()||{};
+  const adresse=[c.adresse,[c.npa,c.ville].filter(Boolean).join(' ')].filter(Boolean).join('\n');
+  const contact=c.contactLivraison||c.contact||''; const phone=c.telephoneLivraison||c.telephone||'';
+  const delai=dateFR(dateIso);
+  const cc=chantierTechnicienEmail(chantier);
+  const groups=plan.opt.best.groups;
+  // Destinataires vérifiés AVANT d'envoyer quoi que ce soit.
+  const emails={}, missing=[];
+  groups.forEach(g=>{
+    const e=cantonSupplierEmailInduni(g.supplier,chantier)||((window._userPerms.supplierDefaultEmails||{})[g.supplier])||(SUPPLIER_INFO[g.supplier]&&SUPPLIER_INFO[g.supplier].email)||'';
+    if(!e) missing.push(g.supplier); else emails[g.supplier]=e;
+  });
+  if(missing.length){alert('Aucune adresse e-mail de commande pour : '+missing.join(', ')+'.\nRenseignez-la dans Admin > Fournisseurs.');resetBtn();return;}
+  if(!confirm('Envoyer '+groups.length+' commande(s) ('+groups.map(g=>g.supplier).join(', ')+') pour livraison le '+delai+' ?')){resetBtn();return;}
+  const body='Bonjour,\n\nVeuillez trouver ci-joint le bon de commande.\n\nMerci de bien vouloir nous faire parvenir votre confirmation de commande dans les plus brefs délais.\n\nRestant à votre disposition pour toute information complémentaire.\n\nCordialement\nINDUNI & Cie SA\nAvenue des Grandes-Communes 6\n1213 Petit-Lancy';
+  const res=document.getElementById('smartResult'); res.innerHTML='';
+  const sentKeys=[]; let okCount=0;
+  for(const g of groups){
+    btn.textContent='⏳ Envoi '+g.supplier+'…';
+    const conf=g.lines.some(l=>l.product.confidential);
+    try{
+      const r=await fetch('/api/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        chantier,delai,adresse,contact,phone,conducteur,remarks,supplier:g.supplier,to:emails[g.supplier],cc,
+        subject:'Commande ESHOP_INDUNI_00',body,
+        items:g.lines.map(l=>({article:l.product.article,designation:l.product.designation,descriptif:l.product.descriptif||'',qty:l.qty,prix:l.prix,catalogPrix:l.product.catalogPrix??null,unite:l.product.unite||'PCE',catalog:l.product.catalog||''})),
+        extra_charges:conf?[]:g.cost.extra,modifies_order_id:null
+      })});
+      const t=await r.text(); let d={}; try{d=JSON.parse(t);}catch(e){d={error:t||'Réponse invalide'};}
+      if(r.ok&&d.success){
+        okCount++; g.lines.forEach(l=>sentKeys.push(l.need.key));
+        res.innerHTML+=`<div style="color:#166534">✅ ${esc(g.supplier)} — ${esc(d.order_number||'')} ${d.needs_approval?'(en attente de validation — '+esc(d.message||'')+')':'envoyée à '+esc(d.supplier_email||emails[g.supplier])}</div>`;
+      } else res.innerHTML+=`<div style="color:#b91c1c">❌ ${esc(g.supplier)} — ${esc(d.error||'échec')}${d.order_number?' (commande '+esc(d.order_number)+' créée, e-mail à renvoyer depuis le Dashboard)':''}</div>`;
+    }catch(err){res.innerHTML+=`<div style="color:#b91c1c">❌ ${esc(g.supplier)} — ${esc(err.message)}</div>`;}
+  }
+  SMART_SEL=SMART_SEL.filter(s=>!sentKeys.includes(s.key)); smartSave();
+  btn.textContent=okCount===groups.length?'✅ Terminé':'Terminé avec erreurs — voir ci-dessus';
+  fetch('/api/orders',{headers:{'Accept':'application/json'}}).then(r=>r.json()).then(o=>{window._serverOrders=o;}).catch(()=>{});
+  render();
 }
 </script>
 </body></html>
