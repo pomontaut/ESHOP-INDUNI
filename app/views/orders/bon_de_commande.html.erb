@@ -37,21 +37,28 @@ body{font-family:Arial,sans-serif;font-size:10pt;color:#111;margin:0}
 .title-box{text-align:center;border:1.5px solid #111;padding:7px 0;margin:8px 0 12px}
 .title-box h1{font-size:14pt;font-weight:bold;margin:0 0 2px}
 .title-box p{font-size:10pt;margin:0}
-.hgrid{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid #111;margin-bottom:14px}
-.hcol{padding:8px 10px}
-.hcol:first-child{border-right:1.5px solid #111}
-.htitle{background:#003087;color:white;font-weight:bold;font-size:10pt;text-align:center;padding:4px;margin:-8px -10px 7px;letter-spacing:.04em}
+.hgrid{width:100%;border-collapse:collapse;border:1.5px solid #111;margin-bottom:14px;table-layout:fixed}
+.hgrid td.hcol{width:50%;padding:0 10px 8px;vertical-align:top;border:0;font-size:10pt}
+.hgrid td.hcol:first-child{border-right:1.5px solid #111}
+.htitle{background:#003087;color:white;font-weight:bold;font-size:10pt;text-align:center;padding:4px;margin:0 -10px 7px;letter-spacing:.04em}
 .cname{font-weight:bold;font-size:11pt;text-align:center;margin-bottom:5px}
 .ir{margin:2px 0;font-size:9.5pt;line-height:1.35}
 .il{font-weight:bold}
-table{width:100%;border-collapse:collapse;margin-bottom:8px}
-th{border-bottom:2px solid #111;padding:5px 4px;font-size:9pt;text-align:left;white-space:nowrap}
-th:not(:first-child){text-align:right}
-td{padding:4px;font-size:9pt;vertical-align:top;border-bottom:1px solid #ddd}
-td:not(:first-child){text-align:right}
-.totals{margin-left:auto;margin-top:10px;width:360px;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px}
-.sum{display:flex;justify-content:space-between;gap:12px;margin:6px 0;font-size:9.5pt}
-.sum.total{margin-top:8px;padding-top:8px;border-top:2px solid #111;font-size:13pt;font-weight:bold}
+table.lines{width:100%;border-collapse:collapse;margin-bottom:8px}
+table.lines th{border-bottom:2px solid #111;padding:5px 4px;font-size:9pt;text-align:left;white-space:nowrap}
+table.lines th:not(:first-child){text-align:right}
+table.lines td{padding:4px;font-size:9pt;vertical-align:top;border-bottom:1px solid #ddd}
+table.lines td:not(:first-child){text-align:right}
+table.lines tr.report td{border-bottom:0;font-weight:bold;font-size:9pt;text-align:right;padding-top:6px}
+table.lines tr.report.top td{border-bottom:1px solid #111;padding:2px 4px 6px}
+.page{page-break-inside:avoid}
+.pagebreak{page-break-after:always}
+/* Frais annexes : désignation à gauche, « CHF montant » à droite sur une seule ligne */
+table.totals{width:100%;border-collapse:collapse;margin-top:10px;page-break-inside:avoid}
+table.totals td{padding:5px 4px;font-size:9.5pt;border-bottom:1px solid #ddd;vertical-align:top}
+table.totals td.lbl{text-align:left}
+table.totals td.amt{text-align:right;white-space:nowrap;width:1%;font-weight:bold;padding-left:18px}
+table.totals tr.grand td{border-top:2px solid #111;border-bottom:0;font-size:13pt;font-weight:bold;padding-top:8px}
 </style></head><body>
 
 <% unless is_consortium %><img src="data:image/png;base64,<%= logo_b64 %>" class="logo" alt="INDUNI"><% end %>
@@ -67,8 +74,8 @@ td:not(:first-child){text-align:right}
 </div>
 <% end %>
 
-<div class="hgrid">
-  <div class="hcol">
+<table class="hgrid"><tr>
+  <td class="hcol">
     <div class="htitle">CLIENT</div>
     <div class="cname"><%= is_consortium ? 'CONSORTIUM' : 'INDUNI &amp; CIE SA'.html_safe %></div>
     <div class="ir"><span class="il">Contact rédacteur de la commande :</span> <%= redacteur_nom %><%= redacteur_email.present? ? " — #{redacteur_email}" : "" %><%= redacteur_tel.present? ? " — #{redacteur_tel}" : "" %></div>
@@ -81,8 +88,8 @@ td:not(:first-child){text-align:right}
     <div class="ir" style="padding-left:10px">Contact réception livraison : <%= contact_livraison %><%= @order.phone.present? ? " — #{@order.phone}" : "" %></div>
     <div class="ir" style="margin-top:6px"><span class="il">Adresse de facturation :</span></div>
     <div class="ir" style="padding-left:10px">INDUNI &amp; Cie SA<br>Avenue des Grandes-Communes 6<br>1213 Petit-Lancy<br>facturation@induni.ch</div>
-  </div>
-  <div class="hcol">
+  </td>
+  <td class="hcol">
     <div class="htitle">FOURNISSEUR</div>
     <div class="cname"><%= @order.supplier&.name&.upcase %></div>
     <% if @order.supplier&.email.present? %>
@@ -95,10 +102,32 @@ td:not(:first-child){text-align:right}
     <div class="ir"><span class="il">Adresse :</span></div>
     <div class="ir" style="padding-left:10px"><%= @order.supplier.address.gsub("\n","<br>").html_safe %></div>
     <% end %>
-  </div>
-</div>
+  </td>
+</tr></table>
 
-<table>
+<%
+  # Pagination manuelle avec « Report » : wkhtmltopdf ne sait pas répéter un
+  # total cumulé d'une page à l'autre, on répartit donc les lignes par page
+  # selon une estimation de leur hauteur (désignation sur 1 à n lignes).
+  all_lines   = @order.order_lines.includes(:product).to_a
+  row_height  = ->(l) { 1.6 + 2.5 * [ (l.product.name.to_s.length / 46.0).ceil, 1 ].max }
+  first_budget, next_budget = 125.0, 225.0
+  pages = [ [] ]
+  used  = 0.0
+  all_lines.each do |l|
+    budget = pages.size == 1 ? first_budget : next_budget
+    if used + row_height.call(l) > budget && pages.last.any?
+      pages << []
+      used = 0.0
+    end
+    pages.last << l
+    used += row_height.call(l)
+  end
+  running = 0.0
+%>
+<% pages.each_with_index do |page_lines, page_index| %>
+<div class="<%= page_index < pages.size - 1 ? 'pagebreak' : '' %>">
+<table class="lines">
   <thead>
     <tr>
       <th style="width:38%">Désignation</th>
@@ -111,7 +140,11 @@ td:not(:first-child){text-align:right}
     </tr>
   </thead>
   <tbody>
-    <% @order.order_lines.includes(:product).each do |line| %>
+    <% if page_index > 0 && !confidential_pricing %>
+    <tr class="report top"><td colspan="7">Report page précédente : CHF <%= fmt.call(running) %></td></tr>
+    <% end %>
+    <% page_lines.each do |line| %>
+    <% running += line.unit_price.to_f * line.quantity %>
     <tr>
       <td><strong><%= line.product.name %></strong></td>
       <td><%= delai_val %></td>
@@ -122,28 +155,33 @@ td:not(:first-child){text-align:right}
       <td>Conformément à nos accords cadre</td>
       <td>—</td>
       <% else %>
-      <td>CHF <%= fmt.call(line.unit_price) %></td>
-      <td><strong>CHF <%= fmt.call(line.unit_price.to_f * line.quantity) %></strong></td>
+      <td style="white-space:nowrap">CHF <%= fmt.call(line.unit_price) %></td>
+      <td style="white-space:nowrap"><strong>CHF <%= fmt.call(line.unit_price.to_f * line.quantity) %></strong></td>
       <% end %>
     </tr>
     <% end %>
+    <% if page_index < pages.size - 1 && !confidential_pricing %>
+    <tr class="report"><td colspan="7">Report page suivante : CHF <%= fmt.call(running) %></td></tr>
+    <% end %>
   </tbody>
 </table>
-
-<div class="totals">
-  <% if confidential_pricing %>
-  <div class="sum"><span>Sous-total marchandises H.T.</span><b>Conformément à nos accords cadre</b></div>
-  <% else %>
-  <div class="sum"><span>Sous-total marchandises H.T.</span><b>CHF <%= fmt.call(@order.total) %></b></div>
-  <% @order.extra_charges.to_a.each do |charge| %>
-  <div class="sum"><span><%= charge["label"] %></span><b>CHF <%= fmt.call(charge["amount"]) %></b></div>
-  <% end %>
-  <% end %>
-  <div class="sum total">
-    <span>TOTAL<%= confidential_pricing ? "" : " H.T." %></span>
-    <b><%= confidential_pricing ? "Conformément à nos accords cadre" : "CHF #{fmt.call(@order.grand_total)}" %></b>
-  </div>
 </div>
+<% end %>
+
+<table class="totals">
+  <% if confidential_pricing %>
+  <tr><td class="lbl">Sous-total marchandises H.T.</td><td class="amt">Conformément à nos accords cadre</td></tr>
+  <% else %>
+  <tr><td class="lbl">Sous-total marchandises H.T.</td><td class="amt">CHF&nbsp;<%= fmt.call(@order.total) %></td></tr>
+  <% @order.extra_charges.to_a.each do |charge| %>
+  <tr><td class="lbl"><%= charge["label"] %></td><td class="amt">CHF&nbsp;<%= fmt.call(charge["amount"]) %></td></tr>
+  <% end %>
+  <% end %>
+  <tr class="grand">
+    <td class="lbl">TOTAL<%= confidential_pricing ? "" : " H.T." %></td>
+    <td class="amt"><%= confidential_pricing ? "Conformément à nos accords cadre" : "CHF&nbsp;#{fmt.call(@order.grand_total)}".html_safe %></td>
+  </tr>
+</table>
 
 
 <% unless is_consortium %>
@@ -157,9 +195,9 @@ td:not(:first-child){text-align:right}
   <h2 style="font-size:12pt;font-weight:bold;text-transform:uppercase;margin:6px 0 12px;letter-spacing:.03em">Conditions générales d'achat de fourniture</h2>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 18px;font-size:8.5pt;line-height:1.45">
+<table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:8.5pt;line-height:1.45"><tr>
 
-  <div>
+  <td style="width:50%;vertical-align:top;padding:0 9px 0 0;border:0;font-size:8.5pt;text-align:left">
     <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">1. &nbsp;Champ d'application</p>
     <p style="margin:0 0 8px">Les présentes conditions générales d'achat s'appliquent à tous les contrats d'achat de fourniture conclus entre Induni &amp; Cie SA et ses fournisseurs. Elles font partie des appels d'offres d'Induni &amp; Cie SA et y sont annexées. Le dépôt d'une offre par le fournisseur vaut comme acceptation des conditions générales d'achat.</p>
 
@@ -200,9 +238,9 @@ td:not(:first-child){text-align:right}
 
     <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">9. &nbsp;Modes d'emploi</p>
     <p style="margin:0 0 8px">Les fournitures / appareils doivent être livrés avec mode d'emploi en français, documentation technique, dessins et schémas complets. Si nécessaire, le vendeur assure une première instruction du personnel d'Induni &amp; Cie SA quant à la mise en service et l'exploitation de la fourniture.</p>
-  </div>
+  </td>
 
-  <div>
+  <td style="width:50%;vertical-align:top;padding:0 0 0 9px;border:0;font-size:8.5pt;text-align:left">
     <p style="font-weight:bold;text-transform:uppercase;margin:0 0 2px;font-size:8.5pt">10. &nbsp;Exécution des commandes et sous-traitance</p>
     <p style="margin:0 0 8px">Le fournisseur est réputé connaître, tant pour lui-même que pour son ou ses éventuels sous-traitants, les conditions d'approvisionnement des matières inhérentes à l'exécution de la commande.<br>Toute cession ou sous-traitance de commande doit faire l'objet du consentement exprès d'Induni &amp; Cie SA. Dans tous les cas, le fournisseur reste solidaire de son cessionnaire ou sous-traitant.</p>
 
@@ -235,9 +273,9 @@ td:not(:first-child){text-align:right}
     <div style="margin-top:20px;border-top:1px solid #111;padding-top:6px;font-size:9pt">
       <strong>Paraphe Entrepreneur :</strong> ……………………………………………
     </div>
-  </div>
+  </td>
 
-</div>
+</tr></table>
 <% end %>
 
 </body></html>
