@@ -19,7 +19,7 @@ class User < ApplicationRecord
   ].freeze
 
   SUPPLIERS = [
-    { key: "HGC",        label: "HGC" },
+    { key: "HG COMMERCIALE", label: "HG COMMERCIALE" },
     { key: "Canplast",   label: "Canplast" },
     { key: "Leuba HIAG", label: "Leuba HIAG SA" },
     { key: "CreaBeton",  label: "CreaBeton" },

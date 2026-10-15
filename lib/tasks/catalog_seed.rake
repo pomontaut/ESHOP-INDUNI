@@ -10,7 +10,7 @@ namespace :catalog do
   desc "Idempotently (re)seed suppliers, catalog products and chantiers from db/seed_data"
   task seed: :environment do
     required_suppliers = {
-      "HGC" => {
+      "HG COMMERCIALE" => {
         email: "yannick.mace@hgc.ch", phone: "0041 22 343 85 50", fax: "0041 22 343 40 92",
         address: "Stauffacherquai 46", postal_code: "8022", city: "Zürich", country_code: "CH",
         supplier_number: "230977", ide_number: "CHE-105.836.561", payment_condition: "30 jours 2%"
@@ -98,6 +98,11 @@ namespace :catalog do
     # N'initialise les coordonnées que pour un fournisseur réellement nouveau :
     # sinon on écraserait à chaque redémarrage les modifications faites depuis
     # l'admin (email, adresse, etc.).
+    # « HGC » et « HG COMMERCIALE » étaient deux fiches pour le même
+    # fournisseur (suppliers:import renomme par numéro, ce seed recréait
+    # « HGC » par nom) : fusion idempotente avant de (re)créer quoi que ce soit.
+    SupplierMerger.merge!(target_name: "HG COMMERCIALE", source_names: [ "HGC" ])
+
     required_suppliers.each do |name, attrs|
       supplier = Supplier.find_or_initialize_by(name: name)
       supplier.update!(attrs) if supplier.new_record?
@@ -180,14 +185,14 @@ namespace :catalog do
         Product.upsert_all(slice, unique_by: :index_products_on_supplier_id_and_reference)
       end
 
-      # HGC and Leuba HIAG sheets cover ~99% of the known catalog: treat them
+      # HG COMMERCIALE and Leuba HIAG sheets cover ~99% of the known catalog: treat them
       # as a full refresh (items missing from the current JSON are discontinued).
       # Products confirmed live from a devis import (manually_added: true)
       # aren't part of the JSON and are excluded from this cleanup, or every
       # deploy would silently wipe them out. A discontinued product referenced
       # by a past order is kept too (deleting it would violate the order_lines
       # foreign key and abort every subsequent boot, as happened in production).
-      [ "HGC", "Leuba HIAG" ].each do |catalog|
+      [ "HG COMMERCIALE", "Leuba HIAG" ].each do |catalog|
         supplier_id = supplier_ids[catalog]
         next unless supplier_id
 

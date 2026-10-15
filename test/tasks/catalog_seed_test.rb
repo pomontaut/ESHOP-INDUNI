@@ -8,7 +8,7 @@ class CatalogSeedTaskTest < ActiveSupport::TestCase
   test "catalog:seed preserves manually-added products for full-refresh suppliers" do
     run_seed
 
-    hgc = Supplier.find_by!(name: "HGC")
+    hgc = Supplier.find_by!(name: "HG COMMERCIALE")
     manual = Product.create!(
       supplier: hgc, reference: "TEST-MANUAL-999", name: "Article ajouté manuellement",
       unit_price: 1.0, famille: "Article générique", sous_famille: "Devis import",
@@ -25,7 +25,7 @@ class CatalogSeedTaskTest < ActiveSupport::TestCase
   test "catalog:seed still discontinues real (non-manually-added) products missing from the JSON" do
     run_seed
 
-    hgc = Supplier.find_by!(name: "HGC")
+    hgc = Supplier.find_by!(name: "HG COMMERCIALE")
     orphan = Product.create!(
       supplier: hgc, reference: "TEST-ORPHAN-999", name: "Article discontinué",
       unit_price: 1.0, famille: "Test", manually_added: false
@@ -41,7 +41,7 @@ class CatalogSeedTaskTest < ActiveSupport::TestCase
   test "catalog:seed keeps a discontinued product still referenced by an order line" do
     run_seed
 
-    hgc = Supplier.find_by!(name: "HGC")
+    hgc = Supplier.find_by!(name: "HG COMMERCIALE")
     ordered = Product.create!(
       supplier: hgc, reference: "TEST-ORDERED-999", name: "Article commandé puis discontinué",
       unit_price: 1.0, famille: "Test", manually_added: false
