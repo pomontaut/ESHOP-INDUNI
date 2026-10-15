@@ -6,7 +6,12 @@ class Api::TestProfilesController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_admin
 
-  PROFILES = [ "Contremaître", "Conducteur de travaux" ].freeze
+  # « Développement » : contrairement aux deux profils chantier, l'admin garde
+  # tous ses droits et son interface — seules s'y ajoutent les fonctions en
+  # cours de développement (ex. sélection multi-fournisseurs), invisibles
+  # pour tous les autres utilisateurs.
+  DEV_PROFILE = "Développement".freeze
+  PROFILES = [ "Contremaître", "Conducteur de travaux", DEV_PROFILE ].freeze
 
   def self.active_profile(session, user)
     profile = session[:test_profile]

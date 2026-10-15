@@ -121,7 +121,7 @@ catalog silently invisible to users with any manual restriction.
 ## Sélection multi-fournisseurs (environnement test uniquement)
 
 Dernier `<script>` de `public/catalogue.html` (préfixe `smart*`), activé par
-`smartBuyInit()` seulement si `perms.test_profile` (vue Contremaître/Conducteur
+`smartBuyInit()` seulement si `perms.test_profile` (menu Admin > « Environnement test : Développement (admin) », qui garde tous les droits admin — `dev_mode` —, ou vues Contremaître/Conducteur
 de l'environnement test admin). Cases « Ajouter à la sélection » sur les fiches
 (`productCard`/`productCardFast` enveloppées), panier flottant 🧺, optimiseur
 client-side : chaque besoin = ses équivalents (`equivalenceKey` + même unité),

@@ -99,4 +99,21 @@ class Api::SessionsControllerTest < ActionDispatch::IntegrationTest
     post api_test_profile_url, params: { profile: "Contremaître" }
     assert_response :forbidden
   end
+
+  test "admin development environment keeps full admin rights and flags dev_mode" do
+    post login_url, params: { email: users(:one).email, password: "password123" }
+    post api_test_profile_url, params: { profile: "Développement" }
+    assert_response :success
+    get api_me_url
+    body = JSON.parse(response.body)
+    assert_equal true, body["admin"]
+    assert_equal true, body["dev_mode"]
+    assert_equal "Développement", body["test_profile"]
+
+    delete api_test_profile_url
+    get api_me_url
+    body = JSON.parse(response.body)
+    assert_equal false, body["dev_mode"]
+    assert_nil body["test_profile"]
+  end
 end

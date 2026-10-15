@@ -7,11 +7,14 @@ class Api::SessionsController < ApplicationController
       test_profile = Api::TestProfilesController.active_profile(session, current_user)
       # Environnement test (admin) : on ne montre que le bandeau d'un profil
       # chantier (contremaître / conducteur de travaux), sans droits admin.
-      return render json: test_profile_payload(test_profile) if test_profile
+      dev_mode = test_profile == Api::TestProfilesController::DEV_PROFILE
+      return render json: test_profile_payload(test_profile) if test_profile && !dev_mode
 
       render json: {
         logged_in:         true,
         real_admin:        current_user.admin?,
+        test_profile:      (test_profile if dev_mode),
+        dev_mode:          dev_mode,
         admin:             current_user.admin?,
         full_name:         current_user.full_name,
         email:             current_user.email,
