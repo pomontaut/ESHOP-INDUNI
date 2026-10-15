@@ -107,7 +107,7 @@ class Api::OrdersController < ApplicationController
     contact            = params[:contact].to_s.strip.presence
     phone              = params[:phone].to_s.strip.presence
     delivery_address   = params[:adresse].to_s.strip.presence
-    conducteur_travaux = params[:conducteur].to_s.strip.presence
+    conducteur_travaux = ConducteurTravaux.sanitize(params[:conducteur])
     # Frais annexes (transport, RPLP, grue, remise de volume...) déjà calculés
     # et affichés côté client (transportLineItemsInduni dans catalogue.html) :
     # repris tels quels, pas recalculés ici, pour éviter de dupliquer cette

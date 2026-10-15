@@ -20,7 +20,7 @@
   redacteur_nom   = @order.user&.full_name.presence || "—"
   redacteur_email = @order.user&.email
   redacteur_tel   = @order.user&.phone
-  conducteur_travaux = @order.conducteur_travaux.presence || chantier_record&.conducteur_travaux.presence || "—"
+  conducteur_travaux = ConducteurTravaux.sanitize(@order.conducteur_travaux) || ConducteurTravaux.sanitize(chantier_record&.conducteur_travaux) || "—"
   contact_livraison  = @order.contact.presence || "—"
   delivery_address_html = (@order.delivery_address.presence || "INDUNI & Cie SA\nAvenue des Grandes-Communes 6\n1213 Petit-Lancy").gsub("\n", "<br>")
   # Prix nets confidentiels (ex. Sika, accord-cadre marqué CONFIDENTIAL) :

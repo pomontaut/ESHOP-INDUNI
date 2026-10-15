@@ -55,6 +55,7 @@ class Api::SessionsController < ApplicationController
             contactLivraison:   c.contact_livraison,
             telephoneLivraison: c.natel_livraison,
             emailTechnicien: c.email_technicien,
+            technicien:  c.technicien,
             consortium:  c.consortium,
             canton:      c.canton
           }
@@ -98,7 +99,7 @@ class Api::SessionsController < ApplicationController
           nom: c.nom, adresse: c.adresse, npa: c.npa, ville: c.ville,
           contact: c.contremaitre, telephone: c.natel_contremaitre,
           contactLivraison: c.contact_livraison, telephoneLivraison: c.natel_livraison,
-          emailTechnicien: c.email_technicien, consortium: c.consortium, canton: c.canton
+          emailTechnicien: c.email_technicien, technicien: c.technicien, consortium: c.consortium, canton: c.canton
         }
       }
     }

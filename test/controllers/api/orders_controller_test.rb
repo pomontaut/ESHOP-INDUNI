@@ -42,7 +42,7 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     post api_orders_url, params: {
       chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
       contact: "PESSOA FRANCISCO Joni", phone: "+41765686536",
-      adresse: "Chemin des Rouettes 30\n1214 Vernier", conducteur: "Pierre-Olivier Montaut",
+      adresse: "Chemin des Rouettes 30\n1214 Vernier", conducteur: "Paul Dupont",
       items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
     }
     assert_response :success
@@ -51,7 +51,7 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_equal "PESSOA FRANCISCO Joni", order.contact
     assert_equal "+41765686536", order.phone
     assert_equal "Chemin des Rouettes 30\n1214 Vernier", order.delivery_address
-    assert_equal "Pierre-Olivier Montaut", order.conducteur_travaux
+    assert_equal "Paul Dupont", order.conducteur_travaux
   end
 
   test "create uses a custom subject and body when provided" do
