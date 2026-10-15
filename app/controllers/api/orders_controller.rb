@@ -39,6 +39,28 @@ class Api::OrdersController < ApplicationController
     render json: { error: "Commande introuvable" }, status: :not_found
   end
 
+  # Relance manuelle d'un fournisseur sans retour (voir OrderRelance) : le
+  # texte exact de l'e-mail est d'abord affiché (#relance_preview) pour
+  # confirmation côté client.
+  def relance_preview
+    order = find_own_order
+    render json: { subject: OrderRelance.subject(order), body: OrderRelance.body(order), to: order.sent_to.presence || order.supplier&.email }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Commande introuvable" }, status: :not_found
+  end
+
+  def relance
+    order = find_own_order
+    return render json: { error: "Cette commande ne peut pas être relancée (non envoyée, déjà confirmée ou annulée)." }, status: :unprocessable_entity unless OrderRelance.relanceable?(order)
+
+    OrderRelance.deliver!(order, kind: "manuel")
+    render json: { success: true, relanceSentAt: order.relance_sent_at.in_time_zone(OrderRelance::TIME_ZONE).strftime("%d.%m.%Y %H:%M") }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Commande introuvable" }, status: :not_found
+  rescue => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
   def index
     orders = current_user&.admin? ? Order.all : Order.where(user: current_user)
     orders = orders.includes(:supplier, :order_lines, :user, :revisions, :modifies_order).order(created_at: :desc).limit(100)
@@ -68,6 +90,9 @@ class Api::OrdersController < ApplicationController
         user_sector:     o.user&.sector,
         receptionConfirmedAt: o.reception_confirmed_at&.strftime("%d.%m.%Y %H:%M"),
         emailSent:       o.email_sent_at.present?,
+        relanceSentAt:   o.relance_sent_at&.in_time_zone(OrderRelance::TIME_ZONE)&.strftime("%d.%m.%Y %H:%M"),
+        relanceKind:     o.relance_kind,
+        canRelance:      OrderRelance.relanceable?(o),
         cancelled:       o.cancelled?,
         cancelledAt:     o.cancelled_at&.strftime("%d.%m.%Y %H:%M"),
         modifiesOrderNumber:  o.modifies_order&.number,
@@ -390,6 +415,10 @@ class Api::OrdersController < ApplicationController
   end
 
   private
+
+  def find_own_order
+    current_user&.admin? ? Order.find(params[:id]) : Order.find_by!(id: params[:id], user: current_user)
+  end
 
   def authorized_approver?(order)
     current_user&.admin? || (current_user&.email.present? && order.approver_email == current_user.email)

@@ -22,6 +22,17 @@ class OrderMailer < ApplicationMailer
     mail(to: to.presence || @order.supplier.email, cc: cc.presence, subject: subject.presence || "Commande #{@order.number}")
   end
 
+  # Relance d'une commande restée sans accusé de réception fournisseur (voir
+  # OrderRelance) : même destinataire/copie que l'envoi initial, le rédacteur
+  # reste en copie.
+  def relance(order)
+    @order = order
+    @body  = OrderRelance.body(order)
+    @reception_url = Rails.application.routes.url_helpers.order_reception_url(@order.reception_token, host: default_url_options[:host])
+    cc = [ order.sent_cc.presence, order.user&.email ].compact.join(", ").split(/\s*,\s*/).uniq.join(", ").presence
+    mail(to: order.sent_to.presence || order.supplier.email, cc: cc, subject: OrderRelance.subject(order))
+  end
+
   def send_order_plain(order)
     @order = order
     mail(to: @order.supplier.email, subject: "Commande #{@order.number}")

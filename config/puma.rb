@@ -40,3 +40,22 @@ plugin :solid_queue if ENV["SOLID_QUEUE_IN_PUMA"]
 # Specify the PID file. Defaults to tmp/pids/server.pid in development.
 # In other environments, only set the PID file if requested.
 pidfile ENV["PIDFILE"] if ENV["PIDFILE"]
+
+# Relance automatique des commandes sans retour fournisseur (voir OrderRelance) :
+# contrôle toutes les 15 minutes, n'envoie que les jours ouvrés entre 7h et 18h
+# et seulement si RELANCE_AUTO_ENABLED=true (désactivée par défaut, le temps de
+# valider le texte de la relance).
+if ENV["RELANCE_AUTO_ENABLED"] == "true"
+  on_booted do
+    Thread.new do
+      loop do
+        sleep 15 * 60
+        begin
+          Rails.application.executor.wrap { OrderRelance.run_due! }
+        rescue => e
+          Rails.logger.error("[relance] #{e.class}: #{e.message}")
+        end
+      end
+    end
+  end
+end

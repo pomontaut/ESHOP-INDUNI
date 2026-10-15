@@ -642,4 +642,29 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert superseded_row["supersededByNumber"].present?
     assert superseded_row["excludedFromReporting"]
   end
+
+  test "relance sends a manual reminder for an order without supplier reception" do
+    order = Order.create!(supplier: Supplier.create!(name: "Fournisseur R", email: "f@fournisseur.ch"), user: users(:one),
+                          order_date: Date.current, notes: "Chantier: X | Délai: Y", email_sent_at: 2.days.ago, sent_to: "f@fournisseur.ch")
+
+    get relance_preview_api_order_url(order)
+    assert_response :success
+    assert_includes JSON.parse(response.body)["body"], order.number
+
+    assert_emails 1 do
+      post relance_api_order_url(order)
+    end
+    assert_response :success
+    order.reload
+    assert_equal "manuel", order.relance_kind
+    assert order.relance_sent_at.present?
+  end
+
+  test "relance is refused once the supplier has confirmed reception" do
+    order = Order.create!(supplier: Supplier.create!(name: "Fournisseur R2", email: "f@fournisseur.ch"), user: users(:one),
+                          order_date: Date.current, email_sent_at: 2.days.ago, reception_confirmed_at: 1.day.ago)
+
+    assert_no_emails { post relance_api_order_url(order) }
+    assert_response :unprocessable_entity
+  end
 end
