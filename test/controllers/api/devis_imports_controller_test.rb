@@ -14,6 +14,35 @@ class Api::DevisImportsControllerTest < ActionDispatch::IntegrationTest
     )
   end
 
+  test "fournisseurs lists the whole base shared with the generic order form" do
+    get fournisseurs_api_devis_imports_url
+
+    assert_response :success
+    names = JSON.parse(response.body)
+    assert names.size > 9000
+    assert_includes names, "HG COMMERCIALE"
+    assert_equal names.uniq, names
+  end
+
+  test "create accepts a supplier from the base that has no e-shop record yet, creating it" do
+    name = FournisseursBase.names.find { |n| Supplier.where(name: n).none? && FournisseursBase.find(n)["email"].present? }
+    fake_lines = [ { reference: "X-1", designation: "Article inconnu", quantity: 1, unit: "PCE", unit_price: 10.0, is_variant: false } ]
+
+    with_stubbed_extraction(fake_lines) do
+      assert_difference "Supplier.count", 1 do
+        post api_devis_imports_url, params: { supplier: name, file: fixture_file_upload(".keep", "application/pdf") }
+      end
+    end
+
+    assert_response :success
+    assert_equal FournisseursBase.find(name)["email"], Supplier.find_by!(name: name).email
+  end
+
+  test "create still refuses a supplier that is neither in the e-shop nor in the base" do
+    post api_devis_imports_url, params: { supplier: "Fournisseur Fantôme XYZ", file: fixture_file_upload(".keep", "application/pdf") }
+    assert_response :unprocessable_entity
+  end
+
   test "matches an existing product and keeps the e-shop price" do
     fake_lines = [
       { reference: "ref-123", designation: "Tuyau PVC (devis)", quantity: 5, unit: "M", unit_price: 15.0, is_variant: false }

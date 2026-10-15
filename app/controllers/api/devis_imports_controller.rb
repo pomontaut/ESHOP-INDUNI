@@ -4,6 +4,12 @@ class Api::DevisImportsController < ApplicationController
 
   MAX_FILE_SIZE = 20.megabytes
 
+  # Base fournisseurs complète (même liste que le bon de commande générique)
+  # pour le menu déroulant de l'import de devis.
+  def fournisseurs
+    render json: FournisseursBase.names
+  end
+
   def create
     supplier_name = params[:supplier].to_s.strip
     file = params[:file]
@@ -12,7 +18,7 @@ class Api::DevisImportsController < ApplicationController
     return render json: { error: "Aucun fichier reçu." }, status: :unprocessable_entity if file.blank?
     return render json: { error: "Le fichier dépasse 20 Mo." }, status: :unprocessable_entity if file.size > MAX_FILE_SIZE
 
-    supplier = Supplier.find_by(name: supplier_name)
+    supplier = FournisseursBase.find_or_create_supplier(supplier_name)
     return render json: { error: "Fournisseur inconnu : #{supplier_name}" }, status: :unprocessable_entity unless supplier
 
     taxonomy = Product.where(supplier: supplier).where.not(famille: nil).distinct.pluck(:famille, :sous_famille)
@@ -43,7 +49,7 @@ class Api::DevisImportsController < ApplicationController
   # a normal, JSON-sourced entry (manually_added reset to false).
   def confirm_products
     supplier_name = params[:supplier].to_s.strip
-    supplier = Supplier.find_by(name: supplier_name)
+    supplier = FournisseursBase.find_or_create_supplier(supplier_name)
     return render json: { error: "Fournisseur inconnu : #{supplier_name}" }, status: :unprocessable_entity unless supplier
 
     products = Array(params[:products]).map do |p|
