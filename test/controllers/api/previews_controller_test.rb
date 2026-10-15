@@ -54,4 +54,16 @@ class Api::PreviewsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert JSON.parse(response.body).all? { |o| o["user_name"] == users(:one).full_name }
   end
+
+  test "admin users page offers the test mode buttons and the layout shows the active profile" do
+    login(users(:one))
+    get admin_users_url
+    assert_response :success
+    assert_select "[data-preview-profile=?]", "CONTREMAITRE"
+    assert_select "[data-preview-profile=?]", "CONDUCTEUR DE TRAVAUX"
+
+    post api_preview_url, params: { profile: "CONTREMAITRE" }, as: :json
+    get admin_users_url
+    assert_select ".alert-warning", /Mode test.*Contremaître/m
+  end
 end
