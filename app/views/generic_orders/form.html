@@ -704,14 +704,17 @@ function validerCommande(){
   statusEl.className = 'status ok';
   statusEl.textContent = "Commande enregistrée dans le tableau de bord. Un fichier .eml a été téléchargé avec le PDF déjà en pièce jointe — ouvrez-le pour l'envoyer depuis Outlook.";
 
+  // Le chantier identifié reste le même pour la commande suivante : on le
+  // renouvelle pour aujourd'hui (le catalogue ne le redemande donc pas) et on
+  // re-remplit le formulaire au lieu de le vider.
+  keepChantierChoiceForToday();
+
   // prépare une nouvelle commande pour la suite
   setTimeout(()=>{
-    document.getElementById('codeChantier').value = '';
-    document.getElementById('chantier').value = '';
-    document.getElementById('adresseLivraison').value = '';
     document.getElementById('linesBody').innerHTML = '';
     addLine();
     setNow();
+    prefillFromChantierChoice(true);
     genererNumero();
   }, 600);
 }
@@ -1121,6 +1124,49 @@ function sendOrderEmailWithAttachment(data){
   });
   downloadEml(eml, filename.replace(/\.pdf$/i,'') + '.eml');
 }
+
+/* ---------------- CHANTIER IDENTIFIÉ (partagé avec le catalogue) ---------------- */
+// Le catalogue mémorise le chantier choisi dans la fenêtre « Chantier » (même
+// origine, localStorage) : on en déduit ici le code chantier, le nom, l'adresse
+// de livraison, les contacts et les contraintes, sans les ressaisir.
+const CHANTIER_CHOICE_KEY = 'induni_chantier_choice_v1';
+let _meInfo = null;
+function readChantierChoice(){
+  try{ return JSON.parse(localStorage.getItem(CHANTIER_CHOICE_KEY) || 'null'); }catch(e){ return null; }
+}
+function keepChantierChoiceForToday(){
+  const c = readChantierChoice();
+  if(!c || !c.nom) return;
+  try{ localStorage.setItem(CHANTIER_CHOICE_KEY, JSON.stringify({nom:c.nom, stay:c.stay, date:new Date().toISOString().slice(0,10)})); }catch(e){}
+}
+function setIfEmpty(id, value, force){
+  const el = document.getElementById(id);
+  if(el && value && (force || !el.value.trim())) el.value = value;
+}
+function prefillFromChantierChoice(force){
+  if(!_meInfo) return;
+  setIfEmpty('auteur', _meInfo.full_name, false);
+  setIfEmpty('contact', _meInfo.full_name, false);
+  const choice = readChantierChoice();
+  if(!choice || !choice.nom) return;
+  const rows = (_meInfo.chantiers || []).filter(c => c.nom === choice.nom);
+  const c = rows[0];
+  const m = String(choice.nom).match(/^\s*(\d+)\s*[-–]\s*(.+)$/);
+  setIfEmpty('codeChantier', m ? m[1] : '', force);
+  setIfEmpty('chantier', m ? m[2].trim() : choice.nom, force);
+  if(!c) { genererNumero(); return; }
+  setIfEmpty('adresseLivraison', [c.adresse, [c.npa, c.ville].filter(Boolean).join(' ')].filter(Boolean).join('\n'), force);
+  const contremaitre = [c.contact, c.telephone].filter(Boolean).join(' - ');
+  setIfEmpty('contremaitre', contremaitre, force);
+  const techniciens = [...new Set(rows.map(r => [r.technicien, r.natelTechnicien, r.emailTechnicien].filter(Boolean).join(' - ')).filter(Boolean))];
+  setIfEmpty('technicien', techniciens.join(' ; '), force);
+  setIfEmpty('contraintes', c.contraintes, force);
+  genererNumero();
+}
+fetch('/api/me', {headers:{'Accept':'application/json'}})
+  .then(r => r.json())
+  .then(me => { _meInfo = me; prefillFromChantierChoice(false); })
+  .catch(() => {});
 </script>
 
 </body>

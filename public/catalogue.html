@@ -4000,7 +4000,10 @@ async function confirmSendOrder() {
         closeModal('sendConfirmModal');
         closeModal('orderModal');
         alert('Commande ' + data.order_number + ' envoyée à ' + (data.supplier_email || data.supplier_name || 'le fournisseur') + (cc?(' (copie : '+cc+')'):'') + ' avec le bon de commande en pièce jointe (PDF).');
-        openChantierPickerModal();
+        // « Je reste sur mon chantier » : on ne redemande pas le chantier après l'envoi.
+        const choiceAfterSend=getChantierChoice();
+        if(choiceAfterSend&&choiceAfterSend.stay){ setChantierChoice(choiceAfterSend.nom,true); applyCurrentChantierToOrderForm(); }
+        else openChantierPickerModal();
       }
       _pendingOrder = null;
     } else {
@@ -4275,7 +4278,9 @@ function applyCurrentChantierToOrderForm(){
 // demande le chantier ; sinon applique silencieusement le dernier choix.
 function maybeOpenChantierPickerOnLoad(){
   const stored=getChantierChoice();
-  if(stored&&stored.date===todayISO()){
+  if(stored&&(stored.date===todayISO()||stored.stay)){
+    // Choix du jour, ou « Je reste sur mon chantier » : pas de nouvelle demande.
+    if(stored.date!==todayISO()) setChantierChoice(stored.nom,true);
     applyCurrentChantierToOrderForm();
   } else {
     openChantierPickerModal();
