@@ -28,6 +28,7 @@ Rails.application.routes.draw do
     resources :diesel_prices, only: [ :index, :create ]
     resources :canplast_surcharges, only: [ :index, :create ]
     get :me, to: "sessions#me"
+    resource :preview, only: [ :create, :destroy ]
     post   "push_subscriptions", to: "push_subscriptions#create"
     delete "push_subscriptions", to: "push_subscriptions#destroy"
   end

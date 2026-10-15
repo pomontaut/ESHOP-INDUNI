@@ -18,6 +18,21 @@ class User < ApplicationRecord
     "RESPONSABLE DEPOT GESTION DE MATERIEL", "DIRECTEUR DEPOT GESTION DE MATERIEL"
   ].freeze
 
+  # "Mode test" administrateur : aperçu de l'interface telle que la voit un profil
+  # d'exploitation, sans quitter son compte. Seuls les droits d'affichage du
+  # bandeau (/api/me) et le périmètre des commandes changent — le compte reste
+  # administrateur côté serveur. À ajuster ici si les droits d'un profil évoluent.
+  PREVIEW_PROFILES = {
+    "CONTREMAITRE" => {
+      label: "Contremaître",
+      perms: { can_read: true, can_create_orders: true, can_view_dashboard: true }
+    },
+    "CONDUCTEUR DE TRAVAUX" => {
+      label: "Conducteur de travaux",
+      perms: { can_read: true, can_create_orders: true, can_view_dashboard: true }
+    }
+  }.freeze
+
   SUPPLIERS = [
     { key: "HGC",        label: "HGC" },
     { key: "Canplast",   label: "Canplast" },

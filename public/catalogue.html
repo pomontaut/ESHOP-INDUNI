@@ -4057,6 +4057,14 @@ Promise.all([
   }
   initProducts(Array.isArray(products) ? products : []);
   window._userPerms = perms;
+  if(perms.preview_profile){
+    const pb=document.createElement('div');
+    pb.id='previewBanner';
+    pb.style.cssText='background:#fff3cd;color:#664d03;border-bottom:1px solid #ffe69c;text-align:center;padding:6px 10px;font-size:13px;font-weight:700;position:sticky;top:0;z-index:10000';
+    pb.innerHTML='&#129514; Mode test : '+esc(perms.preview_label||perms.preview_profile)+' &mdash; <a href="#" style="color:#664d03;text-decoration:underline" id="previewExit">Quitter le mode test</a>';
+    document.body.insertBefore(pb,document.body.firstChild);
+    document.getElementById('previewExit').addEventListener('click',function(e){e.preventDefault();fetch('/api/preview',{method:'DELETE'}).then(function(){window.location.reload()})});
+  }
   updateOrderApprovalsBadge();
   const lastUpdatedLabel = document.getElementById('lastUpdatedLabel');
   if(lastUpdatedLabel && perms.catalogLastUpdated) lastUpdatedLabel.textContent = 'Mise à jour : ' + perms.catalogLastUpdated;

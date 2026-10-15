@@ -38,6 +38,20 @@ class ApplicationController < ActionController::Base
   end
   helper_method :current_user
 
+  # Mode test administrateur (Admin > Utilisateurs) : profil d'exploitation simulé
+  # pour l'affichage. Jamais actif pour un compte non administrateur, même si la
+  # clé traîne dans la session.
+  def preview_profile
+    key = session[:preview_profile]
+    key if key && current_user&.admin? && User::PREVIEW_PROFILES.key?(key)
+  end
+  helper_method :preview_profile
+
+  # Administrateur agissant réellement en tant que tel (hors mode test).
+  def acting_as_admin?
+    current_user&.admin? && preview_profile.nil?
+  end
+
   def render_order_pdf(order)
     @order = order
     html = render_to_string(template: "orders/bon_de_commande", layout: false, formats: [ :html ])

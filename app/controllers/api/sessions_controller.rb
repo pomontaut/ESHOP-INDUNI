@@ -2,25 +2,31 @@ class Api::SessionsController < ApplicationController
   skip_before_action :require_login
   skip_before_action :verify_authenticity_token
 
+  PERMISSION_KEYS = %i[
+    can_create_users can_create_orders can_modify_orders can_import_quote can_generic_order
+    can_view_dashboard can_view_analysis can_view_market_indices can_view_intelligence_buying
+    can_view_nomenclature
+  ].freeze
+
   def me
     if current_user
-      render json: {
+      preview = preview_profile
+      perms = if preview
+        # Mode test : uniquement les droits du profil simulé, jamais ceux de l'administrateur.
+        granted = User::PREVIEW_PROFILES.fetch(preview)[:perms]
+        PERMISSION_KEYS.index_with { |k| granted.fetch(k, false) }
+      else
+        PERMISSION_KEYS.index_with { |k| current_user.public_send("effective_#{k}?") }
+      end
+      render json: perms.merge(
         logged_in:         true,
-        admin:             current_user.admin?,
+        admin:             preview ? false : current_user.admin?,
+        preview_profile:   preview,
+        preview_label:     preview && User::PREVIEW_PROFILES.fetch(preview)[:label],
         full_name:         current_user.full_name,
         email:             current_user.email,
         phone:             current_user.phone,
         sector:            current_user.sector,
-        can_create_users:  current_user.effective_can_create_users?,
-        can_create_orders: current_user.effective_can_create_orders?,
-        can_modify_orders: current_user.effective_can_modify_orders?,
-        can_import_quote:  current_user.effective_can_import_quote?,
-        can_generic_order: current_user.effective_can_generic_order?,
-        can_view_dashboard:    current_user.effective_can_view_dashboard?,
-        can_view_analysis:     current_user.effective_can_view_analysis?,
-        can_view_market_indices:      current_user.effective_can_view_market_indices?,
-        can_view_intelligence_buying: current_user.effective_can_view_intelligence_buying?,
-        can_view_nomenclature: current_user.effective_can_view_nomenclature?,
         # Date réelle de la dernière modification d'un article (tarif, prix…),
         # et non la date du fichier catalogue.html (= date du dernier déploiement).
         catalogLastUpdated: (Product.maximum(:updated_at) || File.mtime(Rails.root.join("public/catalogue.html"))).strftime("%d.%m.%Y"),
@@ -53,7 +59,7 @@ class Api::SessionsController < ApplicationController
             canton:      c.canton
           }
         }
-      }
+      )
     else
       render json: { logged_in: false, admin: false, allowed_suppliers: [] }
     end

@@ -40,7 +40,7 @@ class Api::OrdersController < ApplicationController
   end
 
   def index
-    orders = current_user&.admin? ? Order.all : Order.where(user: current_user)
+    orders = acting_as_admin? ? Order.all : Order.where(user: current_user)
     orders = orders.includes(:supplier, :order_lines, :user, :revisions, :modifies_order).order(created_at: :desc).limit(100)
     # Prix net confidentiel (fournisseur sous accord de confidentialité, ex.
     # Sika) : seule l'Analyse achat (accès restreint aux Achats) doit voir le
@@ -50,7 +50,7 @@ class Api::OrdersController < ApplicationController
     # même pour un utilisateur autorisé, pour que le Dashboard (qui, lui,
     # doit toujours le masquer, indépendamment des droits du visiteur) sache
     # l'afficher comme tel.
-    can_see_confidential = current_user&.admin? || current_user&.effective_can_view_analysis?
+    can_see_confidential = acting_as_admin? || (!preview_profile && current_user&.effective_can_view_analysis?)
     render json: orders.map { |o|
       chantier = o.notes.to_s.match(/Chantier:\s*([^|]+)/)&.captures&.first&.strip || "—"
       confidential = o.supplier&.confidential_pricing?

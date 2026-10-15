@@ -14,6 +14,12 @@
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
   </head>
   <body>
+    <% if preview_profile %>
+      <div class="alert alert-warning rounded-0 text-center py-1 mb-0 small">
+        🧪 Mode test : <strong><%= User::PREVIEW_PROFILES[preview_profile][:label] %></strong> —
+        <a href="#" onclick="fetch('/api/preview',{method:'DELETE'}).then(function(){window.location.reload()});return false;">Quitter le mode test</a>
+      </div>
+    <% end %>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
       <div class="container">
         <a class="navbar-brand fw-bold" href="/">INDUNI Eshop</a>
