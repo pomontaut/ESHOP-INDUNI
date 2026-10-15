@@ -118,6 +118,18 @@ catalog silently invisible to users with any manual restriction.
   transport logic, not just Canplast). Confidential-pricing suppliers must
   keep masking `extra_charges` the same way as the merchandise total.
 
+## Environnements (production / staging)
+
+- **Production** : service Railway déployé depuis `main`.
+- **Staging (test)** : environnement Railway séparé (propre base Postgres, propres
+  variables) déployé depuis la branche `staging`. `APP_ENV=staging` active les
+  garde-fous : aucun e-mail réel (tout est redirigé vers `STAGING_MAIL_TO`, ou
+  rien n'est envoyé s'il est vide — voir `StagingMailInterceptor`), relance
+  automatique coupée, bandeau rouge « ENVIRONNEMENT DE TEST » dans l'e-shop.
+- **Tout nouveau développement va d'abord sur `staging`**, jamais directement
+  sur `main` : pousser `staging`, vérifier sur l'URL de staging, puis seulement
+  fusionner `staging` dans `main`.
+
 ## Deploy workflow (always follow this exact sequence)
 
 1. Edit, then run the full test suite: `bin/rails test` (must be 0
@@ -127,12 +139,13 @@ catalog silently invisible to users with any manual restriction.
    UI/flow-related (log in as a throwaway seeded user, drive the page,
    screenshot, clean up the seeded data afterward).
 3. `git add -A && git commit` with a descriptive French message.
-4. `git push -u origin claude/reprise-eshop-induni-2klf95`.
+4. `git push -u origin <branche de travail>` puis fusionner/pousser sur `staging`
+   et vérifier l'environnement de test AVANT la production.
 5. `git fetch origin main && git merge-base --is-ancestor origin/main HEAD`
    — if this fails, someone pushed to `main` independently (has happened via
    direct GitHub-web uploads); merge `origin/main` into the branch first,
    don't force-push.
-6. `git push origin claude/reprise-eshop-induni-2klf95:main` — Railway
+6. Après validation sur staging : `git push origin <branche>:main` — Railway
    auto-deploys from `main`. Any new migration runs automatically on
    deploy, but always run `bin/rails db:migrate` locally first to verify it
    applies cleanly.

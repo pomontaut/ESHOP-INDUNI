@@ -11,6 +11,7 @@ class Api::SessionsController < ApplicationController
 
       render json: {
         logged_in:         true,
+        environment:       AppEnvironment.name,
         real_admin:        current_user.admin?,
         admin:             current_user.admin?,
         full_name:         current_user.full_name,
@@ -73,6 +74,7 @@ class Api::SessionsController < ApplicationController
   def test_profile_payload(profile)
     {
       logged_in:         true,
+      environment:       AppEnvironment.name,
       real_admin:        true,
       test_profile:      profile,
       admin:             false,

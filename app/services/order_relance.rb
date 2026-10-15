@@ -31,7 +31,7 @@ class OrderRelance
   TEXT
 
   def self.enabled?
-    ENV["RELANCE_AUTO_ENABLED"] == "true"
+    ENV["RELANCE_AUTO_ENABLED"] == "true" && !AppEnvironment.staging?
   end
 
   def self.working_time?(time = Time.current)
