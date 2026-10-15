@@ -4049,7 +4049,7 @@ function pushNotifSupportedInduni(){return 'serviceWorker' in navigator && 'Push
 function updatePushNotifButton(){
   const btn=document.getElementById('pushNotifBtn');
   if(!btn) return;
-  if(!pushNotifSupportedInduni()){btn.style.display='none';return}
+  if(window._hidePushBtn||!pushNotifSupportedInduni()){btn.style.display='none';return}
   btn.style.display='inline-flex';
   const perms=window._userPerms||{};
   if(perms.pushSubscribed && Notification.permission==='granted'){
@@ -4133,7 +4133,7 @@ Promise.all([
     document.getElementById('adminDropdownToggle').style.display='inline-flex';
   }
   if(perms.test_profile){
-    var approvalsBtn=document.getElementById('orderApprovalsNavLink'); if(approvalsBtn) approvalsBtn.style.display='none';
+    var approvalsBtn=document.getElementById('orderApprovalsNavLink'); if(approvalsBtn) approvalsBtn.style.display='none'; var pushBtn=document.getElementById('pushNotifBtn'); if(pushBtn) pushBtn.style.display='none'; window._hidePushBtn=true;
     document.getElementById('testProfileLabel').textContent='🧪 Environnement test — vue '+perms.test_profile;
     document.getElementById('testProfileBanner').style.display='block';
   }
