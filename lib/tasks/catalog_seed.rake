@@ -95,14 +95,14 @@ namespace :catalog do
       supplier.destroy
     end
 
-    # N'initialise les coordonnées que pour un fournisseur réellement nouveau :
-    # sinon on écraserait à chaque redémarrage les modifications faites depuis
-    # l'admin (email, adresse, etc.).
     # « HGC » et « HG COMMERCIALE » étaient deux fiches pour le même
     # fournisseur (suppliers:import renomme par numéro, ce seed recréait
     # « HGC » par nom) : fusion idempotente avant de (re)créer quoi que ce soit.
     SupplierMerger.merge!(target_name: "HG COMMERCIALE", source_names: [ "HGC" ])
 
+    # N'initialise les coordonnées que pour un fournisseur réellement nouveau :
+    # sinon on écraserait à chaque redémarrage les modifications faites depuis
+    # l'admin (email, adresse, etc.).
     required_suppliers.each do |name, attrs|
       supplier = Supplier.find_or_initialize_by(name: name)
       supplier.update!(attrs) if supplier.new_record?
@@ -181,9 +181,16 @@ namespace :catalog do
         }
       end.uniq { |r| [ r[:supplier_id], r[:reference] ] }
 
+      # Historique des prix (Admin > Produits > export Excel) : le upsert en
+      # masse contourne les callbacks de Product, on compare donc avant/après.
+      # Un prix inchangé n'ajoute jamais de ligne.
+      prices_before = Product.pluck(:supplier_id, :reference, :unit_price).to_h { |sid, ref, price| [ [ sid, ref ], price ] }
+
       rows.each_slice(500) do |slice|
         Product.upsert_all(slice, unique_by: :index_products_on_supplier_id_and_reference)
       end
+
+      ProductPriceChange.record_seed_changes(prices_before)
 
       # HG COMMERCIALE and Leuba HIAG sheets cover ~99% of the known catalog: treat them
       # as a full refresh (items missing from the current JSON are discontinued).

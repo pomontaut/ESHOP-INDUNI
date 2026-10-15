@@ -78,3 +78,5 @@ gem "webpush"
 
 # Official Anthropic SDK, used to extract structured line items from supplier quotes (devis)
 gem "anthropic"
+
+gem "caxlsx", "~> 4.5"

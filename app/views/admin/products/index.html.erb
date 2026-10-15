@@ -1,0 +1,28 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="mb-1">Produits — export des prix</h1>
+    <p class="text-muted mb-0">Extraction Excel des prix de tous les produits avec l'historique des modifications (date + nouveau prix).</p>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body p-4">
+    <%= form_with url: export_admin_products_path(format: :xlsx), method: :get, local: true do %>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-5">
+          <label class="form-label fw-semibold" for="supplier_id">Fournisseur</label>
+          <%= select_tag :supplier_id, options_for_select([ [ "Tous les fournisseurs", "" ] ] + @suppliers.map { |s| [ s.name, s.id ] }), class: "form-select" %>
+        </div>
+        <div class="col-md-4">
+          <button type="submit" class="btn btn-primary">📥 Télécharger l'Excel</button>
+        </div>
+      </div>
+    <% end %>
+    <hr>
+    <ul class="small text-muted mb-0">
+      <li><%= @product_count %> produits, <%= @change_count %> prix enregistrés dans l'historique.</li>
+      <li>Une ligne d'historique n'est ajoutée que lorsque le prix change réellement : une mise à jour du catalogue fournisseur qui laisse le prix identique n'ajoute rien.</li>
+      <li>Les prix des fournisseurs à prix confidentiel (ex. Sika) sont exclus de l'extraction.</li>
+    </ul>
+  </div>
+</div>

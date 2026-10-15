@@ -41,6 +41,9 @@ Rails.application.routes.draw do
     end
     resources :chantiers, only: [ :index, :new, :create, :edit, :update, :destroy ]
     resources :suppliers, only: [ :index, :edit, :update ]
+    resources :products, only: [ :index ] do
+      collection { get :export }
+    end
   end
 
   get    "login",           to: "sessions#new",           as: :login

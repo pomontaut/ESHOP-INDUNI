@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_15_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_15_120000) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -117,6 +117,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_15_110000) do
     t.index ["reception_token"], name: "index_orders_on_reception_token", unique: true
     t.index ["supplier_id"], name: "index_orders_on_supplier_id"
     t.index ["user_id"], name: "index_orders_on_user_id"
+  end
+
+  create_table "product_price_changes", force: :cascade do |t|
+    t.datetime "changed_at", null: false
+    t.datetime "created_at", null: false
+    t.decimal "price", null: false
+    t.integer "product_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id", "changed_at"], name: "index_product_price_changes_on_product_id_and_changed_at"
+    t.index ["product_id"], name: "index_product_price_changes_on_product_id"
   end
 
   create_table "products", force: :cascade do |t|
@@ -251,6 +261,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_15_110000) do
   add_foreign_key "orders", "orders", column: "modifies_order_id", on_delete: :nullify
   add_foreign_key "orders", "suppliers"
   add_foreign_key "orders", "users"
+  add_foreign_key "product_price_changes", "products", on_delete: :cascade
   add_foreign_key "products", "suppliers"
   add_foreign_key "projets", "chantiers", on_delete: :nullify
   add_foreign_key "projets", "users", column: "responsable_id", on_delete: :nullify
