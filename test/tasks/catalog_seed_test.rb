@@ -106,6 +106,15 @@ class CatalogSeedTaskTest < ActiveSupport::TestCase
     assert_empty leuba - hgc
   end
 
+  test "catalog:seed no longer carries filmed panels, 50x300x4000 planks or non-protection wood accessories" do
+    run_seed
+
+    wood = Product.joins(:supplier).where(suppliers: { name: [ "Leuba HIAG", "HG COMMERCIALE" ] })
+    assert_empty wood.where(sous_famille: "Panneaux filmés").pluck(:reference)
+    assert_empty wood.where("products.name LIKE ?", "%Carrelets / planches de coffrage 50x300x4000%").pluck(:reference)
+    assert_equal [ "104629", "104662" ], wood.where(famille: "Bois & Coffrage", sous_famille: "Accessoires").distinct.pluck(:reference).sort
+  end
+
   private
 
   def run_seed
