@@ -172,14 +172,14 @@ table.totals tr.grand td{border-top:2px solid #111;border-bottom:0;font-size:13p
   <% if confidential_pricing %>
   <tr><td class="lbl">Sous-total marchandises H.T.</td><td class="amt">Conformément à nos accords cadre</td></tr>
   <% else %>
-  <tr><td class="lbl">Sous-total marchandises H.T.</td><td class="amt">CHF&nbsp;<%= fmt.call(@order.total) %></td></tr>
+  <tr><td class="lbl">Sous-total marchandises H.T.</td><td class="amt">CHF <%= fmt.call(@order.total) %></td></tr>
   <% @order.extra_charges.to_a.each do |charge| %>
-  <tr><td class="lbl"><%= charge["label"] %></td><td class="amt">CHF&nbsp;<%= fmt.call(charge["amount"]) %></td></tr>
+  <tr><td class="lbl"><%= charge["label"] %></td><td class="amt">CHF <%= fmt.call(charge["amount"]) %></td></tr>
   <% end %>
   <% end %>
   <tr class="grand">
     <td class="lbl">TOTAL<%= confidential_pricing ? "" : " H.T." %></td>
-    <td class="amt"><%= confidential_pricing ? "Conformément à nos accords cadre" : "CHF&nbsp;#{fmt.call(@order.grand_total)}".html_safe %></td>
+    <td class="amt"><%= confidential_pricing ? "Conformément à nos accords cadre" : "CHF #{fmt.call(@order.grand_total)}" %></td>
   </tr>
 </table>
 

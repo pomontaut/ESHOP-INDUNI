@@ -119,7 +119,7 @@ class BonDeCommandeTemplateTest < ActiveSupport::TestCase
 
     html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
 
-    assert_match(/<div class="sum total">\s*<span>TOTAL H\.T\.<\/span>\s*<b>CHF 30\.00<\/b>\s*<\/div>/m, html)
+    assert_match(/<tr class="grand">\s*<td class="lbl">TOTAL H\.T\.<\/td>\s*<td class="amt">CHF 30\.00<\/td>\s*<\/tr>/m, html)
     assert_no_match(/<td>CHF <\/td>|<td><\/td>/m, html)
   end
 
@@ -140,7 +140,7 @@ class BonDeCommandeTemplateTest < ActiveSupport::TestCase
     assert_includes html, "CHF 2.20"
     assert_includes html, "Livraison Canplast — Zone 2"
     assert_includes html, "CHF 210.00"
-    assert_match(/<div class="sum total">\s*<span>TOTAL H\.T\.<\/span>\s*<b>CHF 312\.20<\/b>\s*<\/div>/m, html)
+    assert_match(/<tr class="grand">\s*<td class="lbl">TOTAL H\.T\.<\/td>\s*<td class="amt">CHF 312\.20<\/td>\s*<\/tr>/m, html)
   end
 
   test "never shows the extra charges breakdown for a confidential-pricing supplier" do
