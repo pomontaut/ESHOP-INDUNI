@@ -1102,9 +1102,12 @@ function productTitleHtmlInduni(p){
   const isTuyau=isTuyauContextInduni(p.sousFamille,p.sousSousFamille);
   const split=isTuyau?splitTuyauLongueurInduni(p.designation):null;
   let mainText=split?split.main:p.designation;
-  // Sur les fiches, "compact" est déjà porté par la sous-famille (visible au-dessus
-  // de la grille) : le retirer du titre gagne assez de largeur pour tenir sur une ligne.
-  if(isTuyau) mainText=mainText.replace(/\bcompact\b/i,'').replace(/\s{2,}/g,' ').trim();
+  // « COMPACT » reste affiché dans la désignation des tuyaux PVC Canplast SN2/SN4
+  // (sous-famille « Tuyaux compact standard » : « Tuyau PVC COMPACT SN4 … »). Pour les
+  // autres tuyaux (drainage, à bétonner…), il est retiré du titre : déjà porté par la
+  // sous-famille, ce qui gagne assez de largeur pour tenir sur une ligne.
+  const keepCompact=p.catalog==='Canplast'&&p.sousFamille==='Tuyaux compact standard';
+  if(isTuyau&&!keepCompact) mainText=mainText.replace(/\bcompact\b/i,'').replace(/\s{2,}/g,' ').trim();
   let html=esc(mainText).replace(/(Ø\s*[\d.,]+\s*(?:cm|mm)?\s*\/\s*[\d.,]+\s*mm|Ø\s*\d[\d.,]*)/i,m=>`<b>${m}</b>`);
   // Les deux formats Sika-4A (5kg / 15kg) sont visuellement proches : le poids est
   // mis en évidence en rouge pour éviter les erreurs de commande.
