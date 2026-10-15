@@ -18,6 +18,10 @@ class Api::TestProfilesController < ApplicationController
     profile if user&.admin? && PROFILES.include?(profile)
   end
 
+  def self.dev_mode?(session, user)
+    active_profile(session, user) == DEV_PROFILE
+  end
+
   def create
     profile = params[:profile].to_s
     return render json: { error: "Profil inconnu." }, status: :unprocessable_entity unless PROFILES.include?(profile)

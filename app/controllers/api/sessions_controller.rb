@@ -46,7 +46,10 @@ class Api::SessionsController < ApplicationController
         # (Admin > Fournisseurs) — le client ne doit jamais retomber sur une
         # adresse figée dans catalogue.html si celle-ci existe.
         supplierDefaultEmails: Supplier.where.not(email: [ nil, "" ]).pluck(:name, :email).to_h,
-        allowed_suppliers: current_user.effective_visible_suppliers,
+        allowed_suppliers: current_user.effective_visible_suppliers - (dev_mode ? [] : Supplier::TEST_ONLY_NAMES),
+        # Cantons auxquels un fournisseur est réservé (ex. Tinguely = VAUD) :
+        # contrôlé côté navigateur avant l'envoi d'une commande.
+        supplierVisibleCantons: Supplier.all.select { |s| s.visible_cantons.present? }.to_h { |s| [ s.name, s.visible_cantons ] },
         chantiers:         Chantier.visible_to(current_user).order(:nom).map { |c|
           {
             nom:         c.nom,

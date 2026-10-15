@@ -7,6 +7,10 @@ class Supplier < ApplicationRecord
 
   validates :name, presence: true
 
+  # E-shops en cours de développement : jamais exposés au catalogue hors
+  # « Environnement test : Développement » (voir Api::ProductsController).
+  TEST_ONLY_NAMES = [ "Tinguely", "SGTT" ].freeze
+
   CANTONS = [ "GENEVE", "VAUD", "VALAIS", "FRIBOURG", "JURA" ].freeze
   SECTORS = [ "GC", "BAT GE", "BAT VD", "TRANSFO GE", "TRANSFO VD" ].freeze
 

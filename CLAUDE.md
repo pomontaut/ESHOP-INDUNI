@@ -135,6 +135,23 @@ prix confidentiel jamais comparés (fournisseur imposé, prix 🔒) ; prix
 re-téléchargés (`/api/products`) avant calcul et avant envoi ; zones Canplast/
 Soreval inconnues = hypothèse prudente signalée ET envoi bloqué.
 
+## E-shops en test : Tinguely (VD) et SGTT (GE)
+
+Prestations d'aspiratrice/pompage/transport de déchets (4 articles chacun, dans
+`db/seed_data/catalog_products.json`). Listés dans `Supplier::TEST_ONLY_NAMES` :
+`Api::ProductsController` et `allowed_suppliers` (`/api/me`) les masquent hors
+« Environnement test : Développement » (admin) ; la couverture d'accueil exige
+`perms.dev_mode`. Pour les retirer du test = vider `TEST_ONLY_NAMES` et enlever
+la condition `dev_mode` dans `renderHome`. Réservés à un canton via
+`Supplier#visible_cantons` (Tinguely = VAUD, SGTT = GENEVE), contrôlé avant
+envoi par `supplierCantonGuardInduni` (bloque si le canton du chantier diffère,
+confirmation s'il est inconnu). Tinguely : prix = tarif − rabais 8 % déjà
+appliqué (PU catalogue rappelé dans le descriptif) + ASTAG 4.2 % ajouté en frais
+annexe (`transportDetailsInduni`/`Html`/`LineItems`, base = montant net : [H]).
+SGTT : aucun frais annexe (transport compris dans les forfaits). E-mails de
+commande non communiqués : à saisir dans Admin > Fournisseurs avant tout envoi.
+Exclus de la sélection multi-fournisseurs (prestations).
+
 ## Deploy workflow (always follow this exact sequence)
 
 1. Edit, then run the full test suite: `bin/rails test` (must be 0

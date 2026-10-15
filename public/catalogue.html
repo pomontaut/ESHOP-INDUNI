@@ -138,6 +138,8 @@ const HGC_FUEL_SURCHARGE=5.88, HGC_CRANE=18, TRANSPORT_HGC=85, CANPLAST_TRANSPOR
 const MBT_FRANCO=3000, MBT_TIER2_MIN=1500, MBT_TIER2=130, MBT_TIER1=70;
 const ALZO_TRANSPORT=12;
 const LCBE_TRANSPORT=145;
+// Tinguely (aspiratrice, canton de Vaud) : supplément ASTAG de 4.2 % (offre jointe), appliqué ici au montant net après rabais [hypothèse de base]. SGTT (Genève) : aucun frais annexe, transport compris dans les heures/forfaits.
+const TINGUELY_ASTAG_RATE=0.042;
 const GANAMAT_TRANSPORT=105;
 // Conditions de vente et de livraison swisspor (liste de prix nets, valable dès le
 // 22.06.2026, §2 et §4) : franco chantier dès CHF 3'500 net (zone de plaine), sinon
@@ -337,6 +339,11 @@ function transportDetailsInduni(sub,supplier,weightOverride,chantierNom){
     const discount=-(sub*rate);
     return {transport:discount,rplp:0,crane:0,prep:0,totalTransport:discount,total:sub+discount,label:'Remise de volume BTest',rate:rate};
   }
+  if(supplier==='Tinguely'){
+    const astag=Math.round(sub*TINGUELY_ASTAG_RATE*100)/100;
+    return {transport:astag,rplp:0,crane:0,prep:0,totalTransport:astag,total:sub+astag,label:'Supplément ASTAG Tinguely (4.2%)'};
+  }
+  if(supplier==='SGTT') return {transport:0,rplp:0,crane:0,prep:0,totalTransport:0,total:sub,label:'Transport SGTT'};
   if(supplier==='LCBE') return {transport:LCBE_TRANSPORT,rplp:0,crane:0,prep:0,totalTransport:LCBE_TRANSPORT,total:sub+LCBE_TRANSPORT,label:'Forfait déplacement LCBE'};
   if(supplier==='GANAMAT SA') return {transport:GANAMAT_TRANSPORT,rplp:0,crane:0,prep:0,totalTransport:GANAMAT_TRANSPORT,total:sub+GANAMAT_TRANSPORT,label:'Participation transport GANAMAT'};
   if(supplier==='Swisspor'){
@@ -369,6 +376,8 @@ function transportHtmlInduni(sub,supplier,included,chantierNom){
     return `<div class="sum"><span>Transport Soreval — Zone ${t.zone.zone} (${t.essieu4?'4 essieux':'5 essieux'}/malaxeur)</span><b>${fmt(t.totalTransport)}</b></div>`;
   }
   if(supplier==='BTest') return `<div class="sum"><span>Remise de volume BTest${t.rate?` (${Math.round(t.rate*100)}%)`:''}</span><b>${fmt(t.totalTransport)}</b></div>`;
+  if(supplier==='Tinguely') return `<div class="sum"><span>Supplément ASTAG Tinguely (4.2%)</span><b>${fmt(t.totalTransport)}</b></div>`;
+  if(supplier==='SGTT') return `<div class="sum"><span>Transport SGTT — compris dans les heures/forfaits</span><b>${fmt(0)}</b></div>`;
   if(supplier==='LCBE') return `<div class="sum"><span>Forfait déplacement LCBE</span><b>${fmt(t.totalTransport)}</b></div>`;
   if(supplier==='GANAMAT SA') return `<div class="sum"><span>Participation transport GANAMAT</span><b>${fmt(t.totalTransport)}</b></div>`;
   if(supplier==='Swisspor'){
@@ -412,6 +421,8 @@ function transportLineItemsInduni(sub,supplier,included,chantierNom){
     return [{label:`Transport Soreval — Zone ${t.zone.zone} (${t.essieu4?'4 essieux':'5 essieux'}/malaxeur)`,amount:t.totalTransport}];
   }
   if(supplier==='BTest') return [{label:`Remise de volume BTest${t.rate?` (${Math.round(t.rate*100)}%)`:''}`,amount:t.totalTransport}];
+  if(supplier==='Tinguely') return [{label:'Supplément ASTAG Tinguely (4.2%)',amount:t.totalTransport}];
+  if(supplier==='SGTT') return [];
   if(supplier==='LCBE') return [{label:'Forfait déplacement LCBE',amount:t.totalTransport}];
   if(supplier==='GANAMAT SA') return [{label:'Participation transport GANAMAT',amount:t.totalTransport}];
   if(supplier==='Swisspor') return [
@@ -446,12 +457,14 @@ const ALZO_LOGO='/images/categories/alzo.png';
 const SOREVAL_LOGO='/images/categories/soreval.png';
 const BTEST_LOGO='/images/categories/btest.png';
 const LCBE_LOGO='/images/categories/lcbe.png';
+const TINGUELY_LOGO='/images/categories/tinguely.png';
+const SGTT_LOGO='/images/categories/sgtt.png';
 const SIKA_LOGO='/images/categories/sika.png';
 const GANAMAT_LOGO='/images/categories/ganamat.png';
 const SWISSPOR_LOGO='/images/categories/swisspor.png';
 const EFCO_LOGO='/images/categories/efco.png';
 const HILTI_LOGO='/images/categories/hilti.png';
-function catalogLogoInduni(c){return c==='HG COMMERCIALE'?HGC_LOGO:(c==='Canplast'?CAN_LOGO:(c==='Leuba HIAG'?HIAG_LOGO:(c==='CreaBeton'?CREABETON_LOGO:(c==='MBT'?MBT_LOGO:(c==='ALZO AG'?ALZO_LOGO:(c==='Soreval'?SOREVAL_LOGO:(c==='BTest'?BTEST_LOGO:(c==='LCBE'?LCBE_LOGO:(c==='Sika'?SIKA_LOGO:(c==='GANAMAT SA'?GANAMAT_LOGO:(c==='Swisspor'?SWISSPOR_LOGO:(c==='EFCO'?EFCO_LOGO:(c==='HILTI'?HILTI_LOGO:INDUNI_LOGO)))))))))))))}
+function catalogLogoInduni(c){return c==='HG COMMERCIALE'?HGC_LOGO:(c==='Canplast'?CAN_LOGO:(c==='Leuba HIAG'?HIAG_LOGO:(c==='CreaBeton'?CREABETON_LOGO:(c==='MBT'?MBT_LOGO:(c==='ALZO AG'?ALZO_LOGO:(c==='Soreval'?SOREVAL_LOGO:(c==='BTest'?BTEST_LOGO:(c==='LCBE'?LCBE_LOGO:(c==='Tinguely'?TINGUELY_LOGO:(c==='SGTT'?SGTT_LOGO:(c==='Sika'?SIKA_LOGO:(c==='GANAMAT SA'?GANAMAT_LOGO:(c==='Swisspor'?SWISSPOR_LOGO:(c==='EFCO'?EFCO_LOGO:(c==='HILTI'?HILTI_LOGO:INDUNI_LOGO)))))))))))))))}
 const SUPPLIER_INFO={
   'HG COMMERCIALE':{email:'yannick.mace@hgc.ch',phone:'0041 22 343 85 50'},
   'Canplast':{address:'Route de Sollens 2B',postal_code:'1029',city:'Villars-Ste-Croix',email:'commandes@canplast.ch',phone:'0041 21 637 37 77'},
@@ -461,6 +474,8 @@ const SUPPLIER_INFO={
   'ALZO AG':{address:'12 Unterleh',postal_code:'6300',city:'Zug',email:'info@alzo.ch',phone:'041 500 50 16'},
   'Soreval':{address:'10, Route de la Maison Carrée',postal_code:'1242',city:'Satigny',email:'l.sogno@soreval.ch',phone:'+41 22 341 15 71'},
   'BTest':{},
+  'Tinguely':{},
+  'SGTT':{},
   'LCBE':{address:"Route de l'Industrie 43B",postal_code:'1615',city:'Bossonnens',email:'info@lcbe.ch',phone:'021 947 47 58'},
   'Sika':{address:'Tüffenwies 16',postal_code:'8048',city:'Zürich',email:'brugger.patrick@ch.sika.com',phone:'+41 79 847 23 85'},
   'GANAMAT SA':{address:'Chemin des Batailles 16',postal_code:'1214',city:'Vernier',email:'info@ganamat.ch',phone:'+41 22 341 04 61'},
@@ -613,7 +628,7 @@ function goFunnel(cat,fam){
   render();
 }
 function render(){const q=document.getElementById('searchBox').value.trim().toLowerCase(); if(q){return renderSearch(q)} if(state.view==='home')return renderHome(); if(state.view==='catalog')return renderCatalog(); if(state.view==='family')return renderFamily(); if(state.view==='subfamily')return renderSubFamily(); if(state.view==='level4')return renderLevel4(); if(state.view==='products')return renderProducts(); if(state.view==='dashboard')return renderDashboard(); if(state.view==='analysis')return renderAnalysis(); if(state.view==='marketIndices')return renderMarketIndices(); if(state.view==='intelligenceBuying')return renderIntelligenceBuying(); if(state.view==='depotInduni')return renderDepotInduni();}
-function renderHome(){const h=PRODUCTS.filter(p=>p.catalog==='HG COMMERCIALE').length, c=PRODUCTS.filter(p=>p.catalog==='Canplast').length, l=PRODUCTS.filter(p=>p.catalog==='Leuba HIAG').length, cb=PRODUCTS.filter(p=>p.catalog==='CreaBeton').length, mbt=PRODUCTS.filter(p=>p.catalog==='MBT').length, alz=PRODUCTS.filter(p=>p.catalog==='ALZO AG').length, srv=PRODUCTS.filter(p=>p.catalog==='Soreval').length, bt=PRODUCTS.filter(p=>p.catalog==='BTest').length, lcbe=PRODUCTS.filter(p=>p.catalog==='LCBE').length, sika=PRODUCTS.filter(p=>p.catalog==='Sika').length, gan=PRODUCTS.filter(p=>p.catalog==='GANAMAT SA').length, swi=PRODUCTS.filter(p=>p.catalog==='Swisspor').length, efco=PRODUCTS.filter(p=>p.catalog==='EFCO').length, hilti=PRODUCTS.filter(p=>p.catalog==='HILTI').length;
+function renderHome(){const h=PRODUCTS.filter(p=>p.catalog==='HG COMMERCIALE').length, c=PRODUCTS.filter(p=>p.catalog==='Canplast').length, l=PRODUCTS.filter(p=>p.catalog==='Leuba HIAG').length, cb=PRODUCTS.filter(p=>p.catalog==='CreaBeton').length, mbt=PRODUCTS.filter(p=>p.catalog==='MBT').length, alz=PRODUCTS.filter(p=>p.catalog==='ALZO AG').length, srv=PRODUCTS.filter(p=>p.catalog==='Soreval').length, bt=PRODUCTS.filter(p=>p.catalog==='BTest').length, lcbe=PRODUCTS.filter(p=>p.catalog==='LCBE').length, sika=PRODUCTS.filter(p=>p.catalog==='Sika').length, gan=PRODUCTS.filter(p=>p.catalog==='GANAMAT SA').length, swi=PRODUCTS.filter(p=>p.catalog==='Swisspor').length, ting=PRODUCTS.filter(p=>p.catalog==='Tinguely').length, sgtt=PRODUCTS.filter(p=>p.catalog==='SGTT').length, efco=PRODUCTS.filter(p=>p.catalog==='EFCO').length, hilti=PRODUCTS.filter(p=>p.catalog==='HILTI').length;
 const allowed=window._userPerms&&window._userPerms.allowed_suppliers;
 function canSee(key){return !allowed||allowed.length===0||allowed.includes(key);}
 const covers=[
@@ -627,6 +642,8 @@ const covers=[
   canSee('Soreval')?`<button class="cover" onclick="chooseCatalog('Soreval')"><div class="coverTop"><img src="${SOREVAL_LOGO}" alt="Soreval"></div><div class="coverText"><b>E-shop Soreval</b><p class="muted">${srv} articles · granulats, béton recyclé & béton classé</p></div></button>`:'',
   canSee('BTest')?`<button class="cover" onclick="chooseCatalog('BTest')"><div class="coverTop"><img src="${BTEST_LOGO}" alt="BTest"></div><div class="coverText"><b>E-shop BTest</b><p class="muted">${bt} prestations · essais laboratoire béton</p></div></button>`:'',
   canSee('LCBE')?`<button class="cover" onclick="chooseCatalog('LCBE')"><div class="coverTop"><img src="${LCBE_LOGO}" alt="LCBE"></div><div class="coverText"><b>E-shop LCBE</b><p class="muted">${lcbe} prestations · essais béton frais chantier (région lausannoise)</p></div></button>`:'',
+  (window._userPerms&&window._userPerms.dev_mode&&canSee('Tinguely'))?`<button class="cover" onclick="chooseCatalog('Tinguely')"><div class="coverTop" style="background:white"><img src="${TINGUELY_LOGO}" alt="Tinguely"></div><div class="coverText"><b>E-shop Tinguely 🧪</b><p class="muted">${ting} prestations · aspiratrice, pompage & transport de déchets — canton de Vaud uniquement</p></div></button>`:'',
+  (window._userPerms&&window._userPerms.dev_mode&&canSee('SGTT'))?`<button class="cover" onclick="chooseCatalog('SGTT')"><div class="coverTop" style="background:#e9ebee"><img src="${SGTT_LOGO}" alt="SGTT"></div><div class="coverText"><b>E-shop SGTT 🧪</b><p class="muted">${sgtt} prestations · aspiratrice, pompage & transport de déchets — canton de Genève uniquement</p></div></button>`:'',
   canSee('Sika')?`<button class="cover" onclick="chooseCatalog('Sika')"><div class="coverTop" style="background:white"><img src="${SIKA_LOGO}" alt="Sika"></div><div class="coverText"><b>E-shop Sika 🔒</b><p class="muted">${sika} articles · adjuvants béton, réparation & décoffrants — prix net confidentiel</p></div></button>`:'',
   canSee('GANAMAT SA')?`<button class="cover" onclick="chooseCatalog('GANAMAT SA')"><div class="coverTop" style="background:white"><img src="${GANAMAT_LOGO}" alt="GANAMAT SA"></div><div class="coverText"><b>E-shop GANAMAT SA</b><p class="muted">${gan} articles · ligatures, taquets & distanceurs béton armé</p></div></button>`:'',
   canSee('Swisspor')?`<button class="cover" onclick="chooseCatalog('Swisspor')"><div class="coverTop" style="background:white"><img src="${SWISSPOR_LOGO}" alt="Swisspor"></div><div class="coverText"><b>E-shop Swisspor</b><p class="muted">${swi} articles · isolation</p></div></button>`:'',
@@ -1516,7 +1533,7 @@ function addTopArticleFromHistory(catalog,article){
 const CATALOG_COLORS={
   'HG COMMERCIALE':'#1d4ed8', 'Canplast':'#0891b2', 'Leuba HIAG':'#16a34a', 'CreaBeton':'#78716c',
   'MBT':'#b45309', 'ALZO AG':'#f97316', 'Soreval':'#65a30d', 'BTest':'#7c3aed',
-  'LCBE':'#0d9488', 'Sika':'#dc2626', 'GANAMAT SA':'#0f766e', 'Swisspor':'#003399'
+  'LCBE':'#0d9488', 'Tinguely':'#ea580c', 'SGTT':'#dc2626', 'Sika':'#dc2626', 'GANAMAT SA':'#0f766e', 'Swisspor':'#003399'
 };
 function catalogColorInduni(c){return CATALOG_COLORS[c]||'#315b84';}
 function topArticlesSidebarHtml(catalogFilter){
@@ -2274,6 +2291,24 @@ function chantierCanton(nom){
 // Affichage seulement : la commande réelle est toujours re-tarifée
 // côté serveur depuis le chantier soumis (Api::OrdersController#create),
 // pas depuis ce que le navigateur a calculé.
+
+// Fournisseurs réservés à un canton (Supplier#visible_cantons, ex. Tinguely =
+// VAUD, SGTT = GENEVE) : bloque l'envoi si le canton du chantier est connu et
+// différent ; si le canton est inconnu, demande confirmation.
+function supplierCantonProblemInduni(supplier,chantierNom){
+  const list=((window._userPerms&&window._userPerms.supplierVisibleCantons)||{})[supplier];
+  if(!list||!list.length) return null;
+  const canton=chantierCanton(chantierNom);
+  if(!canton) return {block:false,msg:supplier+' ne livre que dans le canton : '+list.join(', ')+'.\nLe canton de ce chantier est inconnu. Confirmer l\'envoi ?'};
+  if(!list.includes(canton)) return {block:true,msg:supplier+' ne livre que dans le canton : '+list.join(', ')+' (chantier en '+canton+'). Commande impossible.'};
+  return null;
+}
+function supplierCantonGuardInduni(supplier,chantierNom){
+  const pb=supplierCantonProblemInduni(supplier,chantierNom);
+  if(!pb) return true;
+  if(pb.block){alert(pb.msg);return false;}
+  return confirm(pb.msg);
+}
 function effectivePriceInduni(item,chantierNom){
   if(item.catalog==='Matériel Induni'&&item.prixExterne!=null&&isChantierConsortium(chantierNom)) return item.prixExterne;
   return item.prix;
@@ -3856,6 +3891,7 @@ async function previewOrder(e) {
   if (!cart.length) { alert('Le panier est vide.'); return; }
   const supplier = cartSupplier ? cartSupplier() : (cart[0] && cart[0].catalog) || 'Inconnu';
   if ((supplier === 'Canplast') && !canplastResolvedZone) { alert('Veuillez renseigner une commune ou un NPA valide pour déterminer le tarif de livraison Canplast.'); return; }
+  if (!supplierCantonGuardInduni(supplier, chantier)) return;
   const no = 'BC-' + Math.floor(100000 + Math.random() * 900000);
   const today = new Date().toLocaleDateString('fr-CH');
   const sub = cart.reduce((s, i) => s + effectivePriceInduni(i, chantier) * i.qty, 0);
@@ -3889,6 +3925,7 @@ async function sendOrderByEmail(e) {
   if (!cart.length) { alert('Le panier est vide.'); return; }
   const supplier = (typeof cartSupplier === 'function' ? cartSupplier() : null) || (cart[0] && cart[0].catalog) || 'Inconnu';
   if ((supplier === 'Canplast') && !canplastResolvedZone) { alert('Veuillez renseigner une commune ou un NPA valide pour déterminer le tarif de livraison Canplast.'); return; }
+  if (!supplierCantonGuardInduni(supplier, chantier)) return;
 
   // Le numéro affiché à l'aperçu et dans le titre de l'e-mail doit être celui
   // réellement attribué à l'envoi (ESHOP_xx) — utiliser un numéro provisoire
@@ -4324,7 +4361,7 @@ function maybeOpenChantierPickerOnLoad(){
    premier temps.
    ============================================================ */
 const SMART_KEY='induni_selection_v1';
-const SMART_EXCLUDED_CATALOGS=['EFCO','HILTI','Matériel Induni'];
+const SMART_EXCLUDED_CATALOGS=['EFCO','HILTI','Matériel Induni','Tinguely','SGTT'];
 let SMART_ON=false;
 let SMART_SEL=[];
 let SMART_FRESH=null; // Map "catalogue|article" -> produit frais (prix, unité, confidentialité)

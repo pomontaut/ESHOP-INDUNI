@@ -35,7 +35,9 @@ class User < ApplicationRecord
     { key: "Swisspor",   label: "Swisspor" },
     { key: "EFCO",       label: "EFCO" },
     { key: "HILTI",      label: "HILTI" },
-    { key: "Matériel Induni", label: "Matériel Induni" }
+    { key: "Matériel Induni", label: "Matériel Induni" },
+    { key: "Tinguely", label: "Tinguely (VD)" },
+    { key: "SGTT", label: "SGTT (GE)" }
   ].freeze
 
   validates :email, presence: true, uniqueness: { case_sensitive: false },

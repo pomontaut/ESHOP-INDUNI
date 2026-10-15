@@ -5,6 +5,8 @@ class Api::ProductsController < ApplicationController
   # (voir User#effective_visible_suppliers et /admin/contrats).
   def index
     visible = current_user.effective_visible_suppliers
+    # E-shops en cours de développement : réservés au mode Développement admin.
+    visible -= Supplier::TEST_ONLY_NAMES unless Api::TestProfilesController.dev_mode?(session, current_user)
     products = Product.joins(:supplier).includes(:supplier)
       .where.not(famille: nil)
       .where(suppliers: { name: visible })

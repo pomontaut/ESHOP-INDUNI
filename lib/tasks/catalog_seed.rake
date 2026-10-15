@@ -85,7 +85,13 @@ namespace :catalog do
       # "Vente" / dépôt 230) : matériel et équipement propre à Induni
       # (échelles, EPI, outillage, signalisation...), pas un fournisseur
       # externe — c'est un transfert interne depuis le dépôt.
-      "Matériel Induni" => { email: "magasin@induni.ch" }
+      "Matériel Induni" => { email: "magasin@induni.ch" },
+      # Aspiratrice / pompage / transport de déchets liquides. En test
+      # uniquement (Supplier::TEST_ONLY_NAMES) et restreints à un canton
+      # (visible_cantons) : Tinguely = Vaud, SGTT = Genève. E-mail de commande
+      # non communiqué : à compléter par un admin (Admin > Fournisseurs).
+      "Tinguely" => { visible_cantons: [ "VAUD" ] },
+      "SGTT" => { visible_cantons: [ "GENEVE" ] }
     }.freeze
 
     # "Alzo" (mauvaise casse/nom, remplacé par "ALZO AG") a été seedé par

@@ -64,4 +64,33 @@ class Api::ProductsControllerTest < ActionDispatch::IntegrationTest
     get api_products_url
     assert_equal "no-store", response.headers["Cache-Control"]
   end
+
+  test "test-only e-shops (Tinguely, SGTT) are hidden except in the admin development environment" do
+    tinguely = Supplier.create!(name: "Tinguely", visible_cantons: [ "VAUD" ])
+    Product.create!(supplier: tinguely, reference: "TING-01", name: "Forfait aspiratrice", famille: "Aspiratrice & pompage", unit_price: 1150)
+
+    post login_url, params: { email: users(:one).email, password: "password123" }
+    get api_products_url
+    assert_not_includes JSON.parse(response.body).map { |p| p["catalog"] }, "Tinguely"
+    get api_me_url
+    assert_not_includes JSON.parse(response.body)["allowed_suppliers"], "Tinguely"
+
+    post api_test_profile_url, params: { profile: "Développement" }
+    get api_products_url
+    assert_includes JSON.parse(response.body).map { |p| p["catalog"] }, "Tinguely"
+    get api_me_url
+    body = JSON.parse(response.body)
+    assert_includes body["allowed_suppliers"], "Tinguely"
+    assert_equal [ "VAUD" ], body["supplierVisibleCantons"]["Tinguely"]
+  end
+
+  test "test-only e-shops are never exposed to a non-admin user" do
+    sgtt = Supplier.create!(name: "SGTT", visible_cantons: [ "GENEVE" ])
+    Product.create!(supplier: sgtt, reference: "SGTT-01", name: "Pompage", famille: "Aspiratrice & pompage", unit_price: 280)
+    user = users(:two)
+    user.update!(admin: false, allowed_suppliers: [])
+    post login_url, params: { email: user.email, password: "password123" }
+    get api_products_url
+    assert_not_includes JSON.parse(response.body).map { |p| p["catalog"] }, "SGTT"
+  end
 end
