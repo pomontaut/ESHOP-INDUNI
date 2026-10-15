@@ -43,6 +43,25 @@ class Chantier < ApplicationRecord
     end
   end
 
+  SEARCH_COLUMNS = %w[
+    nom adresse npa ville canton secteur technicien contremaitre chef_equipe conducteur_travaux
+    contact_livraison contraintes_acces
+  ].freeze
+
+  # Recherche par mots-clés (Admin > Chantiers) : chaque mot saisi doit se
+  # retrouver (en début ou à l'intérieur d'un mot, sans accents ni casse) dans
+  # le nom, l'adresse, la ville, le NPA ou l'un des contacts du chantier —
+  # l'ordre des mots n'a pas d'importance (« vernier halle » = « halle vernier »).
+  def self.search(query)
+    words = name_tokens(query)
+    return order(:nom) if words.empty?
+
+    order(:nom).select do |chantier|
+      haystack = name_tokens(SEARCH_COLUMNS.map { |column| chantier[column] }.join(" "))
+      words.all? { |word| haystack.any? { |token| token.include?(word) } }
+    end
+  end
+
   def self.name_tokens(text)
     I18n.transliterate(text.to_s).downcase.scan(/[a-z0-9]+/)
   end

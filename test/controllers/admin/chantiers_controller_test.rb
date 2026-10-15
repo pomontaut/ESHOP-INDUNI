@@ -69,4 +69,24 @@ class Admin::ChantiersControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Jean Dupont", chantier.conducteur_travaux
     assert_equal "jdupont@induni.ch", chantier.email_conducteur_travaux
   end
+
+  test "index search works by keywords in any order, across name, city and contacts, ignoring accents and case" do
+    halle = Chantier.create!(nom: "12601-Halle des Rouettes", ville: "Vernier", npa: "1214", technicien: "Joni Pessoa")
+    Chantier.create!(nom: "12501-Caran d'Ache", ville: "Genève", npa: "1227", contremaitre: "Zoé Martin")
+
+    get admin_chantiers_url, params: { q: "vernier HALLE" }
+    assert_select "td", text: /12601-Halle des Rouettes/
+    assert_select "td", text: /Caran/, count: 0
+
+    get admin_chantiers_url, params: { q: "zoe genève" }
+    assert_select "td", text: /Caran d'Ache/
+    assert_select "td", text: /Halle des Rouettes/, count: 0
+
+    get admin_chantiers_url, params: { q: "pessoa 1214" }
+    assert_select "td", text: /Halle des Rouettes/
+
+    get admin_chantiers_url, params: { q: "halle caran" }
+    assert_select "td", text: /Halle|Caran/, count: 0
+    assert halle.persisted?
+  end
 end

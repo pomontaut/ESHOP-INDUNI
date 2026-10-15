@@ -3,10 +3,7 @@ class Admin::ChantiersController < ApplicationController
   before_action :set_chantier, only: [ :edit, :update, :destroy ]
 
   def index
-    @chantiers = Chantier.order(:nom)
-    if params[:q].present?
-      @chantiers = @chantiers.where("nom LIKE :q OR ville LIKE :q OR npa LIKE :q", q: "%#{params[:q]}%")
-    end
+    @chantiers = Chantier.search(params[:q])
   end
 
   def new

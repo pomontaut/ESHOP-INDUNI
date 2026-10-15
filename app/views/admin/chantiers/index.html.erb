@@ -17,8 +17,8 @@
 <% end %>
 
 <%= form_with url: admin_chantiers_path, method: :get, class: "mb-3" do %>
-  <div class="input-group" style="max-width:420px">
-    <%= text_field_tag :q, params[:q], class: "form-control", placeholder: "Rechercher un nom, une ville, un NPA…" %>
+  <div class="input-group" style="max-width:560px">
+    <%= text_field_tag :q, params[:q], class: "form-control", placeholder: "Mots-clés : nom, ville, NPA, adresse, contact… (ex. halle vernier)", autofocus: params[:q].present? %>
     <button class="btn btn-outline-secondary" type="submit">Rechercher</button>
   </div>
 <% end %>
