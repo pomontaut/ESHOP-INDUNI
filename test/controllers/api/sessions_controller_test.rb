@@ -82,8 +82,12 @@ class Api::SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal false, body["admin"]
     assert_equal true, body["real_admin"]
     assert_equal "Contremaître", body["test_profile"]
-    assert_equal false, body["can_view_dashboard"]
+    assert_equal true, body["can_view_dashboard"]
     assert_equal false, body["can_create_users"]
+
+    post api_test_profile_url, params: { profile: "Conducteur de travaux" }
+    get api_me_url
+    assert_equal false, JSON.parse(response.body)["can_view_dashboard"]
 
     delete api_test_profile_url
     get api_me_url

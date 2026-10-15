@@ -85,7 +85,7 @@ class Api::SessionsController < ApplicationController
       can_modify_orders: false,
       can_import_quote:  false,
       can_generic_order: false,
-      can_view_dashboard:    false,
+      can_view_dashboard:    profile == "Contremaître",
       can_view_analysis:     false,
       can_view_market_indices:      false,
       can_view_intelligence_buying: false,
