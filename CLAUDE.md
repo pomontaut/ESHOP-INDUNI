@@ -178,6 +178,17 @@ n'est jamais réattribué. « Envoyer à… » (Dashboard, `POST /api/orders/:id
 commande déjà envoyée à une autre adresse + Cci optionnel à l'utilisateur, sans toucher
 à l'historique d'envoi ; redirigé vers l'adresse de test en environnement test.
 
+## Leuba HIAG : bois au PAQUET (pas au m³)
+
+Les 8 articles Leuba tarifés au m³ (carrelets/planches de coffrage, plateau bois C24)
+sont au paquet : prix paquet = prix m³ × (ép × larg × long × « Pcs/pqt N »), unité
+`paquet`, descriptif « Prix au paquet (N pcs = x m³, soit CHF y/m³) » (migration
+`LeubaHiagPricesPerPaquet` + `catalog_products.json`). Les équivalences HGC (m³) sont
+conservées : `comparablePrice()` reconvertit le paquet en m³ (`paquetVolumeM3`) pour
+l'affichage du comparatif, et `cartEquivalenceGroups` n'accepte que des équivalents de
+MÊME unité (jamais comparer 1 m³ à 1 paquet). Anciennes commandes Leuba : quantité en
+m³ au prix m³ (lignes inchangées), mais le produit porte maintenant l'unité « paquet ».
+
 ## HGC : « Enlèvement dépôt » (production)
 
 Case `#hgcPickupToggle` dans le panier (visible seulement pour HG COMMERCIALE,

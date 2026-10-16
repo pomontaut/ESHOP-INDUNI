@@ -1374,7 +1374,21 @@ function mmRanges(p){const txt=fullTxt(p).replace(/,/g,'.'); const out=[]; const
 function dimensionTokens(p){const txt=fullTxt(p); const out=[]; const re=/(?:DN\s*\d+|\d+(?:[.,]\d+)?\s*x\s*\d+(?:[.,]\d+)?(?:\s*x\s*\d+(?:[.,]\d+)?)?|Ø\s*\d+(?:[.,]\d+)?|\d+(?:[.,]\d+)?\s*mm|\d+(?:[.,]\d+)?\s*cm|\d+(?:[.,]\d+)?\s*m\b)/gi; let m; while((m=re.exec(txt))) out.push(normEqText(m[0]).replace(/ /g,'')); return [...new Set(out.concat(dimsArray(p),mmRanges(p)))]}
 function productKind(p){const t=normEqText(fullTxt(p)); if(t.includes('saturn'))return'saturn'; if(t.includes('poutrelle')||t.includes('h20'))return'poutrelle_h20'; if((t.includes('bouleau')&&(t.includes('filme')||t.includes('film film')||t.includes('film/film'))) || t.includes('panneau filme') || t.includes('contreplaque bouleau'))return'panneau_filme'; if(t.includes('osb'))return'panneau_osb'; if(t.includes('fibre dure')||t.includes('panneau de protection'))return'panneau_protection'; if(t.includes('carrelet')||t.includes('planche de coffrage')||t.includes('bois c24'))return'bois_coffrage'; if(t.includes('lambourde')||t.includes('latte en bois'))return'lambourde'; if(t.includes('piquet'))return'piquet'; if(t.includes('coin')&&t.includes('bois'))return'coin_bois'; if(t.includes('linteau'))return'linteau'; if(t.includes('ciment'))return'ciment'; if(t.includes('mortier'))return'mortier'; if(t.includes('sable'))return'sable'; if(t.includes('gravier'))return'gravier'; if(t.includes('brique'))return'brique'; if(t.includes('tuyau'))return'tuyau'; if(t.includes('regard'))return'regard'; if(t.includes('mastic')||t.includes('silicone'))return'mastic'; return ''}
 function exactishDims(a,b){const da=dimsArray(a), db=dimsArray(b); if(!da.length||!db.length)return 0; return da.some(x=>db.includes(x))?1:0}
+// Volume (m³) d'un paquet de bois, d'après la désignation « 27x150x4000 mm » et
+// « Pcs/pqt 150 » du descriptif (Leuba HIAG, prix au paquet) ; null si inconnu.
+function paquetVolumeM3(p){
+  const m=String(p.designation||'').replace(/,/g,'.').match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*mm/i);
+  const n=String(p.descriptif||'').match(/Pcs\/pqt\s*(\d+)/i);
+  if(!m||!n) return null;
+  const v=Number(m[1])*Number(m[2])*Number(m[3])/1e9*Number(n[1]);
+  return v>0?v:null;
+}
 function comparablePrice(p){
+  // Paquet de bois -> équivalent au m³, pour rester comparable aux fournisseurs tarifés au m³.
+  if(['paquet','pqt','paq'].includes(normEqText(p.unite))){
+    const pr0=Number(p.prix)||0, vol=paquetVolumeM3(p);
+    if(pr0&&vol) return {value:pr0/vol, unit:'m3', note:'converti paquet → m³'};
+  }
   const u=unitKey(p), pr=Number(p.prix)||0, k=productKind(p); if(!pr)return null;
   if(['M2','M1','M3','PCE','PAQUET','SAC','ROL','PQT','PL'].includes(u)){
     if(u==='PL'){const a=areaM2(p); if(a) return {value:pr/a, unit:'M2', note:'converti plaque → m²'};}
@@ -1892,7 +1906,7 @@ function dateFR(v){if(!v)return '';const[y,m,d]=v.split('-');return `${d}.${m}.$
   const groups=[];
   for(const i of cart){
     if(!i.equivalenceKey) return null;
-    const members=PRODUCTS.filter(x=>x.equivalenceKey===i.equivalenceKey);
+    const members=PRODUCTS.filter(x=>x.equivalenceKey===i.equivalenceKey&&unitKey(x)===unitKey(i)); // même unité seulement (m³ ≠ paquet)
     groups.push({item:i, members});
   }
   return groups;
