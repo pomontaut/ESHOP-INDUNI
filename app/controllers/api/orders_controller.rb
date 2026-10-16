@@ -346,6 +346,28 @@ class Api::OrdersController < ApplicationController
     render json: { error: e.message, order_number: order&.number }, status: :unprocessable_entity
   end
 
+  # Supprime définitivement une ligne du Dashboard (commande + lignes) :
+  # RÉSERVÉ AUX ADMINISTRATEURS (contrôlé ici, pas seulement masqué côté
+  # navigateur). Aucun e-mail n'est envoyé : si la commande était déjà partie,
+  # le fournisseur n'est pas prévenu (utiliser « Annuler » pour cela). Le numéro
+  # supprimé n'est jamais réattribué (OrderNumberFloor).
+  def destroy
+    return render json: { error: "Réservé aux administrateurs." }, status: :forbidden unless current_user&.admin?
+
+    order = Order.find(params[:id])
+    number = order.number
+    Order.transaction do
+      sequence = number.to_s[/\AESHOP_INDUNI_(\d+)/, 1].to_i
+      OrderNumberFloor.raise_to!(sequence) if sequence.positive?
+      order.destroy!
+    end
+    render json: { success: true, order_number: number }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Commande introuvable" }, status: :not_found
+  rescue => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
   # Retries sending a previously-created order whose initial e-mail failed —
   # reuses the exact recipients/subject/body from the original attempt.
   def resend

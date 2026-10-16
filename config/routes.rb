@@ -15,7 +15,7 @@ Rails.application.routes.draw do
     resources :order_lines, only: [ :create, :destroy ]
   end
   namespace :api do
-    resources :orders, only: [ :create, :index ] do
+    resources :orders, only: [ :create, :index, :destroy ] do
       collection { post :preview_pdf; get :next_number; get :pending_approvals }
       member { patch :confirm_reception; post :resend; post :forward; post :approve; post :refuse; post :cancel; post :relance; get :relance_preview }
     end

@@ -166,7 +166,10 @@ taper). `OrderNumberFloor` garde la numérotation ESHOP_INDUNI_nn après purge (
 « repartir à 01 » en option).
 Champ « Conserver ces commandes » (numéros exacts, ex. une vraie commande) : tout est
 supprimé SAUF ceux-là ; un numéro inconnu annule l'opération ; la numérotation continue
-alors toujours. « Envoyer à… » (Dashboard, `POST /api/orders/:id/forward`) : copie d'une
+alors toujours. Bouton « 🗑 Supprimer » par ligne du Dashboard (`DELETE /api/orders/:id`) :
+admin uniquement (bouton masqué ET 403 côté serveur), supprime commande + lignes sans
+envoyer d'e-mail (le fournisseur n'est pas prévenu — « Annuler » sert à ça), le numéro
+n'est jamais réattribué. « Envoyer à… » (Dashboard, `POST /api/orders/:id/forward`) : copie d'une
 commande déjà envoyée à une autre adresse + Cci optionnel à l'utilisateur, sans toucher
 à l'historique d'envoi ; redirigé vers l'adresse de test en environnement test.
 

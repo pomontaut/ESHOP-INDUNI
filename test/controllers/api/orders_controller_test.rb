@@ -813,4 +813,34 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal [ "pomontaut@induni.ch" ], ActionMailer::Base.deliveries.last.to
   end
+
+  test "destroy lets an administrator delete a dashboard order (with its lines) and never reuses its number" do
+    order = sent_order
+    number = order.number
+    assert_difference({ "Order.count" => -1, "OrderLine.count" => -1 }) do
+      delete api_order_url(order)
+    end
+    assert_response :success
+    assert JSON.parse(response.body)["success"]
+    assert_not Order.exists?(order.id)
+    assert_operator Order.next_number[/\d+/].to_i, :>, number[/\d+/].to_i
+  end
+
+  test "destroy is refused to a non-administrator and the order stays" do
+    order = sent_order
+    delete logout_url
+    user = users(:two)
+    user.update!(admin: false)
+    ChantierAssignment.create!(user: user, chantier: Chantier.create!(nom: "12345-Chantier Test"))
+    post login_url, params: { email: user.email, password: "password123" }
+
+    delete api_order_url(order)
+    assert_response :forbidden
+    assert Order.exists?(order.id)
+  end
+
+  test "destroy answers 404 for an unknown order" do
+    delete api_order_url(id: 99_999_999)
+    assert_response :not_found
+  end
 end
