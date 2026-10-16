@@ -1470,10 +1470,32 @@ function findEquivalents(p){
 // vient du catalogue (voir Api::ProductsController#index) et n'est renseigné
 // que lorsque l'information nous est transmise explicitement — un produit
 // sans valeur n'affiche aucun marqueur plutôt qu'une supposition.
+// Lien « Fiche HGC » : la recherche hgc.ch par n° d'article redirige vers la
+// fiche produit (prix catalogue, disponibilité selon le NPA saisi sur leur site).
+function hgcSheetLinkHtml(p){
+  if(!p||p.catalog!=='HG COMMERCIALE'||!/^\d{6,}$/.test(String(p.article||''))) return '';
+  const a=encodeURIComponent(p.article);
+  return `<div class="hgcSheet" style="margin:4px 0;font-size:12px"><a href="https://www.hgc.ch/fr/search?text=${a}" target="_blank" rel="noopener noreferrer" title="Ouvrir la fiche article sur hgc.ch" onclick="event.stopPropagation()" style="font-weight:700;color:#0b4f9c;text-decoration:none">🔗 Fiche HGC</a> · <a href="#" onclick="event.preventDefault();event.stopPropagation();hgcStockCheck('${a}',this)" style="font-weight:700;color:#0b4f9c;text-decoration:none">📦 Stock HGC (NPA 1213)</a></div>`;
+}
+// Disponibilité lue sur hgc.ch par le serveur (GET /api/hgc_stock/:article, cache 15 min).
+async function hgcStockCheck(article,el){
+  const box=el.parentNode; const old=el.outerHTML;
+  el.textContent='⏳ Vérification…';
+  try{
+    const r=await fetch('/api/hgc_stock/'+article,{credentials:'same-origin'});
+    if(!r.ok) throw new Error('indispo');
+    const d=await r.json();
+    const dot=d.level==='ok'?'🟢':(d.level==='no'?'🔴':'🟠');
+    el.outerHTML=`<span title="Source : hgc.ch, NPA ${esc(d.zip)}" style="font-weight:700">${dot} ${esc(d.label)} <small style="font-weight:400;color:#6b7280">(NPA ${esc(d.zip)})</small></span>`;
+  }catch(e){
+    el.outerHTML=old; const m=document.createElement('small'); m.style.color='#b45309'; m.textContent=' Stock HGC indisponible, réessayez ou ouvrez la fiche.'; box.appendChild(m);
+  }
+}
 function stockStatusBadgeHtml(p){
-  if(p.stockStatus==='stock') return '<div class="stockBadge stockOk" title="En stock">🟢 En stock</div>';
-  if(p.stockStatus==='sur_demande') return '<div class="stockBadge stockAsk" title="Sur demande — délai à confirmer par le fournisseur">🟠 Sur demande</div>';
-  return '';
+  const link=hgcSheetLinkHtml(p);
+  if(p.stockStatus==='stock') return '<div class="stockBadge stockOk" title="En stock">🟢 En stock</div>'+link;
+  if(p.stockStatus==='sur_demande') return '<div class="stockBadge stockAsk" title="Sur demande — délai à confirmer par le fournisseur">🟠 Sur demande</div>'+link;
+  return link;
 }
 // Estimation purement indicative affichée dans le panier (jamais reportée
 // dans la commande elle-même : seul le délai saisi manuellement à l'étape
