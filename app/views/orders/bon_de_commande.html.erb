@@ -80,9 +80,14 @@ table.totals tr.grand td{border-top:2px solid #111;border-bottom:0;font-size:13p
     <div class="cname"><%= is_consortium ? 'CONSORTIUM' : 'INDUNI &amp; CIE SA'.html_safe %></div>
     <div class="ir"><span class="il">Contact rédacteur de la commande :</span> <%= redacteur_nom %><%= redacteur_email.present? ? " — #{redacteur_email}" : "" %><%= redacteur_tel.present? ? " — #{redacteur_tel}" : "" %></div>
     <div class="ir"><span class="il">Chantier :</span> <%= chantier_val %></div>
+    <% if @order.pickup? %>
+    <div class="ir"><span class="il">Date d'enlèvement souhaitée :</span> <%= delai_val %></div>
+    <div class="ir"><span class="il">Mode de livraison :</span> <b>ENLÈVEMENT AU DÉPÔT PAR INDUNI — aucune livraison, aucun frais de transport</b></div>
+    <% else %>
     <div class="ir"><span class="il">Délai livraison :</span> <%= delai_val %></div>
     <div class="ir"><span class="il">Adresse de livraison :</span></div>
     <div class="ir" style="padding-left:10px"><%= delivery_address_html.html_safe %></div>
+    <% end %>
     <div class="ir" style="margin-top:6px"><span class="il">Contact chantier :</span></div>
     <div class="ir" style="padding-left:10px">Conducteur de travaux : <%= conducteur_travaux %></div>
     <div class="ir" style="padding-left:10px">Contact réception livraison : <%= contact_livraison %><%= @order.phone.present? ? " — #{@order.phone}" : "" %></div>

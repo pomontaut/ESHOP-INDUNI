@@ -118,6 +118,18 @@ catalog silently invisible to users with any manual restriction.
   transport logic, not just Canplast). Confidential-pricing suppliers must
   keep masking `extra_charges` the same way as the merchandise total.
 
+## HGC : « Enlèvement dépôt » (production)
+
+Case `#hgcPickupToggle` dans le panier (visible seulement pour HG COMMERCIALE,
+`hgcPickup()`), décochée à la vidange du panier : `transportDetailsInduni`
+renvoie 0 (transport fixe, carburant et grue), `transportHtmlInduni` /
+`transportLineItemsInduni` suivent. L'information voyage via `Order#pickup`
+(colonne booléenne, posée par `Api::OrdersController#create` uniquement pour
+HG COMMERCIALE) : le PDF serveur (`bon_de_commande.html.erb`) et l'aperçu client
+(`buildOrderHtml`) affichent « ENLÈVEMENT AU DÉPÔT PAR INDUNI » à la place de
+l'adresse de livraison, et l'e-mail par défaut le précise. Adresse du dépôt HGC
+volontairement absente (non communiquée).
+
 ## Sélection multi-fournisseurs (environnement test uniquement)
 
 Dernier `<script>` de `public/catalogue.html` (préfixe `smart*`), activé par

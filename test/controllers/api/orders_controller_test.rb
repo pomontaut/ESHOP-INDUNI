@@ -667,4 +667,29 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_no_emails { post relance_api_order_url(order) }
     assert_response :unprocessable_entity
   end
+
+  test "create stores the pickup flag (enlèvement dépôt) for HG COMMERCIALE and drops delivery fees" do
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "20.10.2026", supplier: "HG COMMERCIALE", pickup: true,
+      extra_charges: [ { label: "Transport HGC fixe", amount: 85 } ],
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+    }
+    assert_response :success
+    order = Order.order(:id).last
+    assert order.pickup?
+    assert_equal [], order.extra_charges
+    assert_equal 10.0, order.grand_total
+  end
+
+  test "create ignores the pickup flag for any supplier other than HG COMMERCIALE" do
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "20.10.2026", supplier: "Canplast", pickup: true,
+      extra_charges: [ { label: "Livraison Canplast", amount: 150 } ],
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+    }
+    assert_response :success
+    order = Order.order(:id).last
+    assert_not order.pickup?
+    assert_equal 160.0, order.grand_total
+  end
 end

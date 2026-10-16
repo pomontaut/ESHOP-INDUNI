@@ -133,6 +133,9 @@ class Api::OrdersController < ApplicationController
     phone              = params[:phone].to_s.strip.presence
     delivery_address   = params[:adresse].to_s.strip.presence
     conducteur_travaux = ConducteurTravaux.sanitize(params[:conducteur])
+    # « Enlèvement dépôt » : uniquement pour HG COMMERCIALE (Induni récupère la
+    # commande au dépôt, aucun frais de livraison).
+    pickup             = supplier_name == "HG COMMERCIALE" && ActiveModel::Type::Boolean.new.cast(params[:pickup]) == true
     # Frais annexes (transport, RPLP, grue, remise de volume...) déjà calculés
     # et affichés côté client (transportLineItemsInduni dans catalogue.html) :
     # repris tels quels, pas recalculés ici, pour éviter de dupliquer cette
@@ -247,7 +250,8 @@ class Api::OrdersController < ApplicationController
       phone:              phone,
       delivery_address:   delivery_address,
       conducteur_travaux: conducteur_travaux,
-      extra_charges:      extra_charges
+      extra_charges:      pickup ? [] : extra_charges,
+      pickup:             pickup
     )
 
     items.each do |item|

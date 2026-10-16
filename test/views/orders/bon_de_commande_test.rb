@@ -168,4 +168,20 @@ class BonDeCommandeTemplateTest < ActiveSupport::TestCase
     assert_includes html, "Conducteur de travaux : —"
     assert_not_includes html, "Conducteur de travaux : Pierre-Olivier"
   end
+
+  test "shows the pickup mention instead of a delivery address for an enlèvement dépôt order" do
+    supplier = Supplier.create!(name: "HG COMMERCIALE", email: "commandes@hgc.ch")
+    product = Product.create!(supplier: supplier, reference: "ART-HGC", name: "Article HGC", famille: "Voirie", unit_price: 10.0, unite: "PCE")
+    order = Order.create!(
+      supplier: supplier, user: users(:one), order_date: Date.current, pickup: true,
+      notes: "Chantier: X | Délai souhaité: 20.10.2026", delivery_address: "Rue du Chantier 1\n1200 Genève"
+    )
+    order.order_lines.create!(product: product, quantity: 1, unit_price: 10.0)
+
+    html = ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order })
+
+    assert_includes html, "ENLÈVEMENT AU DÉPÔT PAR INDUNI"
+    assert_includes html, "Date d'enlèvement souhaitée"
+    assert_not_includes html, "Rue du Chantier 1"
+  end
 end

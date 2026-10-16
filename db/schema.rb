@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_15_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_16_090000) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -103,6 +103,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_15_140000) do
     t.string "number"
     t.date "order_date"
     t.string "phone"
+    t.boolean "pickup", default: false, null: false
     t.datetime "reception_confirmed_at"
     t.string "reception_token"
     t.string "relance_kind"
