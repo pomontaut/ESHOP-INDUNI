@@ -34,6 +34,28 @@ class Api::SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal false, body["can_view_analysis"]
   end
 
+  test "me exposes the validation-de-commande and alerts rights, true by default, false once removed (never for an admin)" do
+    post login_url, params: { email: users(:two).email, password: "password123" }
+    get api_me_url
+    body = JSON.parse(response.body)
+    assert_equal true, body["can_validate_orders"]
+    assert_equal true, body["can_enable_alerts"]
+
+    users(:two).update!(can_validate_orders: false, can_enable_alerts: false)
+    get api_me_url
+    body = JSON.parse(response.body)
+    assert_equal false, body["can_validate_orders"]
+    assert_equal false, body["can_enable_alerts"]
+
+    delete logout_url
+    users(:one).update!(can_validate_orders: false, can_enable_alerts: false)
+    post login_url, params: { email: users(:one).email, password: "password123" }
+    get api_me_url
+    body = JSON.parse(response.body)
+    assert_equal true, body["can_validate_orders"]
+    assert_equal true, body["can_enable_alerts"]
+  end
+
   test "me exposes each supplier's real configured default e-mail" do
     Supplier.create!(name: "HGC", email: "commandes-reelles@hgc.ch")
     Supplier.create!(name: "Sans e-mail")

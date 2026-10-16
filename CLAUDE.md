@@ -130,6 +130,15 @@ HG COMMERCIALE) : le PDF serveur (`bon_de_commande.html.erb`) et l'aperçu clien
 l'adresse de livraison, et l'e-mail par défaut le précise. Adresse du dépôt HGC
 volontairement absente (non communiquée).
 
+## Droits d'affichage « Validation de commande » / « Activer les alertes »
+
+`User#can_validate_orders` et `#can_enable_alerts` (défaut vrai : l'interface
+existante est conservée), cases dans Admin > Droits (`new`/`edit`), exposées par
+`/api/me` (toujours vraies pour un admin) et appliquées dans `catalogue.html`
+(`orderApprovalsNavLink`, `pushNotifBtn` via `_hidePushBtn`). Effet purement
+d'interface : les liens Approuver/Refuser des e-mails et les abonnements push
+déjà créés continuent de fonctionner.
+
 ## Sélection multi-fournisseurs (environnement test uniquement)
 
 Dernier `<script>` de `public/catalogue.html` (préfixe `smart*`), activé par

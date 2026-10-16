@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_16_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_16_100000) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -233,10 +233,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_090000) do
     t.string "approver_email"
     t.boolean "can_create_orders", default: false, null: false
     t.boolean "can_create_users", default: false, null: false
+    t.boolean "can_enable_alerts", default: true, null: false
     t.boolean "can_generic_order", default: false, null: false
     t.boolean "can_import_quote", default: false, null: false
     t.boolean "can_modify_orders", default: false, null: false
     t.boolean "can_read", default: true, null: false
+    t.boolean "can_validate_orders", default: true, null: false
     t.boolean "can_view_analysis", default: false, null: false
     t.boolean "can_view_dashboard", default: false, null: false
     t.boolean "can_view_intelligence_buying", default: false, null: false

@@ -22,6 +22,21 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_not user.can_view_nomenclature?
   end
 
+  test "update persists the validation-de-commande and alerts display rights" do
+    user = users(:two)
+    assert user.can_validate_orders?, "défaut : vrai, l'interface actuelle est conservée"
+    assert user.can_enable_alerts?
+
+    patch admin_user_url(user), params: {
+      user: { first_name: user.first_name, last_name: user.last_name, email: user.email,
+              can_validate_orders: "0", can_enable_alerts: "0" }
+    }
+
+    user.reload
+    assert_not user.can_validate_orders?
+    assert_not user.can_enable_alerts?
+  end
+
   test "update persists the chantier access scope" do
     user = users(:two)
 

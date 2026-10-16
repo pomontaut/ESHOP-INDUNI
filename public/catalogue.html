@@ -4203,6 +4203,9 @@ Promise.all([
   if(perms.admin||perms.can_view_analysis||perms.can_view_intelligence_buying) document.getElementById('intelBuyingNavLink').style.display='inline-flex';
   if(perms.admin||perms.can_view_analysis||perms.can_view_market_indices||perms.can_view_intelligence_buying) document.getElementById('analyseDropdownToggle').style.display='inline-flex';
   if(perms.admin||perms.can_create_users||perms.can_view_nomenclature) document.getElementById('adminDropdownToggle').style.display='inline-flex';
+  // Droits Admin > Droits : boutons « Validation de commande » et « Activer les alertes » (vrais par défaut).
+  if(perms.can_validate_orders===false){ const ab=document.getElementById('orderApprovalsNavLink'); if(ab) ab.style.display='none'; }
+  if(perms.can_enable_alerts===false){ window._hidePushBtn=true; }
   updatePushNotifButton();
   render();
   maybeOpenChantierPickerOnLoad();
