@@ -156,6 +156,12 @@ prix confidentiel jamais comparés (fournisseur imposé, prix 🔒) ; prix
 re-téléchargés (`/api/products`) avant calcul et avant envoi ; zones Canplast/
 Soreval inconnues = hypothèse prudente signalée ET envoi bloqué.
 
+Analyse Supply Chain du module (`smartSupplyChainHtml`, méthode de l'agent
+« Expert Achats, Supply Chain & Optimisation logistique », voir `docs/agents/`) :
+scénarios + coût complet, flux, franco manquant, risques, robustesse (tolérance
+`SMART_ROBUST_TOLERANCE` = 3 % [H]), plan d'action, KPI. Elle n'utilise que des
+données existantes ; ne jamais y inventer distance, OTIF ou capacité.
+
 ## E-shops en test : Tinguely (VD) et SGTT (GE)
 
 Prestations d'aspiratrice/pompage/transport de déchets (4 articles chacun, dans
