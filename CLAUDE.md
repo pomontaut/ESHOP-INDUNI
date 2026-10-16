@@ -189,6 +189,15 @@ l'affichage du comparatif, et `cartEquivalenceGroups` n'accepte que des équival
 MÊME unité (jamais comparer 1 m³ à 1 paquet). Anciennes commandes Leuba : quantité en
 m³ au prix m³ (lignes inchangées), mais le produit porte maintenant l'unité « paquet ».
 
+## Bois & Coffrage : libellés Planche / Carrelet / Plateau bois C24
+
+Plus de « Carrelets / planches de coffrage » : rubrique « Planches de coffrage »
+(27x…, 40x… → désignation « Planche de coffrage … »), rubrique « Carrelets » (80x120,
+80x160 → « Carrelet … ») et « Plateau bois C24 » (ex-« Bois C24 »), HGC et Leuba
+(migrations `RenameCarreletsPlanchesToPlanche`, `RenameBoisC24ToPlateauBoisC24`, JSON
+du catalogue et liste `subs` de « Bois & Coffrage » dans `catalogue.html`). Les
+références d'article ne changent jamais.
+
 ## HGC : « Enlèvement dépôt » (production)
 
 Case `#hgcPickupToggle` dans le panier (visible seulement pour HG COMMERCIALE,
