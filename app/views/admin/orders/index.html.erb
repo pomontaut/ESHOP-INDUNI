@@ -17,8 +17,13 @@
   <div class="card border-danger">
     <div class="card-header bg-danger text-white fw-bold">⚠️ Vider les commandes — irréversible</div>
     <div class="card-body">
-      <p>Supprime <b>toutes</b> les commandes et leurs lignes (Dashboard et Analyse achat inclus). Les fournisseurs, articles, chantiers et utilisateurs ne sont pas touchés. Aucun e-mail n'est envoyé.</p>
+      <p>Supprime <b>toutes</b> les commandes (sauf celles à conserver ci-dessous) et leurs lignes (Dashboard et Analyse achat inclus). Les fournisseurs, articles, chantiers et utilisateurs ne sont pas touchés. Aucun e-mail n'est envoyé.</p>
       <%= form_with url: purge_admin_orders_path, method: :delete, data: { turbo: false } do |f| %>
+        <div class="mb-3">
+          <%= label_tag :keep, "Conserver ces commandes (facultatif)", class: "form-label fw-semibold" %>
+          <%= text_field_tag :keep, "", class: "form-control", placeholder: "ex. ESHOP_INDUNI_71 — plusieurs : séparer par une virgule", autocomplete: "off" %>
+          <div class="form-text">Tout est supprimé SAUF les numéros indiqués. Un numéro inconnu annule l'opération (rien n'est supprimé). La numérotation continue alors toujours.</div>
+        </div>
         <div class="form-check mb-3">
           <%= check_box_tag :reset_numbering, "1", false, class: "form-check-input" %>
           <%= label_tag :reset_numbering, "Repartir de ESHOP_INDUNI_01", class: "form-check-label" %>

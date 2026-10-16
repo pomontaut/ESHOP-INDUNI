@@ -164,6 +164,11 @@ Admin > Commandes (`Admin::OrdersController`, propriétaire seulement =
 `User::PERMANENT_ADMIN_EMAILS`) : export CSV puis « VIDER LES COMMANDES » (phrase à
 taper). `OrderNumberFloor` garde la numérotation ESHOP_INDUNI_nn après purge (case
 « repartir à 01 » en option).
+Champ « Conserver ces commandes » (numéros exacts, ex. une vraie commande) : tout est
+supprimé SAUF ceux-là ; un numéro inconnu annule l'opération ; la numérotation continue
+alors toujours. « Envoyer à… » (Dashboard, `POST /api/orders/:id/forward`) : copie d'une
+commande déjà envoyée à une autre adresse + Cci optionnel à l'utilisateur, sans toucher
+à l'historique d'envoi ; redirigé vers l'adresse de test en environnement test.
 
 ## HGC : « Enlèvement dépôt » (production)
 

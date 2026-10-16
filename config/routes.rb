@@ -17,7 +17,7 @@ Rails.application.routes.draw do
   namespace :api do
     resources :orders, only: [ :create, :index ] do
       collection { post :preview_pdf; get :next_number; get :pending_approvals }
-      member { patch :confirm_reception; post :resend; post :approve; post :refuse; post :cancel; post :relance; get :relance_preview }
+      member { patch :confirm_reception; post :resend; post :forward; post :approve; post :refuse; post :cancel; post :relance; get :relance_preview }
     end
     resources :products, only: [ :index ]
     resources :devis_imports, only: [ :create ] do

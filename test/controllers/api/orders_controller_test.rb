@@ -767,4 +767,50 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal [ "a@f.ch", "b@f.ch", "c@f.ch" ], ActionMailer::Base.deliveries.last.to
   end
+
+  def sent_order(number: nil)
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "20.10.2026", supplier: "HGC Test Fixture",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+    }
+    Order.find(JSON.parse(response.body)["order_id"])
+  end
+
+  test "forward sends a copy of an already-sent order to another address, with a hidden copy (Cci) to the sender" do
+    order = sent_order
+    original_sent_to = order.sent_to
+    ActionMailer::Base.deliveries.clear
+    post forward_api_order_url(order), params: { to: "yannick.mace@hgc.ch; autre@hgc.ch", bcc_me: true }
+    assert_response :success
+
+    mail = ActionMailer::Base.deliveries.last
+    assert_equal [ "yannick.mace@hgc.ch", "autre@hgc.ch" ], mail.to
+    assert_equal [ users(:one).email ], mail.bcc
+    assert_equal 1, mail.attachments.size
+    assert_match(/#{order.number}/, mail.subject)
+    assert_equal original_sent_to.to_s, order.reload.sent_to.to_s, "l'historique d'envoi d'origine n'est pas modifié"
+  end
+
+  test "forward without bcc_me adds no hidden copy; invalid or unsent orders are refused" do
+    order = sent_order
+    post forward_api_order_url(order), params: { to: "yannick.mace@hgc.ch", bcc_me: false }
+    assert_response :success
+    assert_empty Array(ActionMailer::Base.deliveries.last.bcc)
+
+    post forward_api_order_url(order), params: { to: "pas-une-adresse" }
+    assert_response :unprocessable_entity
+
+    order.update!(email_sent_at: nil)
+    post forward_api_order_url(order), params: { to: "yannick.mace@hgc.ch" }
+    assert_response :unprocessable_entity
+  end
+
+  test "in the test environment forward is redirected to the test recipient" do
+    order = sent_order
+    post api_test_profile_url, params: { profile: "Développement" }
+    ActionMailer::Base.deliveries.clear
+    post forward_api_order_url(order), params: { to: "yannick.mace@hgc.ch", bcc_me: true }
+    assert_response :success
+    assert_equal [ "pomontaut@induni.ch" ], ActionMailer::Base.deliveries.last.to
+  end
 end

@@ -46,4 +46,20 @@ class Admin::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_equal 0, Order.count
     assert_equal "ESHOP_INDUNI_01", Order.next_number
   end
+
+  test "purge keeps the listed orders (a real order) and deletes all the others" do
+    real = Order.order(:id).first
+    real.update!(number: "ESHOP_INDUNI_71")
+    post login_url, params: { email: @owner.email, password: "password123" }
+
+    delete purge_admin_orders_url, params: { confirmation: "VIDER LES COMMANDES", keep: "eshop_induni_71" }
+    assert_equal [ "ESHOP_INDUNI_71" ], Order.pluck(:number)
+    assert_equal "ESHOP_INDUNI_72", Order.next_number
+  end
+
+  test "purge deletes nothing when a number to keep does not exist" do
+    post login_url, params: { email: @owner.email, password: "password123" }
+    delete purge_admin_orders_url, params: { confirmation: "VIDER LES COMMANDES", keep: "ESHOP_INDUNI_999" }
+    assert_equal 3, Order.count
+  end
 end

@@ -1,7 +1,7 @@
 class OrderMailer < ApplicationMailer
   DEFAULT_BODY = "Bonjour,\n\nVeuillez trouver ci-joint le bon de commande.\n\nMerci de bien vouloir nous faire parvenir votre confirmation de commande dans les plus brefs délais.\n\nRestant à votre disposition pour toute information complémentaire.\n\nCordialement\nINDUNI & Cie SA\nAvenue des Grandes-Communes 6\n1213 Petit-Lancy"
 
-  def send_order(order, pdf_content = nil, to: nil, cc: nil, subject: nil, body: nil, read_receipt_to: nil)
+  def send_order(order, pdf_content = nil, to: nil, cc: nil, bcc: nil, subject: nil, body: nil, read_receipt_to: nil)
     @order = order
     @body  = body.presence || DEFAULT_BODY
     # A real read-receipt (below) is unreliable — Gmail ignores it outright,
@@ -19,7 +19,7 @@ class OrderMailer < ApplicationMailer
       headers["Disposition-Notification-To"] = read_receipt_to
       headers["Return-Receipt-To"] = read_receipt_to
     end
-    mail(to: to.presence || @order.supplier.order_emails, cc: cc.presence, subject: subject.presence || "Commande #{@order.number}")
+    mail(to: to.presence || @order.supplier.order_emails, cc: cc.presence, bcc: bcc.presence, subject: subject.presence || "Commande #{@order.number}")
   end
 
   # Relance d'une commande restée sans accusé de réception fournisseur (voir

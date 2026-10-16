@@ -364,6 +364,33 @@ class Api::OrdersController < ApplicationController
     render json: { error: e.message }, status: :unprocessable_entity
   end
 
+  # Envoie une copie d'une commande DÉJÀ envoyée à une ou plusieurs adresses
+  # supplémentaires (ex. un contact fournisseur oublié dans la fiche), avec,
+  # si demandé, une copie cachée (Cci) à l'utilisateur qui déclenche l'envoi —
+  # même PDF, mêmes objet/texte que l'envoi d'origine ; l'historique de la
+  # commande (destinataires d'origine, date d'envoi) n'est pas modifié.
+  # Environnement test : tout part à l'adresse de test, jamais à l'adresse saisie.
+  def forward
+    order = find_own_order
+    return render json: { error: "Cette commande n'a pas été envoyée ou est annulée." }, status: :unprocessable_entity if order.email_sent_at.blank? || order.cancelled?
+
+    to = sanitize_email_list(params[:to].to_s.tr(";", ","))
+    return render json: { error: "Adresse e-mail invalide." }, status: :unprocessable_entity if to.blank?
+
+    test_mode = Api::TestProfilesController.active_profile(session, current_user).present?
+    to = Api::TestProfilesController::TEST_RECIPIENT if test_mode
+    bcc = ActiveModel::Type::Boolean.new.cast(params[:bcc_me]) && current_user&.email.present? ? current_user.email : nil
+    subject = order.sent_subject.presence || "Commande #{order.number}"
+    subject = "[TEST] #{subject}" if test_mode && !subject.start_with?("[TEST]")
+
+    OrderMailer.send_order(order, render_order_pdf(order), to: to, bcc: bcc, subject: subject, body: order.sent_body).deliver_now
+    render json: { success: true, order_number: order.number, sent_to: to, bcc: bcc, test_mode: test_mode }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Commande introuvable" }, status: :not_found
+  rescue => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
   # Commandes actuellement en attente de LA validation de l'utilisateur
   # connecté (il est l'approbateur résolu — voir #create) — alimente l'onglet
   # dédié "Validation de commande" du SPA, plutôt que de compter uniquement

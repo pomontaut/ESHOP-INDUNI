@@ -35,18 +35,24 @@ class Admin::OrdersController < ApplicationController
       return redirect_to admin_orders_path, alert: "Confirmation incorrecte : tapez exactement « #{CONFIRMATION_PHRASE} »."
     end
 
-    count = Order.count
+    # Commandes à conserver (ex. une vraie commande) : numéros exacts, sinon rien n'est supprimé.
+    keep = params[:keep].to_s.upcase.split(/[\s,;]+/).reject(&:blank?).uniq
+    unknown = keep - Order.where(number: keep).pluck(:number)
+    if unknown.any?
+      return redirect_to admin_orders_path, alert: "Commande(s) à conserver introuvable(s) : #{unknown.join(', ')}. Rien n'a été supprimé."
+    end
+
+    doomed = Order.where.not(number: keep)
+    count = doomed.count
+    reset = params[:reset_numbering] == "1" && keep.empty?
     Order.transaction do
       last = Order.where("number LIKE 'ESHOP_INDUNI_%'").pluck(:number).filter_map { |n| n[/\AESHOP_INDUNI_(\d+)/, 1]&.to_i }.max.to_i
-      if params[:reset_numbering] == "1"
-        OrderNumberFloor.reset!
-      else
-        OrderNumberFloor.raise_to!(last)
-      end
-      OrderLine.delete_all
-      Order.delete_all
+      reset ? OrderNumberFloor.reset! : OrderNumberFloor.raise_to!(last)
+      OrderLine.where(order_id: doomed.select(:id)).delete_all
+      doomed.delete_all
     end
-    redirect_to admin_orders_path, notice: "#{count} commande(s) supprimée(s). Numérotation : #{params[:reset_numbering] == '1' ? 'repart à ESHOP_INDUNI_01' : 'continue après le dernier numéro attribué'}."
+    kept = keep.any? ? " Conservée(s) : #{keep.join(', ')}." : ""
+    redirect_to admin_orders_path, notice: "#{count} commande(s) supprimée(s).#{kept} Numérotation : #{reset ? 'repart à ESHOP_INDUNI_01' : 'continue après le dernier numéro attribué'}."
   end
 
   private
