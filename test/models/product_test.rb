@@ -21,4 +21,12 @@ class ProductTest < ActiveSupport::TestCase
     assert_equal [ "Coffrage & Étaiement", "Coffrage", "Profils plastique" ], [ goutte["famille"], goutte["sousFamille"], goutte["sousSousFamille"] ]
     assert_equal 4, items.count { |i| i["sousSousFamille"] == "Profils plastique" }
   end
+
+  test "every product image referenced by the seed catalog exists in public/images/products" do
+    items = JSON.parse(File.read(Rails.root.join("db/seed_data/catalog_products.json")))
+    refs = items.filter_map { |i| i["image"] }.select { |path| path.start_with?("/images/products/") }.uniq
+    assert_operator refs.size, :>, 200
+    missing = refs.reject { |path| File.exist?(Rails.root.join("public", path.delete_prefix("/"))) }
+    assert_empty missing, "images référencées mais absentes : #{missing.first(5).join(', ')}"
+  end
 end
