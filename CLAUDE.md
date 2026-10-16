@@ -166,7 +166,12 @@ taper). `OrderNumberFloor` garde la numérotation ESHOP_INDUNI_nn après purge (
 « repartir à 01 » en option).
 Champ « Conserver ces commandes » (numéros exacts, ex. une vraie commande) : tout est
 supprimé SAUF ceux-là ; un numéro inconnu annule l'opération ; la numérotation continue
-alors toujours. Bouton « 🗑 Supprimer » par ligne du Dashboard (`DELETE /api/orders/:id`) :
+alors toujours. Barre de recherche du Dashboard (`GET /api/orders?q=`, `Order.matching_query`) : tous les mots
+saisis (sans accents/casse, début ou milieu de mot) parmi n° de commande, fournisseur,
+chantier, auteur et référence + nom de chaque article ; porte sur les 3'000 commandes
+visibles les plus récentes (résultat ≤ 500), toujours limitée à `Order.visible_to` ; les
+articles trouvés s'affichent sous le n° (`dashMatchedItemsHtml`).
+Bouton « 🗑 Supprimer » par ligne du Dashboard (`DELETE /api/orders/:id`) :
 admin uniquement (bouton masqué ET 403 côté serveur), supprime commande + lignes sans
 envoyer d'e-mail (le fournisseur n'est pas prévenu — « Annuler » sert à ça), le numéro
 n'est jamais réattribué. « Envoyer à… » (Dashboard, `POST /api/orders/:id/forward`) : copie d'une

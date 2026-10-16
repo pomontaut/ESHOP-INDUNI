@@ -65,7 +65,11 @@ class Api::OrdersController < ApplicationController
     # Dashboard : un utilisateur ne voit que les commandes des chantiers qui lui
     # sont visibles/affectés (Order.visible_to), quel que soit l'auteur.
     orders = Order.visible_to(current_user)
-    orders = orders.includes(:supplier, :order_lines, :user, :revisions, :modifies_order).order(created_at: :desc).limit(100)
+    # Recherche (barre du Dashboard) : sur TOUTES les commandes visibles, pas
+    # seulement les 100 dernières affichées par défaut.
+    searching = params[:q].present?
+    orders = orders.matching_query(params[:q]) if searching
+    orders = orders.includes(:supplier, :order_lines, :user, :revisions, :modifies_order).order(created_at: :desc).limit(searching ? 500 : 100)
     # Prix net confidentiel (fournisseur sous accord de confidentialité, ex.
     # Sika) : seule l'Analyse achat (accès restreint aux Achats) doit voir le
     # vrai montant. On le masque ici pour quiconque n'a pas ce droit, pour

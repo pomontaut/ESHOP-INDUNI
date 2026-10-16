@@ -56,6 +56,27 @@ class Order < ApplicationRecord
     for_chantier_names(Chantier.visible_to(user).pluck(:nom))
   end
 
+  # Texte de recherche d'une commande (sans accents ni casse) : numéro,
+  # fournisseur, chantier, auteur et, pour chaque ligne, référence + nom d'article.
+  def search_text
+    parts = [ number, supplier&.name, chantier_name, user&.full_name ]
+    order_lines.each { |l| parts << l.product&.reference << l.product&.name }
+    Chantier.name_tokens(parts.compact.join(" ")).join(" ")
+  end
+
+  # Recherche libre (Dashboard) : tous les mots saisis doivent se retrouver
+  # (début ou milieu de mot, sans accents ni casse) dans la commande — nom ou
+  # référence d'un de ses articles, n° de commande, fournisseur, chantier…
+  # Porte sur les 3'000 commandes les plus récentes du périmètre courant.
+  def self.matching_query(query)
+    words = Chantier.name_tokens(query)
+    return all if words.empty?
+
+    ids = includes(:supplier, :user, order_lines: :product).order(created_at: :desc).limit(3000)
+            .select { |o| text = o.search_text; words.all? { |w| text.include?(w) } }.map(&:id)
+    where(id: ids)
+  end
+
   def total
     order_lines.sum(&:subtotal)
   end

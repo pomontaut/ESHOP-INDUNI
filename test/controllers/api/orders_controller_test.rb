@@ -843,4 +843,47 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     delete api_order_url(id: 99_999_999)
     assert_response :not_found
   end
+
+  def order_with(supplier_name, chantier, article_ref, article_name)
+    supplier = Supplier.find_or_create_by!(name: supplier_name)
+    product = Product.find_or_create_by!(supplier: supplier, reference: article_ref) { |p| p.name = article_name; p.unit_price = 10 }
+    order = Order.create!(supplier: supplier, user: users(:one), notes: "Chantier: #{chantier} | Délai souhaité: 20.10.2026", email_sent_at: Time.current)
+    order.order_lines.create!(product: product, quantity: 2, unit_price: 10)
+    order
+  end
+
+  test "index?q= finds orders by article name or reference, ignoring accents, case and word order — beyond the 100 latest" do
+    target = order_with("Canplast", "62606-Vuette", "100054343", "Caniveau de câbles zingué Swisscom")
+    order_with("HG COMMERCIALE", "62606-Vuette", "ART-XYZ", "Tuyau PVC")
+    105.times { order_with("HG COMMERCIALE", "62606-Vuette", "ART-XYZ", "Tuyau PVC") } # repousse la cible hors des 100 dernières
+    Order.where(id: target.id).update_all(created_at: 2.years.ago)
+
+    get api_orders_url
+    assert_not_includes JSON.parse(response.body).map { |o| o["no"] }, target.number, "hors des 100 dernières sans recherche"
+
+    [ "100054343", "CANIVEAU cables", "swisscom zingue", "caniveau 100054343" ].each do |q|
+      get api_orders_url, params: { q: q }
+      assert_equal [ target.number ], JSON.parse(response.body).map { |o| o["no"] }, "recherche « #{q} »"
+    end
+
+    get api_orders_url, params: { q: "introuvable-xyz" }
+    assert_equal [], JSON.parse(response.body)
+  end
+
+  test "index?q= also matches the order number and the supplier, and never exposes orders outside the user's chantiers" do
+    mine = order_with("Canplast", "12345-Affecté", "REF-A", "Coude PVC")
+    other = order_with("Canplast", "99999-Pas à moi", "REF-A", "Coude PVC")
+    user = users(:two)
+    user.update!(admin: false, chantier_access_scope: "own")
+    ChantierAssignment.create!(user: user, chantier: Chantier.create!(nom: "12345-Affecté"))
+
+    delete logout_url
+    post login_url, params: { email: user.email, password: "password123" }
+    get api_orders_url, params: { q: "coude" }
+    assert_equal [ mine.number ], JSON.parse(response.body).map { |o| o["no"] }
+    get api_orders_url, params: { q: mine.number }
+    assert_equal [ mine.number ], JSON.parse(response.body).map { |o| o["no"] }
+    get api_orders_url, params: { q: other.number }
+    assert_equal [], JSON.parse(response.body)
+  end
 end
