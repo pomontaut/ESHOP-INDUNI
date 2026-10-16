@@ -278,6 +278,16 @@ SGTT : aucun frais annexe (transport compris dans les forfaits). E-mails de
 commande non communiqués : à saisir dans Admin > Fournisseurs avant tout envoi.
 Exclus de la sélection multi-fournisseurs (prestations).
 
+## HGC : fiche article et stock (hgc.ch)
+
+Sur chaque fiche HG COMMERCIALE (`stockStatusBadgeHtml` → `hgcSheetLinkHtml`) : lien
+« Fiche HGC » (`hgc.ch/fr/search?text=<n° article>` redirige vers la fiche) et bouton
+« Stock HGC (NPA 1213) » → `GET /api/hgc_stock/:article[?zip=]` (`HgcStock`, cache 15 min).
+Pas d'API HGC : la fiche embarque `stockLevelStatus` calculé pour le NPA du cookie anonyme
+`hgc.anonymousZipCode` (défaut `HGC_STOCK_ZIP`=1213), lu par scraping — fragile si HGC change
+son site ; en cas d'échec le bouton affiche « indisponible » sans bloquer. Statut
+purement informatif, jamais utilisé pour bloquer une commande.
+
 ## Deploy workflow (always follow this exact sequence)
 
 1. Edit, then run the full test suite: `bin/rails test` (must be 0
