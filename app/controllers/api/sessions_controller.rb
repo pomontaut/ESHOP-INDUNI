@@ -54,7 +54,7 @@ class Api::SessionsController < ApplicationController
         # Cantons auxquels un fournisseur est réservé (ex. Tinguely = VAUD) :
         # contrôlé côté navigateur avant l'envoi d'une commande.
         supplierVisibleCantons: Supplier.all.select { |s| s.visible_cantons.present? }.to_h { |s| [ s.name, s.visible_cantons ] },
-        chantiers:         Chantier.visible_to(current_user).order(:nom).map { |c|
+        chantiers:         Chantier.visible_to(current_user).includes(:contacts).order(:nom).map { |c|
           {
             nom:         c.nom,
             adresse:     c.adresse,
@@ -70,7 +70,7 @@ class Api::SessionsController < ApplicationController
             contraintes: c.contraintes_acces,
             consortium:  c.consortium,
             canton:      c.canton
-          }
+          }.merge(c.team_json)
         }
       }
     else
@@ -109,13 +109,13 @@ class Api::SessionsController < ApplicationController
       supplierEmailsByCanton: {},
       supplierDefaultEmails: Supplier.where.not(email: [ nil, "" ]).pluck(:name, :email).to_h,
       allowed_suppliers: current_user.effective_visible_suppliers,
-      chantiers:         Chantier.visible_to(current_user).order(:nom).map { |c|
+      chantiers:         Chantier.visible_to(current_user).includes(:contacts).order(:nom).map { |c|
         {
           nom: c.nom, adresse: c.adresse, npa: c.npa, ville: c.ville,
           contact: c.contremaitre, telephone: c.natel_contremaitre,
           contactLivraison: c.contact_livraison, telephoneLivraison: c.natel_livraison,
           emailTechnicien: c.email_technicien, technicien: c.technicien, natelTechnicien: c.natel_technicien, contraintes: c.contraintes_acces, consortium: c.consortium, canton: c.canton
-        }
+        }.merge(c.team_json)
       }
     }
   end

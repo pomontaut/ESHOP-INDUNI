@@ -67,7 +67,16 @@ class Admin::ChantiersController < ApplicationController
       :contremaitre, :natel_contremaitre, :email_contremaitre,
       :chef_equipe, :natel_chef_equipe, :email_chef_equipe,
       :conducteur_travaux, :natel_conducteur_travaux, :email_conducteur_travaux,
-      :contact_livraison, :natel_livraison, :email_livraison
-    )
+      :contact_livraison, :natel_livraison, :email_livraison,
+      contacts_attributes: [ :id, :role, :nom, :natel, :email, :_destroy ]
+    ).tap { |permitted| blank_existing_contacts_become_deletions(permitted) }
+  end
+
+  # Une personne supplémentaire déjà enregistrée dont tous les champs ont été
+  # vidés = suppression (plutôt qu'une erreur de validation).
+  def blank_existing_contacts_become_deletions(permitted)
+    (permitted[:contacts_attributes] || {}).each_value do |attrs|
+      attrs[:_destroy] = "1" if attrs[:id].present? && %i[nom natel email].all? { |k| attrs[k].blank? }
+    end
   end
 end

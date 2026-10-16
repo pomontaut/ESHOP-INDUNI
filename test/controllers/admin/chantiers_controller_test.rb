@@ -89,4 +89,37 @@ class Admin::ChantiersControllerTest < ActionDispatch::IntegrationTest
     assert_select "td", text: /Halle|Caran/, count: 0
     assert halle.persisted?
   end
+
+  test "create and update persist several technicians, foremen, team leads and delivery contacts" do
+    post admin_chantiers_url, params: {
+      chantier: { nom: "Gros chantier", technicien: "MORAND Adrien", email_technicien: "amorand@induni.ch",
+        contacts_attributes: {
+          "0" => { role: "technicien", nom: "DUPONT Jean", natel: "+41790000001", email: "JDupont@induni.ch" },
+          "1" => { role: "contremaitre", nom: "GAILLARD Cédric", email: "cgaillard@induni.ch" },
+          "2" => { role: "contact_livraison", nom: "PINTO Pedro", natel: "+41763656892" },
+          "3" => { role: "chef_equipe", nom: "", natel: "", email: "" } # ligne vide ignorée
+        } }
+    }
+    chantier = Chantier.find_by!(nom: "Gros chantier")
+    assert_equal 3, chantier.contacts.count
+    assert_equal [ "MORAND Adrien", "DUPONT Jean" ], chantier.technicien_names
+    assert_equal [ "amorand@induni.ch", "jdupont@induni.ch" ], chantier.technicien_emails
+
+    # ✕ sur une personne existante = suppression ; champs vidés = suppression aussi
+    dupont, gaillard = chantier.contacts_for("technicien").first, chantier.contacts_for("contremaitre").first
+    patch admin_chantier_url(chantier), params: { chantier: { contacts_attributes: {
+      "0" => { id: dupont.id, role: "technicien", nom: "DUPONT Jean", _destroy: "1" },
+      "1" => { id: gaillard.id, role: "contremaitre", nom: "", natel: "", email: "" }
+    } } }
+    assert_equal [ "PINTO Pedro" ], chantier.reload.contacts.map(&:nom)
+  end
+
+  test "edit form renders an add button for each of the four roles" do
+    chantier = Chantier.create!(nom: "Formulaire")
+    get edit_admin_chantier_url(chantier)
+    assert_response :success
+    %w[technicien contremaitre chef_equipe contact_livraison].each do |role|
+      assert_select "[data-extra-role='#{role}'] .extra-add"
+    end
+  end
 end

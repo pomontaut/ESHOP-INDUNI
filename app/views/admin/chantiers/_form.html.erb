@@ -93,6 +93,7 @@
           <%= f.email_field :email_technicien, class: "form-control" %>
         </div>
       </div>
+      <%= render "admin/chantiers/extra_contacts", f: f, role: "technicien", label: "un technicien" %>
 
       <div class="row g-3 mb-3">
         <div class="col-4">
@@ -108,6 +109,7 @@
           <%= f.email_field :email_contremaitre, class: "form-control" %>
         </div>
       </div>
+      <%= render "admin/chantiers/extra_contacts", f: f, role: "contremaitre", label: "un contremaître" %>
 
       <div class="row g-3 mb-3">
         <div class="col-4">
@@ -123,6 +125,7 @@
           <%= f.email_field :email_chef_equipe, class: "form-control" %>
         </div>
       </div>
+      <%= render "admin/chantiers/extra_contacts", f: f, role: "chef_equipe", label: "un chef d'équipe" %>
 
       <div class="row g-3">
         <div class="col-4">
@@ -139,6 +142,7 @@
           <%= f.email_field :email_livraison, class: "form-control" %>
         </div>
       </div>
+      <%= render "admin/chantiers/extra_contacts", f: f, role: "contact_livraison", label: "un contact réception livraison" %>
     </div>
   </div>
 
@@ -147,3 +151,22 @@
     <%= link_to "Annuler", admin_chantiers_path, class: "btn btn-outline-secondary" %>
   </div>
 <% end %>
+
+<script>
+(function(){
+  var seq=0;
+  document.querySelectorAll('.extra-contacts').forEach(function(box){
+    var rows=box.querySelector('.extra-rows'), tpl=box.querySelector('.extra-template');
+    box.querySelector('.extra-add').addEventListener('click',function(){
+      var html=tpl.innerHTML.replace(/NEW_IDX/g, String(Date.now())+(seq++));
+      rows.insertAdjacentHTML('beforeend',html);
+      var inputs=rows.querySelectorAll('.extra-row:last-child input[type=text]'); if(inputs[0]) inputs[0].focus();
+    });
+    box.addEventListener('click',function(e){
+      var b=e.target.closest('.extra-remove'); if(!b) return;
+      var row=b.closest('.extra-row'), d=row.querySelector('.extra-destroy'), hasId=row.querySelector('input[name$="[id]"]');
+      if(hasId){ d.value='1'; row.style.display='none'; } else { row.remove(); }
+    });
+  });
+})();
+</script>

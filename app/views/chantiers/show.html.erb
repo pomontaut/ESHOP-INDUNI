@@ -10,9 +10,9 @@
     <% if @chantier.carte_interactive.present? %>
       <tr><th>Carte interactive</th><td><%= link_to "Ouvrir la carte", @chantier.carte_interactive, target: "_blank" %></td></tr>
     <% end %>
-    <tr><th>Technicien</th><td><%= [ @chantier.technicien, @chantier.natel_technicien, @chantier.email_technicien ].compact_blank.join(" · ") %></td></tr>
-    <tr><th>Contremaître</th><td><%= [ @chantier.contremaitre, @chantier.natel_contremaitre, @chantier.email_contremaitre ].compact_blank.join(" · ") %></td></tr>
-    <tr><th>Chef d'équipe</th><td><%= [ @chantier.chef_equipe, @chantier.natel_chef_equipe, @chantier.email_chef_equipe ].compact_blank.join(" · ") %></td></tr>
+    <tr><th>Technicien</th><td><%= [ @chantier.technicien, @chantier.natel_technicien, @chantier.email_technicien ].compact_blank.join(" · ") %><% @chantier.contacts_for("technicien").each do |c| %><br><%= [ c.nom, c.natel, c.email ].compact_blank.join(" · ") %><% end %></td></tr>
+    <tr><th>Contremaître</th><td><%= [ @chantier.contremaitre, @chantier.natel_contremaitre, @chantier.email_contremaitre ].compact_blank.join(" · ") %><% @chantier.contacts_for("contremaitre").each do |c| %><br><%= [ c.nom, c.natel, c.email ].compact_blank.join(" · ") %><% end %></td></tr>
+    <tr><th>Chef d'équipe</th><td><%= [ @chantier.chef_equipe, @chantier.natel_chef_equipe, @chantier.email_chef_equipe ].compact_blank.join(" · ") %><% @chantier.contacts_for("chef_equipe").each do |c| %><br><%= [ c.nom, c.natel, c.email ].compact_blank.join(" · ") %><% end %></td></tr>
     <tr><th>Chantier consortium</th><td><%= @chantier.consortium? ? "Oui" : "Non" %></td></tr>
   </tbody>
 </table>

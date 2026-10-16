@@ -2286,6 +2286,7 @@ function showToast(msg){
 // formulaire restent ceux du contremaître, cf. fillChantierContact).
 function chantierTechnicienEmail(nomChantier){
   const c=(window._chantiers||[]).find(x=>x.nom===nomChantier);
+  if(c&&c.emailsTechnicien&&c.emailsTechnicien.length) return c.emailsTechnicien.join(', ');
   return (c&&c.emailTechnicien)||'';
 }
 function isChantierConsortium(nom){return (window._chantiers||[]).some(x=>x.nom===nom&&x.consortium);}
@@ -4244,6 +4245,18 @@ function fillChantierContact(){
   if(adresseEl) adresseEl.value=[c.adresse,[c.npa,c.ville].filter(Boolean).join(' ')].filter(Boolean).join('\n');
   if(contactEl && (c.contactLivraison||c.contact)) contactEl.value=c.contactLivraison||c.contact;
   if(phoneEl && (c.telephoneLivraison||c.telephone)) phoneEl.value=c.telephoneLivraison||c.telephone;
+  // Plusieurs contacts de réception (gros chantiers) : le premier pré-remplit, les autres sont proposés.
+  if(contactEl){
+    let dl=document.getElementById('contactLivraisonList');
+    if(!dl){ dl=document.createElement('datalist'); dl.id='contactLivraisonList'; document.body.appendChild(dl); }
+    contactEl.setAttribute('list','contactLivraisonList');
+    const contacts=c.contactsLivraison||[];
+    dl.innerHTML=contacts.map(function(x){ return '<option value="'+esc(x.nom)+'"></option>'; }).join('');
+    contactEl.onchange=function(){
+      const m=contacts.find(function(x){ return x.nom===contactEl.value; });
+      if(m&&m.telephone&&phoneEl) phoneEl.value=m.telephone;
+    };
+  }
   applyChantierVilleToCanplast(c.ville);
   applyChantierVilleToSoreval(c.ville);
   fillConducteurFromTechniciens(val);
@@ -4258,7 +4271,7 @@ function isForbiddenConducteurInduni(name){
 function fillConducteurFromTechniciens(chantierNom){
   const input=document.getElementById('conducteurTravaux'), list=document.getElementById('conducteurList');
   if(!input||!list) return;
-  const names=[...new Set((window._chantiers||[]).filter(function(x){return x.nom===chantierNom;}).map(function(x){return String(x.technicien||'').trim();}).filter(function(n){return n&&!isForbiddenConducteurInduni(n);}))];
+  const names=[...new Set((window._chantiers||[]).filter(function(x){return x.nom===chantierNom;}).reduce(function(acc,x){return acc.concat(x.techniciens&&x.techniciens.length?x.techniciens:[x.technicien]);},[]).map(function(n){return String(n||'').trim();}).filter(function(n){return n&&!isForbiddenConducteurInduni(n);}))];
   list.innerHTML=names.map(function(n){return '<option value="'+esc(n)+'"></option>';}).join('');
   if(isForbiddenConducteurInduni(input.value)) input.value='';
   if(names.length===1) input.value=names[0]; else if(names.length>1&&!names.includes(input.value)) input.value='';
@@ -4797,7 +4810,7 @@ function smartRender(keepForm){
   const anyConf=o.best.groups.some(g=>g.lines.some(l=>l.product.confidential));
   const noteHtml=plan.notes.map(n=>`<li style="color:${n.sev==='warn'?'#b45309':'#555'}">${n.sev==='warn'?'⚠️ ':''}${esc(n.msg)}</li>`).join('');
   const ch=smartChantierObj();
-  const techs=[...new Set((window._chantiers||[]).filter(x=>x.nom===chantier).map(x=>String(x.technicien||'').trim()).filter(n=>n&&!isForbiddenConducteurInduni(n)))];
+  const techs=[...new Set((window._chantiers||[]).filter(x=>x.nom===chantier).reduce((acc,x)=>acc.concat(x.techniciens&&x.techniciens.length?x.techniciens:[x.technicien]),[]).map(n=>String(n||'').trim()).filter(n=>n&&!isForbiddenConducteurInduni(n)))];
   const cond=keep&&keep.cond!=null?keep.cond:(techs.length===1?techs[0]:'');
   const today=new Date().toISOString().slice(0,10);
   box.innerHTML=head+

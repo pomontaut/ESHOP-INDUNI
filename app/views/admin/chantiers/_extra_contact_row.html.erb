@@ -1,0 +1,12 @@
+<div class="row g-3 mb-2 extra-row">
+  <%= cf.hidden_field :role, value: role %>
+  <%= cf.hidden_field :_destroy, value: "0", class: "extra-destroy" %>
+  <div class="col-4"><%= cf.text_field :nom, class: "form-control", placeholder: "Nom" %></div>
+  <div class="col-4"><%= cf.text_field :natel, class: "form-control", placeholder: "Natel" %></div>
+  <div class="col-4">
+    <div class="input-group">
+      <%= cf.email_field :email, class: "form-control", placeholder: "E-mail" %>
+      <button type="button" class="btn btn-outline-danger extra-remove" title="Retirer" aria-label="Retirer">✕</button>
+    </div>
+  </div>
+</div>

@@ -118,6 +118,20 @@ catalog silently invisible to users with any manual restriction.
   transport logic, not just Canplast). Confidential-pricing suppliers must
   keep masking `extra_charges` the same way as the merchandise total.
 
+## Plusieurs personnes par rôle sur un chantier (gros chantiers)
+
+La personne « principale » (technicien, contremaître, chef d'équipe, contact
+réception livraison) reste dans les colonnes de `chantiers` ; les autres sont des
+`ChantierContact` (role/nom/natel/email), saisies par « ＋ Ajouter … » dans Admin >
+Chantiers (`accepts_nested_attributes_for :contacts`, ✕ ou champs vidés =
+suppression). Effets : l'e-mail d'un technicien/contremaître/chef d'équipe
+supplémentaire donne accès au chantier (`Chantier.visible_to`) et est repris par
+`Chantier.matching_person` (affectations) ; `/api/me` expose `techniciens`,
+`emailsTechnicien` (tous en copie de commande) et `contactsLivraison` (liste
+proposée dans le champ « contact » du bon de commande, téléphone auto) via
+`Chantier#team_json`. Le contact de réception supplémentaire ne donne PAS accès au
+chantier. Le conducteur de travaux reste unique (approbateur N+1).
+
 ## Visibilité des commandes par chantier / remise à zéro
 
 **Un utilisateur non-admin ne voit que les commandes des chantiers qui lui sont

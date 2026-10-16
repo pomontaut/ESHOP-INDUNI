@@ -66,4 +66,35 @@ class ChantierTest < ActiveSupport::TestCase
     assert_equal [ [ "Technicien" ], [ "Contremaître" ] ], found.map { |m| m[:roles] }
     assert_empty Chantier.matching_person("Zoé", "Inconnue")
   end
+
+  test "visible_to also gives access through an additional contact's e-mail (technician, foreman, team lead) but not a delivery contact" do
+    user = users(:two)
+    user.update!(admin: false, chantier_access_scope: "own")
+    via_tech = Chantier.create!(nom: "Via technicien suppl.")
+    via_tech.contacts.create!(role: "technicien", nom: "Autre Tech", email: user.email.upcase)
+    via_livraison = Chantier.create!(nom: "Via contact livraison")
+    via_livraison.contacts.create!(role: "contact_livraison", nom: "Réception", email: user.email)
+    Chantier.create!(nom: "Aucun lien")
+
+    assert_equal [ via_tech ], Chantier.visible_to(user).to_a
+  end
+
+  test "matching_person also finds a person listed as an additional contact" do
+    chantier = Chantier.create!(nom: "Équipe étendue", technicien: "MORAND Adrien")
+    chantier.contacts.create!(role: "contremaitre", nom: "GAILLARD Cédric")
+
+    found = Chantier.matching_person("Cédric", "Gaillard")
+    assert_equal [ chantier ], found.map { |m| m[:chantier] }
+    assert_equal [ "Contremaître" ], found.first[:roles]
+  end
+
+  test "team_json lists every technician and e-mail, and delivery contacts with the primary first" do
+    c = Chantier.create!(nom: "JSON", technicien: "A Un", email_technicien: "a@induni.ch", contact_livraison: "Réception Un", natel_livraison: "+411")
+    c.contacts.create!(role: "technicien", nom: "B Deux", email: "b@induni.ch")
+    c.contacts.create!(role: "contact_livraison", nom: "Réception Deux", natel: "+412")
+    json = c.reload.team_json
+    assert_equal [ "A Un", "B Deux" ], json[:techniciens]
+    assert_equal [ "a@induni.ch", "b@induni.ch" ], json[:emailsTechnicien]
+    assert_equal [ "Réception Un", "Réception Deux" ], json[:contactsLivraison].map { |x| x[:nom] }
+  end
 end

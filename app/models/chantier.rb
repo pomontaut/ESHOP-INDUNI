@@ -1,6 +1,28 @@
 class Chantier < ApplicationRecord
   validates :nom, presence: true
 
+  # Personnes supplémentaires (plusieurs techniciens, contremaîtres, chefs
+  # d'équipe, contacts de réception) en plus de la personne principale.
+  has_many :contacts, -> { order(:id) }, class_name: "ChantierContact", dependent: :destroy
+  accepts_nested_attributes_for :contacts, allow_destroy: true,
+    reject_if: ->(attrs) { attrs["id"].blank? && %w[nom natel email].all? { |k| attrs[k].blank? } }
+
+  def contacts_for(role) = contacts.select { |c| c.role == role }
+
+  # Personne principale + personnes supplémentaires, dédoublonnées.
+  def technicien_names  = ([ technicien ] + contacts_for("technicien").map(&:nom)).map { |n| n.to_s.strip }.reject(&:blank?).uniq
+  def technicien_emails = ([ email_technicien ] + contacts_for("technicien").map(&:email)).map { |n| n.to_s.strip }.reject(&:blank?).uniq
+  def delivery_contacts
+    primary = { nom: contact_livraison.presence || contremaitre, telephone: natel_livraison.presence || natel_contremaitre }
+    ([ primary ] + contacts_for("contact_livraison").map { |c| { nom: c.nom, telephone: c.natel } })
+      .select { |c| c[:nom].present? }.uniq { |c| c[:nom] }
+  end
+
+  # Clés ajoutées au JSON du SPA (/api/me), en plus des champs historiques.
+  def team_json
+    { techniciens: technicien_names, emailsTechnicien: technicien_emails, contactsLivraison: delivery_contacts }
+  end
+
   # Trois niveaux d'accès possibles à /chantiers (voir User#chantier_access_scope) :
   # admin -> tous les chantiers Induni ; "secteur" -> tous les chantiers du
   # même secteur (BAT GE, GC, etc., voir User::SECTORS) que l'utilisateur ;
@@ -13,6 +35,9 @@ class Chantier < ApplicationRecord
     return none unless user
 
     assigned = where(id: ChantierAssignment.where(user_id: user.id).select(:chantier_id))
+    # Personnes supplémentaires (Admin > Chantiers > « + ») : leur e-mail donne le même accès.
+    via_contact = where(id: ChantierContact.where(role: ChantierContact::ACCESS_ROLES, email: user.email.to_s.downcase).select(:chantier_id))
+    assigned = assigned.or(via_contact)
 
     if user.chantier_access_scope == "secteur" && user.sector.present?
       return where(secteur: user.sector).or(assigned)
@@ -34,10 +59,13 @@ class Chantier < ApplicationRecord
     wanted = name_tokens("#{first_name} #{last_name}")
     return [] if wanted.size < 2
 
-    all.filter_map do |chantier|
+    includes(:contacts).filter_map do |chantier|
       roles = ROLE_COLUMNS.select do |column, _|
-        have = name_tokens(chantier[column])
-        have.any? && wanted.all? { |token| have.include?(token) }
+        names = [ chantier[column] ] + chantier.contacts_for(column).map(&:nom)
+        names.any? do |name|
+          have = name_tokens(name)
+          have.any? && wanted.all? { |token| have.include?(token) }
+        end
       end.values
       { chantier: chantier, roles: roles } if roles.any?
     end

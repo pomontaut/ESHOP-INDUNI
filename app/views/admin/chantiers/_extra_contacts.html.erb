@@ -1,0 +1,16 @@
+<%# Personnes supplémentaires d'un rôle (gros chantiers) : lignes ajoutables avec « + ».
+    locals : f (form builder du chantier), role (technicien|contremaitre|chef_equipe|contact_livraison), label %>
+<% existing = f.object.contacts_for(role) %>
+<div class="extra-contacts mb-3" data-extra-role="<%= role %>">
+  <div class="extra-rows">
+    <%= f.fields_for :contacts, existing do |cf| %>
+      <%= render "admin/chantiers/extra_contact_row", cf: cf, role: role, label: label %>
+    <% end %>
+  </div>
+  <template class="extra-template">
+    <%= f.fields_for :contacts, ChantierContact.new(role: role), child_index: "NEW_IDX" do |cf| %>
+      <%= render "admin/chantiers/extra_contact_row", cf: cf, role: role, label: label %>
+    <% end %>
+  </template>
+  <button type="button" class="btn btn-outline-primary btn-sm extra-add">＋ Ajouter <%= label %></button>
+</div>

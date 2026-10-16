@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_16_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_16_130000) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -30,6 +30,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_120000) do
     t.index ["chantier_id"], name: "index_chantier_assignments_on_chantier_id"
     t.index ["user_id", "chantier_id"], name: "index_chantier_assignments_on_user_id_and_chantier_id", unique: true
     t.index ["user_id"], name: "index_chantier_assignments_on_user_id"
+  end
+
+  create_table "chantier_contacts", force: :cascade do |t|
+    t.integer "chantier_id", null: false
+    t.datetime "created_at", null: false
+    t.string "email"
+    t.string "natel"
+    t.string "nom"
+    t.string "role", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chantier_id", "role"], name: "index_chantier_contacts_on_chantier_id_and_role"
+    t.index ["chantier_id"], name: "index_chantier_contacts_on_chantier_id"
+    t.index ["email"], name: "index_chantier_contacts_on_email"
   end
 
   create_table "chantiers", force: :cascade do |t|
@@ -267,6 +280,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_120000) do
 
   add_foreign_key "chantier_assignments", "chantiers"
   add_foreign_key "chantier_assignments", "users"
+  add_foreign_key "chantier_contacts", "chantiers"
   add_foreign_key "order_lines", "orders"
   add_foreign_key "order_lines", "products"
   add_foreign_key "orders", "orders", column: "modifies_order_id", on_delete: :nullify
