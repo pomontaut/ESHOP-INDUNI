@@ -4968,4 +4968,49 @@ async function smartSend(){
   render();
 }
 </script>
+<script>
+/* ============================================================
+   NAVIGATION ET HISTORIQUE DU NAVIGATEUR
+   L'e-shop est une seule page : sans ceci, la flèche « retour » du navigateur
+   (ou Alt+←, bouton retour de la souris) quittait carrément l'application.
+   Chaque écran (accueil, catalogue, famille, produits, recherche, dashboard…)
+   devient une entrée d'historique : on la mémorise à chaque changement d'écran
+   (render) et on la restaure au retour (popstate). Les simples re-rendus
+   (quantité du panier, tri…) n'ajoutent rien ; la frappe dans la recherche
+   remplace l'entrée au lieu d'en empiler une par mot.
+   ============================================================ */
+(function(){
+  if(!window.history||!history.pushState) return;
+  const box=()=>document.getElementById('searchBox');
+  const snap=()=>({s:JSON.parse(JSON.stringify(state)),q:(box()&&box().value||'').trim()});
+  const keyOf=sn=>JSON.stringify([sn.s,sn.q]);
+  let last=null, restoring=false;
+  const baseRender=render;
+  function track(){
+    if(restoring) return;
+    const sn=snap(), k=keyOf(sn);
+    if(k===last) return;
+    const prev=last?JSON.parse(last):null;
+    last=k;
+    const typingInSearch=prev&&prev[1]&&sn.q; // recherche -> recherche : on remplace
+    try{ (typingInSearch?history.replaceState:history.pushState).call(history,sn,''); }catch(e){}
+  }
+  render=function(){ baseRender.apply(this,arguments); track(); };
+  // Entrée de départ : marque la page actuelle pour pouvoir y revenir.
+  try{ const sn=snap(); last=keyOf(sn); history.replaceState(sn,''); }catch(e){}
+  window.addEventListener('popstate',function(e){
+    const sn=e.state; if(!sn||!sn.s) return;       // entrée hors e-shop : le navigateur gère
+    restoring=true;
+    try{
+      state=Object.assign({},sn.s);
+      if(box()) box().value=sn.q||'';
+      if(typeof closeCart==='function') closeCart();
+      document.querySelectorAll('.modal.open').forEach(m=>m.classList.remove('open'));
+      baseRender.call(window);
+      last=keyOf(sn);
+    }finally{ restoring=false; }
+    window.scrollTo(0,0);
+  });
+})();
+</script>
 </body></html>

@@ -189,6 +189,15 @@ l'affichage du comparatif, et `cartEquivalenceGroups` n'accepte que des équival
 MÊME unité (jamais comparer 1 m³ à 1 paquet). Anciennes commandes Leuba : quantité en
 m³ au prix m³ (lignes inchangées), mais le produit porte maintenant l'unité « paquet ».
 
+## Navigation : flèche « retour » du navigateur
+
+Dernier `<script>` de `catalogue.html` : `render()` est enveloppée — chaque changement
+d'écran (`state` + contenu de `#searchBox`) fait un `history.pushState`, un simple
+re-rendu n'ajoute rien, la frappe dans la recherche fait un `replaceState` ; `popstate`
+restaure `state` et la recherche puis re-rend (sans repousser d'entrée) et ferme
+panier/fenêtres. Un nouvel écran qui n'utilise pas `state`/`render()` (ex. écrans
+construits directement dans `#app`) n'a pas d'entrée d'historique propre.
+
 ## Bois & Coffrage : libellés Planche / Carrelet / Plateau bois C24
 
 Plus de « Carrelets / planches de coffrage » : rubrique « Planches de coffrage »

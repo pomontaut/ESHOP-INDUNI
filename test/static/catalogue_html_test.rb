@@ -11,4 +11,10 @@ class CatalogueHtmlTest < ActiveSupport::TestCase
   test "the emailed order PDF template has no « Commandé par » line either" do
     assert_not_includes File.read(Rails.root.join("app/views/orders/bon_de_commande.html.erb")), "Commandé par"
   end
+
+  test "the SPA wires its screens to the browser history so the back arrow works" do
+    html = File.read(Rails.root.join("public/catalogue.html"))
+    assert_includes html, "history.pushState"
+    assert_includes html, "addEventListener('popstate'"
+  end
 end
