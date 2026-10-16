@@ -118,7 +118,12 @@ catalog silently invisible to users with any manual restriction.
   transport logic, not just Canplast). Confidential-pricing suppliers must
   keep masking `extra_charges` the same way as the merchandise total.
 
-## Fournisseur : 2 adresses e-mail de commande
+## Fournisseur : plusieurs adresses e-mail de commande
+
+**Tous** les champs e-mail d'un fournisseur (`Supplier::EMAIL_COLUMNS` : défaut, 2e adresse, canton)
+accettent une ou plusieurs adresses séparées par `,` `;` ou espace, normalisées en
+« a@x.ch, b@x.ch » (`before_validation`, champs `text_field` — pas `email_field`, le
+navigateur refuse `;`). Les adresses invalides sont nommées dans l'erreur.
 
 `Supplier#email_secondaire` (Admin > Fournisseurs, optionnelle) s'ajoute à l'adresse
 principale **ou** à celle du canton du chantier : `Supplier#order_emails(canton)`

@@ -757,4 +757,14 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal [ "principal@f.ch", "second@f.ch" ], ActionMailer::Base.deliveries.last.to
   end
+
+  test "create sends the order to every address of a multi-address supplier" do
+    Supplier.create!(name: "Fournisseur triple", email: "a@f.ch; b@f.ch; c@f.ch")
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "20.10.2026", supplier: "Fournisseur triple",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+    }
+    assert_response :success
+    assert_equal [ "a@f.ch", "b@f.ch", "c@f.ch" ], ActionMailer::Base.deliveries.last.to
+  end
 end

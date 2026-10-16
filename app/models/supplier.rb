@@ -43,16 +43,37 @@ class Supplier < ApplicationRecord
   }.freeze
 
   EMAIL_FORMAT = /\A[^@\s,]+@[^@\s,]+\.[^@\s,]+\z/
-  validates :email_secondaire, format: { with: EMAIL_FORMAT, message: "n'est pas une adresse e-mail valide" }, allow_blank: true
+  # Chaque champ e-mail accepte UNE ou PLUSIEURS adresses, séparées par une
+  # virgule, un point-virgule ou un espace ; elles sont normalisées en
+  # « a@x.ch, b@x.ch » (dédoublonnées) avant enregistrement.
+  EMAIL_COLUMNS = %i[ email email_secondaire email_geneve email_vaud email_valais email_fribourg email_jura ].freeze
+
+  def self.split_emails(text) = text.to_s.split(/[\s,;]+/).reject(&:blank?)
+
+  before_validation :normalize_emails
+  EMAIL_COLUMNS.each do |column|
+    validate(if: -> { will_save_change_to_attribute?(column) }) do
+      bad = self.class.split_emails(self[column]).reject { |e| e.match?(EMAIL_FORMAT) }
+      errors.add(column, "contient une adresse invalide : #{bad.join(', ')}") if bad.any?
+    end
+  end
 
   # Destinataires d'une commande : adresse principale (ou celle du canton du
   # chantier) + 2e adresse éventuelle, séparées par une virgule.
   def order_emails(canton = nil)
-    [ email_for_canton(canton), email_secondaire ].map { |e| e.to_s.strip }.reject(&:blank?).uniq(&:downcase).join(", ").presence
+    [ email_for_canton(canton), email_secondaire ].flat_map { |e| self.class.split_emails(e) }.uniq(&:downcase).join(", ").presence
   end
 
   def email_for_canton(canton)
     column = EMAIL_COLUMN_BY_CANTON[canton]
     (column && public_send(column).presence) || email
+  end
+
+  private
+
+  def normalize_emails
+    EMAIL_COLUMNS.each do |column|
+      self[column] = self.class.split_emails(self[column]).uniq(&:downcase).join(", ").presence
+    end
   end
 end

@@ -55,4 +55,18 @@ class SupplierTest < ActiveSupport::TestCase
     assert Supplier.new(name: "X", email_secondaire: "ok@f.ch").valid?
     assert Supplier.new(name: "X", email_secondaire: "").valid?
   end
+
+  test "an e-mail field accepts several addresses separated by ; , or spaces and normalizes them" do
+    supplier = Supplier.create!(name: "HGC multi", email: "commandes_ge@hgc.ch; grand-lancy@hgc.ch;  yannick.mace@hgc.ch , COMMANDES_GE@hgc.ch")
+    assert_equal "commandes_ge@hgc.ch, grand-lancy@hgc.ch, yannick.mace@hgc.ch", supplier.email
+    assert_equal "commandes_ge@hgc.ch, grand-lancy@hgc.ch, yannick.mace@hgc.ch", supplier.order_emails
+    supplier.update!(email_secondaire: "autre@hgc.ch; grand-lancy@hgc.ch")
+    assert_equal "commandes_ge@hgc.ch, grand-lancy@hgc.ch, yannick.mace@hgc.ch, autre@hgc.ch", supplier.order_emails
+  end
+
+  test "an invalid address inside a multi-address field is rejected and named" do
+    supplier = Supplier.new(name: "Mauvais", email: "ok@hgc.ch; pas-une-adresse")
+    assert_not supplier.valid?
+    assert_match(/pas-une-adresse/, supplier.errors[:email].join)
+  end
 end

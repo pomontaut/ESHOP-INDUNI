@@ -13,7 +13,8 @@
   </div>
   <div class="mb-3">
     <%= form.label :email, "Email", class: "form-label" %>
-    <%= form.email_field :email, class: "form-control" %>
+    <%= form.text_field :email, class: "form-control", placeholder: "adresse1@fournisseur.ch, adresse2@fournisseur.ch" %>
+    <div class="form-text">Une ou plusieurs adresses, séparées par une virgule ou un point-virgule : la commande part à toutes.</div>
   </div>
   <div class="mb-3">
     <%= form.label :phone, "Téléphone", class: "form-label" %>
