@@ -36,7 +36,7 @@
                 <%= supplier.visible_sectors.join(", ") %>
               <% end %>
             </td>
-            <td class="py-3 small"><%= supplier.email.presence || "—" %></td>
+            <td class="py-3 small"><%= supplier.email.presence || "—" %><% if supplier.email_secondaire.present? %><br><%= supplier.email_secondaire %><% end %></td>
             <td class="py-3 small">
               <% if supplier.approval_threshold.present? %>
                 dès <%= number_with_delimiter(supplier.approval_threshold.to_i) %> CHF

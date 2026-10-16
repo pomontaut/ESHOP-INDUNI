@@ -747,4 +747,14 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     chantiers = JSON.parse(response.body).map { |o| o["chantier"] }
     assert_equal [ "12345-Affecté" ], chantiers
   end
+
+  test "create sends the order to both supplier addresses by default" do
+    Supplier.create!(name: "Fournisseur double", email: "principal@f.ch", email_secondaire: "second@f.ch")
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "20.10.2026", supplier: "Fournisseur double",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+    }
+    assert_response :success
+    assert_equal [ "principal@f.ch", "second@f.ch" ], ActionMailer::Base.deliveries.last.to
+  end
 end

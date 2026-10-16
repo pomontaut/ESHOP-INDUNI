@@ -19,7 +19,7 @@ class OrderMailer < ApplicationMailer
       headers["Disposition-Notification-To"] = read_receipt_to
       headers["Return-Receipt-To"] = read_receipt_to
     end
-    mail(to: to.presence || @order.supplier.email, cc: cc.presence, subject: subject.presence || "Commande #{@order.number}")
+    mail(to: to.presence || @order.supplier.order_emails, cc: cc.presence, subject: subject.presence || "Commande #{@order.number}")
   end
 
   # Relance d'une commande restée sans accusé de réception fournisseur (voir
@@ -30,12 +30,12 @@ class OrderMailer < ApplicationMailer
     @body  = OrderRelance.body(order)
     @reception_url = Rails.application.routes.url_helpers.order_reception_url(@order.reception_token, host: default_url_options[:host])
     cc = [ order.sent_cc.presence, order.user&.email ].compact.join(", ").split(/\s*,\s*/).uniq.join(", ").presence
-    mail(to: order.sent_to.presence || order.supplier.email, cc: cc, subject: OrderRelance.subject(order))
+    mail(to: order.sent_to.presence || order.supplier.order_emails, cc: cc, subject: OrderRelance.subject(order))
   end
 
   def send_order_plain(order)
     @order = order
-    mail(to: @order.supplier.email, subject: "Commande #{@order.number}")
+    mail(to: @order.supplier.order_emails, subject: "Commande #{@order.number}")
   end
 
   # Notifies every admin when a user re-submits a previously generated order
@@ -58,7 +58,7 @@ class OrderMailer < ApplicationMailer
     @order = order
     @user  = order.user
     mail(
-      to:      order.sent_to.presence || order.supplier&.email,
+      to:      order.sent_to.presence || order.supplier&.order_emails,
       cc:      @user&.email,
       subject: "Annulation de la commande N° #{order.number}"
     )

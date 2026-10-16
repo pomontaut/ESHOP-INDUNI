@@ -44,7 +44,7 @@ class Api::OrdersController < ApplicationController
   # confirmation côté client.
   def relance_preview
     order = find_own_order
-    render json: { subject: OrderRelance.subject(order), body: OrderRelance.body(order), to: order.sent_to.presence || order.supplier&.email }
+    render json: { subject: OrderRelance.subject(order), body: OrderRelance.body(order), to: order.sent_to.presence || order.supplier&.order_emails }
   rescue ActiveRecord::RecordNotFound
     render json: { error: "Commande introuvable" }, status: :not_found
   end
@@ -333,7 +333,7 @@ class Api::OrdersController < ApplicationController
         needs_approval: false,
         order_id:       order.id,
         order_number:   order.number,
-        supplier_email: to.presence || supplier.email,
+        supplier_email: to.presence || supplier.order_emails,
         test_mode:      test_mode,
         supplier_name:  supplier.name
       }, status: :ok

@@ -40,4 +40,19 @@ class SupplierTest < ActiveSupport::TestCase
     supplier = Supplier.new(email: "defaut@example.ch")
     assert_equal "defaut@example.ch", supplier.email_for_canton(nil)
   end
+
+  test "order_emails combines the main (or canton) address with the optional second one, without duplicates" do
+    supplier = Supplier.new(name: "Deux adresses", email: "commandes@f.ch", email_vaud: "vaud@f.ch", email_secondaire: "Compta@f.ch")
+    assert_equal "commandes@f.ch, Compta@f.ch", supplier.order_emails
+    assert_equal "vaud@f.ch, Compta@f.ch", supplier.order_emails("VAUD")
+    assert_equal "commandes@f.ch", Supplier.new(name: "Une adresse", email: "commandes@f.ch").order_emails
+    assert_equal "commandes@f.ch", Supplier.new(name: "Doublon", email: "commandes@f.ch", email_secondaire: "COMMANDES@f.ch").order_emails
+    assert_nil Supplier.new(name: "Aucune").order_emails
+  end
+
+  test "email_secondaire must look like an e-mail address" do
+    assert_not Supplier.new(name: "X", email_secondaire: "pas-une-adresse").valid?
+    assert Supplier.new(name: "X", email_secondaire: "ok@f.ch").valid?
+    assert Supplier.new(name: "X", email_secondaire: "").valid?
+  end
 end

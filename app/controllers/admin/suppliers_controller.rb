@@ -34,7 +34,7 @@ class Admin::SuppliersController < ApplicationController
     all_sectors = params[:supplier][:all_sectors] == "1"
 
     permitted = params.require(:supplier).permit(
-      :email, :email_geneve, :email_vaud, :email_valais, :email_fribourg, :email_jura,
+      :email, :email_secondaire, :email_geneve, :email_vaud, :email_valais, :email_fribourg, :email_jura,
       :approval_threshold, :responsable_achat,
       visible_cantons: [], visible_sectors: []
     )

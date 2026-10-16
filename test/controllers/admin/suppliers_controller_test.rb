@@ -52,4 +52,12 @@ class Admin::SuppliersControllerTest < ActionDispatch::IntegrationTest
     get admin_suppliers_url
     assert_redirected_to root_path
   end
+
+  test "update persists the second order e-mail address" do
+    supplier = Supplier.create!(name: "Fournisseur 2 adresses", email: "principal@f.ch")
+    patch admin_supplier_url(supplier), params: { supplier: { email: "principal@f.ch", email_secondaire: "second@f.ch" } }
+    assert_equal "second@f.ch", supplier.reload.email_secondaire
+    get admin_suppliers_url
+    assert_includes response.body, "second@f.ch"
+  end
 end

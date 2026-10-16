@@ -74,6 +74,11 @@
             <%= f.label :email, "E-mail par défaut (tous cantons)", class: "form-label fw-semibold" %>
             <%= f.email_field :email, class: "form-control" %>
           </div>
+          <div class="mb-3">
+            <%= f.label :email_secondaire, "2e adresse e-mail (optionnelle)", class: "form-label fw-semibold" %>
+            <%= f.email_field :email_secondaire, class: "form-control", placeholder: "ex. deuxieme.contact@fournisseur.ch" %>
+            <div class="form-text">Chaque bon de commande part aux deux adresses (principale ou spécifique au canton du chantier, + celle-ci).</div>
+          </div>
           <p class="text-muted small mb-2">Laisser vide sauf si ce fournisseur a une adresse différente selon le canton :</p>
           <div class="row g-3">
             <% Supplier::CANTONS.each do |canton| %>

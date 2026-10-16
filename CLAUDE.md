@@ -118,6 +118,16 @@ catalog silently invisible to users with any manual restriction.
   transport logic, not just Canplast). Confidential-pricing suppliers must
   keep masking `extra_charges` the same way as the merchandise total.
 
+## Fournisseur : 2 adresses e-mail de commande
+
+`Supplier#email_secondaire` (Admin > Fournisseurs, optionnelle) s'ajoute à l'adresse
+principale **ou** à celle du canton du chantier : `Supplier#order_emails(canton)`
+= destinataires séparés par une virgule, utilisé par `OrderMailer` (envoi,
+relance), `Api::OrdersController` et — côté SPA — `supplierOrderEmailInduni()`
+(`supplierDefaultEmails` + `supplierExtraEmails` de `/api/me`) pour pré-remplir le
+champ « À » (modifiable) et pour la sélection multi-fournisseurs. Le bon de
+commande PDF affiche les deux adresses.
+
 ## Plusieurs personnes par rôle sur un chantier (gros chantiers)
 
 La personne « principale » (technicien, contremaître, chef d'équipe, contact

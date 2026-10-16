@@ -42,6 +42,15 @@ class Supplier < ApplicationRecord
     "JURA"     => :email_jura
   }.freeze
 
+  EMAIL_FORMAT = /\A[^@\s,]+@[^@\s,]+\.[^@\s,]+\z/
+  validates :email_secondaire, format: { with: EMAIL_FORMAT, message: "n'est pas une adresse e-mail valide" }, allow_blank: true
+
+  # Destinataires d'une commande : adresse principale (ou celle du canton du
+  # chantier) + 2e adresse éventuelle, séparées par une virgule.
+  def order_emails(canton = nil)
+    [ email_for_canton(canton), email_secondaire ].map { |e| e.to_s.strip }.reject(&:blank?).uniq(&:downcase).join(", ").presence
+  end
+
   def email_for_canton(canton)
     column = EMAIL_COLUMN_BY_CANTON[canton]
     (column && public_send(column).presence) || email

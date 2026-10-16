@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_16_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_16_140000) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -230,6 +230,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_130000) do
     t.string "email_fribourg"
     t.string "email_geneve"
     t.string "email_jura"
+    t.string "email_secondaire"
     t.string "email_valais"
     t.string "email_vaud"
     t.string "fax"

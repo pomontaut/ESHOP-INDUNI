@@ -2330,6 +2330,14 @@ function effectivePriceInduni(item,chantierNom){
 // si le chantier tapé correspond exactement à un chantier connu avec un
 // canton renseigné, et si ce fournisseur a une adresse spécifique pour ce
 // canton ; sinon on garde l'e-mail par défaut.
+// Destinataire(s) du bon de commande : adresse du canton ou par défaut, + 2e adresse
+// éventuelle (Admin > Fournisseurs), séparées par une virgule.
+function supplierOrderEmailInduni(supplier,nomChantier){
+  const perms=window._userPerms||{};
+  const base=cantonSupplierEmailInduni(supplier,nomChantier)||(perms.supplierDefaultEmails&&perms.supplierDefaultEmails[supplier])||(SUPPLIER_INFO[supplier]&&SUPPLIER_INFO[supplier].email)||'';
+  const extra=(perms.supplierExtraEmails&&perms.supplierExtraEmails[supplier])||'';
+  const seen=new Set(); return [base,extra].filter(function(e){const k=String(e||'').trim().toLowerCase();if(!k||seen.has(k))return false;seen.add(k);return true;}).join(', ');
+}
 function cantonSupplierEmailInduni(supplier,nomChantier){
   const c=(window._chantiers||[]).find(x=>x.nom===nomChantier);
   const canton=c&&c.canton;
@@ -2396,7 +2404,7 @@ ${_modifyingOrderNumber?`<div style="text-align:center;color:#c00000;font-weight
   <div class="hcol">
     <div class="htitle">FOURNISSEUR</div>
     <div class="cname">${esc(supplier==='HG COMMERCIALE'?'HG Commerciale':supplier)}</div>
-    ${(()=>{const info=SUPPLIER_INFO[supplier]||{}; const realEmail=(window._userPerms&&window._userPerms.supplierDefaultEmails&&window._userPerms.supplierDefaultEmails[supplier])||info.email; const addr=[info.address,[info.postal_code,info.city].filter(Boolean).join(' ')].filter(Boolean).join('<br>'); return `${addr?`<div class="ir"><span class="il">Adresse :</span></div><div class="ir" style="padding-left:10px">${addr}</div>`:''}${realEmail?`<div class="ir"><span class="il">Mail :</span> ${esc(realEmail)}</div>`:''}${info.phone?`<div class="ir"><span class="il">Tél :</span> ${esc(info.phone)}</div>`:''}`;})()}
+    ${(()=>{const info=SUPPLIER_INFO[supplier]||{}; const realEmail=[(window._userPerms&&window._userPerms.supplierDefaultEmails&&window._userPerms.supplierDefaultEmails[supplier])||info.email,(window._userPerms&&window._userPerms.supplierExtraEmails&&window._userPerms.supplierExtraEmails[supplier])].filter(Boolean).join(', '); const addr=[info.address,[info.postal_code,info.city].filter(Boolean).join(' ')].filter(Boolean).join('<br>'); return `${addr?`<div class="ir"><span class="il">Adresse :</span></div><div class="ir" style="padding-left:10px">${addr}</div>`:''}${realEmail?`<div class="ir"><span class="il">Mail :</span> ${esc(realEmail)}</div>`:''}${info.phone?`<div class="ir"><span class="il">Tél :</span> ${esc(info.phone)}</div>`:''}`;})()}
     ${supplier==='HG COMMERCIALE'?`<div class="ir"><span class="il">Marchand :</span> HG Commerciale</div>`:''}
   </div>
 </div>
@@ -3967,7 +3975,7 @@ async function sendOrderByEmail(e) {
   };
 
   document.getElementById('confirmOrderNumber').textContent = no;
-  document.getElementById('confirmSupplierEmail').value = cantonSupplierEmailInduni(supplier, chantier) || (window._userPerms && window._userPerms.supplierDefaultEmails && window._userPerms.supplierDefaultEmails[supplier]) || (SUPPLIER_INFO[supplier] && SUPPLIER_INFO[supplier].email) || '';
+  document.getElementById('confirmSupplierEmail').value = supplierOrderEmailInduni(supplier, chantier);
   document.getElementById('confirmCcEmail').value = chantierTechnicienEmail(chantier);
   if (window._userPerms && window._userPerms.testRecipient) { document.getElementById('confirmSupplierEmail').value = window._userPerms.testRecipient; document.getElementById('confirmCcEmail').value = ''; }
   document.getElementById('confirmSubject').value = 'Commande ' + no;
@@ -4855,7 +4863,7 @@ async function smartSend(){
   // Destinataires vérifiés AVANT d'envoyer quoi que ce soit.
   const emails={}, missing=[];
   groups.forEach(g=>{
-    const e=testTo||cantonSupplierEmailInduni(g.supplier,chantier)||((window._userPerms.supplierDefaultEmails||{})[g.supplier])||(SUPPLIER_INFO[g.supplier]&&SUPPLIER_INFO[g.supplier].email)||'';
+    const e=testTo||supplierOrderEmailInduni(g.supplier,chantier);
     if(!e) missing.push(g.supplier); else emails[g.supplier]=e;
   });
   if(missing.length){alert('Aucune adresse e-mail de commande pour : '+missing.join(', ')+'.\nRenseignez-la dans Admin > Fournisseurs.');resetBtn();return;}
