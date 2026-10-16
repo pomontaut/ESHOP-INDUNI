@@ -15,6 +15,7 @@ class Api::SessionsController < ApplicationController
         real_admin:        current_user.admin?,
         test_profile:      (test_profile if dev_mode),
         dev_mode:          dev_mode,
+        is_owner:          User::PERMANENT_ADMIN_EMAILS.include?(current_user.email.to_s.downcase),
         testRecipient:     (Api::TestProfilesController::TEST_RECIPIENT if test_profile),
         admin:             current_user.admin?,
         full_name:         current_user.full_name,

@@ -1,0 +1,33 @@
+<div class="container py-4" style="max-width:820px">
+  <h1 class="h3 mb-3">Admin — Commandes passées</h1>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <p class="mb-2"><b><%= @count %></b> commande(s) enregistrée(s) (<%= @line_count %> ligne(s)).
+        Dernier numéro attribué : <b><%= @last_number ? "ESHOP_INDUNI_#{@last_number.to_s.rjust(2, '0')}" : "—" %></b>.</p>
+      <% if @by_supplier.any? %>
+        <ul class="small text-muted mb-3">
+          <% @by_supplier.each do |name, n| %><li><%= name %> : <%= n %></li><% end %>
+        </ul>
+      <% end %>
+      <%= link_to "⬇ Exporter toutes les commandes (CSV) — à faire avant de vider", export_admin_orders_path, class: "btn btn-outline-primary" %>
+    </div>
+  </div>
+
+  <div class="card border-danger">
+    <div class="card-header bg-danger text-white fw-bold">⚠️ Vider les commandes — irréversible</div>
+    <div class="card-body">
+      <p>Supprime <b>toutes</b> les commandes et leurs lignes (Dashboard et Analyse achat inclus). Les fournisseurs, articles, chantiers et utilisateurs ne sont pas touchés. Aucun e-mail n'est envoyé.</p>
+      <%= form_with url: purge_admin_orders_path, method: :delete, data: { turbo: false } do |f| %>
+        <div class="form-check mb-3">
+          <%= check_box_tag :reset_numbering, "1", false, class: "form-check-input" %>
+          <%= label_tag :reset_numbering, "Repartir de ESHOP_INDUNI_01", class: "form-check-label" %>
+          <div class="form-text">Déconseillé si des commandes réelles ont déjà été envoyées à des fournisseurs : ils reconnaîtraient un numéro déjà reçu. Par défaut, la numérotation continue.</div>
+        </div>
+        <%= label_tag :confirmation, "Pour confirmer, tapez : #{@phrase}", class: "form-label fw-semibold" %>
+        <%= text_field_tag :confirmation, "", class: "form-control mb-3", autocomplete: "off", placeholder: @phrase %>
+        <%= submit_tag "Vider les #{@count} commande(s)", class: "btn btn-danger", disabled: @count.zero? %>
+      <% end %>
+    </div>
+  </div>
+</div>

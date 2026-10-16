@@ -19,7 +19,7 @@ class OrderLinesController < ApplicationController
   private
 
   def set_order
-    @order = Order.find(params[:order_id])
+    @order = Order.visible_to(current_user).find(params[:order_id])
   end
 
   def order_line_params

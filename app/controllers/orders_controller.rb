@@ -2,7 +2,7 @@ class OrdersController < ApplicationController
   before_action :set_order, only: [ :show, :edit, :update, :destroy, :send_to_supplier, :download_eml, :resubmit_approval ]
 
   def index
-    @orders = Order.all.includes(:supplier, :user)
+    @orders = Order.visible_to(current_user).includes(:supplier, :user)
   end
 
   def show
@@ -78,7 +78,7 @@ class OrdersController < ApplicationController
   private
 
   def set_order
-    @order = Order.find(params[:id])
+    @order = Order.visible_to(current_user).find(params[:id])
   end
 
   def order_params

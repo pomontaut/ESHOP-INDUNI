@@ -51,6 +51,11 @@
               <li class="nav-item">
                 <%= link_to "Admin chantiers", admin_chantiers_path, class: "nav-link" %>
               </li>
+              <% if User::PERMANENT_ADMIN_EMAILS.include?(current_user.email.to_s.downcase) %>
+              <li class="nav-item">
+                <%= link_to "Admin commandes", admin_orders_path, class: "nav-link" %>
+              </li>
+              <% end %>
             <% end %>
           </ul>
           <ul class="navbar-nav ms-auto">

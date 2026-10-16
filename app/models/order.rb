@@ -31,6 +31,31 @@ class Order < ApplicationRecord
   # elle reste néanmoins visible dans l'historique complet, avec une annotation.
   def excluded_from_reporting? = cancelled? || superseded?
 
+  # Nom du chantier saisi à la commande (stocké dans les notes, pas de clé
+  # étrangère : « Chantier: <nom> | Délai souhaité: … »).
+  def self.chantier_name_of(notes)
+    notes.to_s[/Chantier:\s*([^|]+)/, 1]&.strip
+  end
+
+  def chantier_name = self.class.chantier_name_of(notes)
+
+  def self.for_chantier_names(names)
+    wanted = names.to_set
+    ids = pluck(:id, :notes).filter_map { |id, notes| id if wanted.include?(chantier_name_of(notes)) }
+    where(id: ids)
+  end
+
+  # Commandes qu'un utilisateur a le droit de voir : toutes pour un admin,
+  # sinon uniquement celles des chantiers qui lui sont visibles
+  # (Chantier.visible_to : e-mail du fiche chantier, secteur, ou affectation
+  # explicite Admin > Utilisateurs), quel que soit l'auteur de la commande.
+  def self.visible_to(user)
+    return all if user&.admin?
+    return none unless user
+
+    for_chantier_names(Chantier.visible_to(user).pluck(:nom))
+  end
+
   def total
     order_lines.sum(&:subtotal)
   end
@@ -71,6 +96,7 @@ class Order < ApplicationRecord
   def self.next_number
     last_seq = where("number LIKE 'ESHOP_INDUNI_%'").pluck(:number)
                  .filter_map { |n| n[/\AESHOP_INDUNI_(\d+)\z/, 1]&.to_i }.max || 0
+    last_seq = [ last_seq, OrderNumberFloor.value ].max
     "ESHOP_INDUNI_#{(last_seq + 1).to_s.rjust(2, '0')}"
   end
 

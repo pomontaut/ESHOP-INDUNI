@@ -41,6 +41,9 @@ Rails.application.routes.draw do
     end
     resources :chantiers, only: [ :index, :new, :create, :edit, :update, :destroy ]
     resources :suppliers, only: [ :index, :edit, :update ]
+    resources :orders, only: [ :index ] do
+      collection { get :export; delete :purge }
+    end
     resources :products, only: [ :index ] do
       collection { get :export }
     end

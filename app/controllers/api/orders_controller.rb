@@ -62,7 +62,9 @@ class Api::OrdersController < ApplicationController
   end
 
   def index
-    orders = current_user&.admin? ? Order.all : Order.where(user: current_user)
+    # Dashboard : un utilisateur ne voit que les commandes des chantiers qui lui
+    # sont visibles/affectés (Order.visible_to), quel que soit l'auteur.
+    orders = Order.visible_to(current_user)
     orders = orders.includes(:supplier, :order_lines, :user, :revisions, :modifies_order).order(created_at: :desc).limit(100)
     # Prix net confidentiel (fournisseur sous accord de confidentialité, ex.
     # Sika) : seule l'Analyse achat (accès restreint aux Achats) doit voir le

@@ -53,4 +53,40 @@ class OrderTest < ActiveSupport::TestCase
     assert order.cancelled?
     assert order.excluded_from_reporting?
   end
+
+  test "visible_to shows a user only the orders of the chantiers assigned to them, whoever placed the order" do
+    supplier = Supplier.create!(name: "Fournisseur visibilité")
+    user = users(:two)
+    user.update!(admin: false, chantier_access_scope: "own")
+    other = users(:one)
+    assigned = Chantier.create!(nom: "12345-Affecté")
+    Chantier.create!(nom: "99999-Autre")
+    ChantierAssignment.create!(user: user, chantier: assigned)
+
+    on_assigned_by_other = Order.create!(supplier: supplier, user: other, notes: "Chantier: 12345-Affecté | Délai souhaité: 20.10.2026")
+    own_on_other_chantier = Order.create!(supplier: supplier, user: user, notes: "Chantier: 99999-Autre | Délai souhaité: 20.10.2026")
+    Order.create!(supplier: supplier, user: other, notes: "Chantier: 99999-Autre | Délai souhaité: 20.10.2026")
+
+    visible = Order.visible_to(user).to_a
+    assert_equal [ on_assigned_by_other ], visible
+    assert_not_includes visible, own_on_other_chantier
+    assert_equal Order.count, Order.visible_to(other.tap { |u| u.update!(admin: true) }).count
+    assert_equal 0, Order.visible_to(nil).count
+  end
+
+  test "next_number keeps counting after orders are purged (numbering floor)" do
+    supplier = Supplier.create!(name: "Fournisseur numérotation")
+    OrderLine.delete_all
+    Order.delete_all
+    3.times { Order.create!(supplier: supplier, notes: "Chantier: X | Délai souhaité: Y") }
+    assert_equal "ESHOP_INDUNI_04", Order.next_number
+
+    OrderNumberFloor.raise_to!(3)
+    OrderLine.delete_all
+    Order.delete_all
+    assert_equal "ESHOP_INDUNI_04", Order.next_number
+
+    OrderNumberFloor.reset!
+    assert_equal "ESHOP_INDUNI_01", Order.next_number
+  end
 end

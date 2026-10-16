@@ -24,6 +24,18 @@
     <input type="text" id="chantierAddInput" class="form-control" list="chantierAddList" placeholder="Rechercher un chantier par nom ou numéro…" autocomplete="off">
     <button type="button" id="chantierAddBtn" class="btn btn-primary">Ajouter</button>
   </div>
+  <button type="button" id="chantierBrowseToggle" class="btn btn-outline-secondary btn-sm mt-2">📋 Parcourir la liste complète des chantiers (<%= @all_chantiers.size %>)</button>
+  <div id="chantierBrowse" class="border rounded mt-2 p-2" style="display:none">
+    <input type="text" id="chantierBrowseFilter" class="form-control form-control-sm mb-2" placeholder="Filtrer (nom, numéro…)" autocomplete="off">
+    <div class="small text-muted mb-1"><span id="chantierBrowseCount"></span> — cochez pour affecter, décochez pour retirer.</div>
+    <div id="chantierBrowseList" style="max-height:320px;overflow:auto">
+      <% @all_chantiers.each do |id, nom| %>
+        <label class="py-1 border-bottom" data-browse-row data-browse-text="<%= I18n.transliterate(nom.to_s).downcase %>" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" class="form-check-input mt-0" data-browse-id="<%= id %>" data-browse-nom="<%= nom %>"> <span><%= nom %></span>
+        </label>
+      <% end %>
+    </div>
+  </div>
   <datalist id="chantierAddList">
     <% @all_chantiers.each do |_id, nom| %><option value="<%= nom %>"></option><% end %>
   </datalist>
@@ -44,9 +56,34 @@
     span.appendChild(document.createTextNode(nom+(roles&&roles.length?' ('+roles.join(', ')+')':'')+' '));
     var input=document.createElement('input'); input.type='hidden'; input.name='user[assigned_chantier_ids][]'; input.value=id; span.appendChild(input);
     var btn=document.createElement('button'); btn.type='button'; btn.className='btn-close btn-close-white'; btn.style.fontSize='9px'; btn.setAttribute('aria-label','Retirer'); btn.setAttribute('data-remove-chantier',''); span.appendChild(btn);
-    chips.appendChild(span); return true;
+    span.appendChild(btn);
+    chips.appendChild(span); if(typeof syncBrowse==='function') syncBrowse(); return true;
   }
-  chips.addEventListener('click',function(e){ var b=e.target.closest('[data-remove-chantier]'); if(b) b.parentNode.remove(); });
+  chips.addEventListener('click',function(e){ var b=e.target.closest('[data-remove-chantier]'); if(b){ b.parentNode.remove(); syncBrowse(); } });
+  // Liste complète : cases synchronisées avec les pastilles ci-dessus.
+  var browse=document.getElementById('chantierBrowse'), bList=document.getElementById('chantierBrowseList');
+  function syncBrowse(){
+    bList.querySelectorAll('input[data-browse-id]').forEach(function(cb){ cb.checked=has(cb.getAttribute('data-browse-id')); });
+    filterBrowse();
+  }
+  function norm(t){ return t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
+  function filterBrowse(){
+    var words=norm(document.getElementById('chantierBrowseFilter').value).split(/\s+/).filter(Boolean), shown=0, sel=0;
+    bList.querySelectorAll('[data-browse-row]').forEach(function(row){
+      var t=row.getAttribute('data-browse-text'), ok=words.every(function(w){return t.indexOf(w)!==-1;});
+      row.style.display=ok?'flex':'none'; if(ok) shown++;
+    });
+    sel=chips.querySelectorAll('[data-chantier-id]').length;
+    document.getElementById('chantierBrowseCount').textContent=shown+' affiché(s) · '+sel+' affecté(s)';
+  }
+  document.getElementById('chantierBrowseToggle').addEventListener('click',function(){ browse.style.display=browse.style.display==='none'?'block':'none'; syncBrowse(); });
+  document.getElementById('chantierBrowseFilter').addEventListener('input',filterBrowse);
+  bList.addEventListener('change',function(e){
+    var cb=e.target.closest('input[data-browse-id]'); if(!cb) return;
+    var id=cb.getAttribute('data-browse-id');
+    if(cb.checked) addChip(id,cb.getAttribute('data-browse-nom')); else { var chip=chips.querySelector('[data-chantier-id="'+id+'"]'); if(chip) chip.remove(); }
+    filterBrowse();
+  });
   document.getElementById('chantierAddToggle').addEventListener('click',function(){
     var row=document.getElementById('chantierAddRow'); row.style.display=row.style.display==='none'?'flex':'none';
     if(row.style.display==='flex') document.getElementById('chantierAddInput').focus();

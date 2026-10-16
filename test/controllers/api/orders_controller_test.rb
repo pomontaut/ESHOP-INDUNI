@@ -310,6 +310,7 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     delete logout_url
     basic = users(:two)
     basic.update!(admin: false, can_view_analysis: false)
+    ChantierAssignment.create!(user: basic, chantier: Chantier.create!(nom: "X"))
     post login_url, params: { email: basic.email, password: "password123" }
 
     get api_orders_url
@@ -729,5 +730,21 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert JSON.parse(response.body)["needs_approval"]
     assert_equal "pomontaut@induni.ch", Order.order(:id).last.approver_email
+  end
+
+  test "index (dashboard) only lists orders of the chantiers the user is assigned to" do
+    supplier = Supplier.create!(name: "Fournisseur dashboard")
+    user = users(:two)
+    user.update!(admin: false, chantier_access_scope: "own")
+    assigned = Chantier.create!(nom: "12345-Affecté")
+    ChantierAssignment.create!(user: user, chantier: assigned)
+    Order.create!(supplier: supplier, user: users(:one), notes: "Chantier: 12345-Affecté | Délai souhaité: 20.10.2026")
+    Order.create!(supplier: supplier, user: user, notes: "Chantier: 99999-Pas affecté | Délai souhaité: 20.10.2026")
+
+    delete logout_url
+    post login_url, params: { email: user.email, password: "password123" }
+    get api_orders_url
+    chantiers = JSON.parse(response.body).map { |o| o["chantier"] }
+    assert_equal [ "12345-Affecté" ], chantiers
   end
 end

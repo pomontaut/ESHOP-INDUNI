@@ -118,6 +118,24 @@ catalog silently invisible to users with any manual restriction.
   transport logic, not just Canplast). Confidential-pricing suppliers must
   keep masking `extra_charges` the same way as the merchandise total.
 
+## Visibilité des commandes par chantier / remise à zéro
+
+**Un utilisateur non-admin ne voit que les commandes des chantiers qui lui sont
+visibles** (`Order.visible_to(user)` = `Chantier.visible_to` : e-mail sur la fiche
+chantier, secteur, ou affectation explicite Admin > Utilisateurs > « Chantiers »),
+quel que soit l'auteur de la commande — et plus ses propres commandes sur d'autres
+chantiers. Appliqué partout : Dashboard (`Api::OrdersController#index`) ET pages
+serveur `/orders` + `/orders/:id/order_lines` (qui étaient ouvertes à tout
+utilisateur connecté). Le chantier d'une commande n'a pas de clé étrangère : il est
+lu dans `notes` (« Chantier: <nom> | … »), voir `Order.chantier_name_of`.
+`Api::OrdersController#create` n'impose pas (encore) que le chantier saisi soit
+l'un des siens. Reste ouvert à tout utilisateur connecté : `/products`, `/suppliers`
+(CRUD historique, prix y compris confidentiels) — à restreindre.
+Admin > Commandes (`Admin::OrdersController`, propriétaire seulement =
+`User::PERMANENT_ADMIN_EMAILS`) : export CSV puis « VIDER LES COMMANDES » (phrase à
+taper). `OrderNumberFloor` garde la numérotation ESHOP_INDUNI_nn après purge (case
+« repartir à 01 » en option).
+
 ## HGC : « Enlèvement dépôt » (production)
 
 Case `#hgcPickupToggle` dans le panier (visible seulement pour HG COMMERCIALE,
