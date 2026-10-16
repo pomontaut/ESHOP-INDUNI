@@ -178,6 +178,18 @@ n'est jamais réattribué. « Envoyer à… » (Dashboard, `POST /api/orders/:id
 commande déjà envoyée à une autre adresse + Cci optionnel à l'utilisateur, sans toucher
 à l'historique d'envoi ; redirigé vers l'adresse de test en environnement test.
 
+## Photos des articles HGC (récupérées sur www.hgc.ch)
+
+460 des 614 articles HGC ont une photo (`image` = `/images/products/hgc-<id média>.jpg`, 479 px,
+213 fichiers : les variantes d'un même produit partagent la photo). Source : l'API
+publique de recherche de HGC, `GET https://www.hgc.ch/api/search/autocomplete?term=<n° article>`
+(renvoie `image.medias` en 240/479/958 px) ; script réutilisable `script/fetch_hgc_images.py`
+(args : catalogue JSON, fichier de résultats, dossier de destination, limite) qui n'écrit
+que les articles SANS image, 0,3 s entre requêtes. 114 articles absents du site public
+HGC restent sans photo (icône grue). Un nouvel article HGC : relancer le script puis
+renseigner `image` dans `catalog_products.json`. Les photos appartiennent à HGC (usage
+interne d'un client).
+
 ## Leuba HIAG : bois au PAQUET (pas au m³)
 
 Les 8 articles Leuba tarifés au m³ (carrelets/planches de coffrage, plateau bois C24)
