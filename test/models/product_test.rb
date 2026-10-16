@@ -12,4 +12,13 @@ class ProductTest < ActiveSupport::TestCase
     assert_equal [ [ "Coffrage & Étaiement", "Coffrage", "lot" ] ], items.map { |i| [ i["famille"], i["sousFamille"], i["unite"] ] }.uniq
     assert_match(/10x10mm L100m/, items.first["designation"])
   end
+
+  test "seed catalog carries the HGC goutte pendante profile (botte de 40 pces = 100 m) next to the triangular profiles" do
+    items = JSON.parse(File.read(Rails.root.join("db/seed_data/catalog_products.json"))).select { |i| i["catalog"] == "HG COMMERCIALE" }
+    goutte = items.find { |i| i["article"] == "100013624" }
+    assert_equal "Profil goutte pendante plastique 12mm L250cm 40pces", goutte["designation"]
+    assert_equal [ 65.35, "botte", 8.4 ], [ goutte["prix"], goutte["unite"], goutte["poids"] ]
+    assert_equal [ "Coffrage & Étaiement", "Coffrage", "Profils plastique" ], [ goutte["famille"], goutte["sousFamille"], goutte["sousSousFamille"] ]
+    assert_equal 4, items.count { |i| i["sousSousFamille"] == "Profils plastique" }
+  end
 end
