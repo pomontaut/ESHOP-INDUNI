@@ -135,6 +135,8 @@ class Api::OrdersController < ApplicationController
     conducteur_travaux = ConducteurTravaux.sanitize(params[:conducteur])
     # « Enlèvement dépôt » : uniquement pour HG COMMERCIALE (Induni récupère la
     # commande au dépôt, aucun frais de livraison).
+    # Environnement test (admin) : voir Api::TestProfilesController::TEST_RECIPIENT.
+    test_mode          = Api::TestProfilesController.active_profile(session, current_user).present?
     pickup             = supplier_name == "HG COMMERCIALE" && ActiveModel::Type::Boolean.new.cast(params[:pickup]) == true
     # Frais annexes (transport, RPLP, grue, remise de volume...) déjà calculés
     # et affichés côté client (transportLineItemsInduni dans catalogue.html) :
@@ -232,6 +234,7 @@ class Api::OrdersController < ApplicationController
         end
       end
 
+    approver_email = Api::TestProfilesController::TEST_RECIPIENT if test_mode && needs_approval
     approval_status = needs_approval ? "pending_approval" : "approved"
     order_status    = needs_approval ? "pending_approval" : "sent"
 
@@ -291,6 +294,10 @@ class Api::OrdersController < ApplicationController
       # step instead of always using the generic defaults.
       to = sanitize_email_list(params[:to])
       cc = sanitize_email_list(params[:cc])
+      if test_mode
+        to = Api::TestProfilesController::TEST_RECIPIENT
+        cc = nil
+      end
       # The order's author is always copied — even if they clear the field —
       # so a copy always lands in their own mailbox as proof the order was
       # actually sent (combined with the read receipt below, proof it was
@@ -299,6 +306,7 @@ class Api::OrdersController < ApplicationController
       cc_addresses << current_user.email if current_user&.email.present?
       cc = cc_addresses.uniq.join(", ").presence
       subject = params[:subject].to_s.strip.presence
+      subject = "[TEST] #{subject || "Commande #{order.number}"}" if test_mode && !subject.to_s.start_with?("[TEST]")
       # The "Vérifier et envoyer" step pre-fills the subject with a number
       # previewed via next_number *before* the order actually exists (so the
       # user can see/edit the real-looking subject up front) — if another
@@ -324,6 +332,7 @@ class Api::OrdersController < ApplicationController
         order_id:       order.id,
         order_number:   order.number,
         supplier_email: to.presence || supplier.email,
+        test_mode:      test_mode,
         supplier_name:  supplier.name
       }, status: :ok
     end

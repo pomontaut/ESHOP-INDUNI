@@ -692,4 +692,42 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_not order.pickup?
     assert_equal 160.0, order.grand_total
   end
+
+  test "in the admin test environment every order e-mail goes to the test recipient only, never to the supplier" do
+    post api_test_profile_url, params: { profile: "Développement" }
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "20.10.2026", supplier: "HGC Test Fixture",
+      to: "vrai-fournisseur@exemple.ch", cc: "technicien@induni.ch",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+    }
+    assert_response :success
+    assert JSON.parse(response.body)["test_mode"]
+
+    mail = ActionMailer::Base.deliveries.last
+    assert_equal [ "pomontaut@induni.ch" ], mail.to
+    assert_not_includes Array(mail.cc), "technicien@induni.ch"
+    assert_match(/\A\[TEST\] /, mail.subject)
+  end
+
+  test "outside the test environment the supplier still receives the order" do
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "20.10.2026", supplier: "HGC Test Fixture",
+      to: "vrai-fournisseur@exemple.ch",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+    }
+    assert_response :success
+    assert_equal [ "vrai-fournisseur@exemple.ch" ], ActionMailer::Base.deliveries.last.to
+  end
+
+  test "in the test environment an approval request goes to the test recipient, not the real approver" do
+    users(:one).update!(order_limit: 5, approver_email: "vrai-approbateur@induni.ch")
+    post api_test_profile_url, params: { profile: "Développement" }
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "20.10.2026", supplier: "HGC Test Fixture",
+      items: [ { article: "ART-1", designation: "Article test", qty: 1, prix: 100.0 } ]
+    }
+    assert_response :success
+    assert JSON.parse(response.body)["needs_approval"]
+    assert_equal "pomontaut@induni.ch", Order.order(:id).last.approver_email
+  end
 end

@@ -162,6 +162,16 @@ scénarios + coût complet, flux, franco manquant, risques, robustesse (toléran
 `SMART_ROBUST_TOLERANCE` = 3 % [H]), plan d'action, KPI. Elle n'utilise que des
 données existantes ; ne jamais y inventer distance, OTIF ou capacité.
 
+**Environnement test = aucun e-mail au fournisseur.** `Api::OrdersController#create`
+force `to` = `Api::TestProfilesController::TEST_RECIPIENT` (pomontaut@induni.ch),
+supprime les copies (technicien…), préfixe l'objet « [TEST] » et redirige la
+demande d'approbation vers la même adresse, quel que soit le `to`/`cc` envoyé par
+le navigateur (profils Contremaître, Conducteur et Développement). Les commandes de
+test sont néanmoins enregistrées (Dashboard/Analyse). Dans la sélection
+multi-fournisseurs : date de livraison PAR commande (`SMART_DATES`), zone Soreval/
+Canplast modifiable, fournisseur imposé par ligne (`SMART_OVERRIDE`), quantités et
+retrait de lignes éditables dans la page.
+
 ## E-shops en test : Tinguely (VD) et SGTT (GE)
 
 Prestations d'aspiratrice/pompage/transport de déchets (4 articles chacun, dans

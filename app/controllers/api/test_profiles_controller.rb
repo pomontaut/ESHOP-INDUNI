@@ -11,6 +11,10 @@ class Api::TestProfilesController < ApplicationController
   # cours de développement (ex. sélection multi-fournisseurs), invisibles
   # pour tous les autres utilisateurs.
   DEV_PROFILE = "Développement".freeze
+  # Environnement test : AUCUN e-mail de commande ne part au fournisseur (ni en
+  # copie au technicien / à l'approbateur réel) — tout est redirigé ici, côté
+  # serveur, quoi que le navigateur envoie (voir Api::OrdersController#create).
+  TEST_RECIPIENT = "pomontaut@induni.ch".freeze
   PROFILES = [ "Contremaître", "Conducteur de travaux", DEV_PROFILE ].freeze
 
   def self.active_profile(session, user)

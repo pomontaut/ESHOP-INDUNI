@@ -3968,6 +3968,7 @@ async function sendOrderByEmail(e) {
   document.getElementById('confirmOrderNumber').textContent = no;
   document.getElementById('confirmSupplierEmail').value = cantonSupplierEmailInduni(supplier, chantier) || (window._userPerms && window._userPerms.supplierDefaultEmails && window._userPerms.supplierDefaultEmails[supplier]) || (SUPPLIER_INFO[supplier] && SUPPLIER_INFO[supplier].email) || '';
   document.getElementById('confirmCcEmail').value = chantierTechnicienEmail(chantier);
+  if (window._userPerms && window._userPerms.testRecipient) { document.getElementById('confirmSupplierEmail').value = window._userPerms.testRecipient; document.getElementById('confirmCcEmail').value = ''; }
   document.getElementById('confirmSubject').value = 'Commande ' + no;
   document.getElementById('confirmBody').value = 'Bonjour,\n\nVeuillez trouver ci-joint le bon de commande.\n\n' + (pickup ? 'ENLÈVEMENT AU DÉPÔT : cette commande sera retirée par nos soins à votre dépôt (aucune livraison). Merci de la préparer pour la date indiquée.\n\n' : '') + 'Merci de bien vouloir nous faire parvenir votre confirmation de commande dans les plus brefs délais.\n\nRestant à votre disposition pour toute information complémentaire.\n\nCordialement\nINDUNI & Cie SA\nAvenue des Grandes-Communes 6\n1213 Petit-Lancy';
   const modifyNote = document.getElementById('confirmModifyNote');
@@ -4382,6 +4383,8 @@ let SMART_ON=false;
 let SMART_SEL=[];
 let SMART_FRESH=null; // Map "catalogue|article" -> produit frais (prix, unité, confidentialité)
 let SMART_PLAN=null;
+let SMART_OVERRIDE={}; // clé article -> fournisseur imposé manuellement (« modifier »)
+let SMART_DATES={};    // fournisseur -> date de livraison ISO propre à sa commande
 function smartLoad(){try{SMART_SEL=JSON.parse(localStorage.getItem(SMART_KEY)||'[]');if(!Array.isArray(SMART_SEL))SMART_SEL=[];}catch(e){SMART_SEL=[];}}
 function smartSave(){try{localStorage.setItem(SMART_KEY,JSON.stringify(SMART_SEL));}catch(e){}smartRefreshBar();}
 function smartKeyOf(p){return p.catalog+'|'+p.article;}
@@ -4523,6 +4526,9 @@ function smartBuildNeeds(){
       notes.push({sev:'info',msg:`« ${base.designation} » : aucun équivalent référencé — fournisseur imposé (${base.catalog}).`});
     }
     need.options=[...bySupplier.values()];
+    need.allOptions=need.options.slice();
+    const ov=SMART_OVERRIDE[s.key];
+    if(ov){const f=need.options.find(x=>x.supplier===ov);if(f){need.options=[f];need.overridden=true;}}
     if(need.options.length===0) continue;
     if(need.options.length===1) need.fixed=true;
     needs.push(need);
@@ -4633,7 +4639,7 @@ function smartScenarioStats(r,needs){
       if(l.product.stockStatus==='sur_demande') nowStock=false;
     });
   });
-  const mono=needs.filter(n=>n.options.length<2).length;
+  const mono=needs.filter(n=>(n.allOptions||n.options).length<2).length;
   const transport=r.total-merch;
   return {total:r.total,merch,transport,nSuppliers:r.nSuppliers,weight:w,wMissing,delay:nowStock?'stock / standard':'sur demande (à confirmer)',mono};
 }
@@ -4682,7 +4688,7 @@ function smartSupplyChainHtml(plan){
   }).join('');
   // Risques
   const risks=[];
-  const mono=needs.filter(n=>n.options.length<2);
+  const mono=needs.filter(n=>(n.allOptions||n.options).length<2);
   if(mono.length) risks.push(`${mono.length} article(s) sans fournisseur alternatif (dépendance mono-source) : ${mono.slice(0,4).map(n=>esc(n.base.designation)).join(' ; ')}${mono.length>4?'…':''}.`);
   const onDemand=[]; o.best.groups.forEach(g=>g.lines.forEach(l=>{if(l.product.stockStatus==='sur_demande') onDemand.push(l.product.designation);}));
   if(onDemand.length) risks.push(`${onDemand.length} article(s) « sur demande » : délai non garanti, risque d’immobilisation du chantier.`);
@@ -4701,7 +4707,7 @@ function smartSupplyChainHtml(plan){
   if(mono.length) actions.push('Faire référencer un équivalent pour les articles mono-source (Achats : liens d’équivalence exacts uniquement).');
   // KPI
   const ratio=st.merch>0?st.transport/st.merch*100:0;
-  const covered=needs.filter(n=>n.options.length>=2).length;
+  const covered=needs.filter(n=>(n.allOptions||n.options).length>=2).length;
   const kpi=[
     `Coût complet HT : ${fmt(st.total)}`,
     `Transport / marchandise : ${ratio.toFixed(1)}%`,
@@ -4735,10 +4741,35 @@ async function smartOpen(){
 function smartSetQty(key,v){
   const n=parseFloat(String(v).replace(',','.'));
   const s=SMART_SEL.find(x=>x.key===key); if(!s) return;
-  if(!isFinite(n)||n<=0){SMART_SEL=SMART_SEL.filter(x=>x.key!==key);} else s.qty=n;
+  if(!isFinite(n)||n<=0){delete SMART_OVERRIDE[key];SMART_SEL=SMART_SEL.filter(x=>x.key!==key);} else s.qty=n;
   smartSave(); smartRender(true);
 }
-function smartRemove(key){SMART_SEL=SMART_SEL.filter(x=>x.key!==key);smartSave();smartRender(true);}
+function smartRemove(key){delete SMART_OVERRIDE[key];SMART_SEL=SMART_SEL.filter(x=>x.key!==key);smartSave();smartRender(true);}
+function smartOverride(key,supplier){ if(supplier) SMART_OVERRIDE[key]=supplier; else delete SMART_OVERRIDE[key]; smartRender(true); }
+function smartResetOverrides(){ SMART_OVERRIDE={}; smartRender(true); }
+function smartSetDate(supplier,iso){ if(iso) SMART_DATES[supplier]=iso; else delete SMART_DATES[supplier]; }
+function smartApplyDateAll(){
+  const iso=(document.getElementById('smartDate')||{}).value; if(!iso){alert('Choisissez d’abord une date.');return;}
+  ((SMART_PLAN&&SMART_PLAN.opt&&SMART_PLAN.opt.best.groups)||[]).forEach(g=>{SMART_DATES[g.supplier]=iso;});
+  smartRender(true);
+}
+// Zones de livraison modifiables depuis cette page (mêmes états globaux que le panier classique).
+async function smartSorevalCommune(v){ const el=document.getElementById('sorevalCommune'); if(el) el.value=v; try{ await resolveSorevalZone(); }catch(e){} smartRender(true); }
+function smartSorevalZone(n){ sorevalResolvedZone=n?Object.assign({},SOREVAL_ZONES[Number(n)-1],{minutes:0,commune:'zone choisie manuellement'}):null; smartRender(true); }
+function smartCanplastCommune(v){ const el=document.getElementById('canplastCommune'); if(el) el.value=v; onCanplastCommuneInput(); smartRender(true); }
+function smartZoneHtml(supplier){
+  const st='font-size:12px;margin-top:6px;padding:6px 8px;background:#fff7ed;border-radius:8px';
+  if(supplier==='Soreval'){
+    const z=sorevalResolvedZone&&!sorevalResolvedZone.outOfZone?sorevalResolvedZone:null;
+    const ville=(smartChantierObj()||{}).ville||'';
+    return `<div style="${st}">📍 Zone de livraison Soreval : commune <input value="${esc((z&&z.commune&&z.minutes)?z.commune:ville)}" placeholder="Commune" style="width:150px" onchange='smartSorevalCommune(this.value)'> ou zone <select onchange="smartSorevalZone(this.value)"><option value="">—</option>${SOREVAL_ZONES.map(x=>`<option value="${x.zone}" ${z&&z.zone===x.zone?'selected':''}>Zone ${x.zone}</option>`).join('')}</select> <b style="color:${z?'#166534':'#b45309'}">${z?`✓ Zone ${z.zone}${z.minutes?` (~${z.minutes} min)`:''}`:'⚠️ non déterminée'}</b></div>`;
+  }
+  if(supplier==='Canplast'){
+    const z=canplastResolvedZone;
+    return `<div style="${st}">📍 Zone de livraison Canplast : commune <input list="canplastCommuneList" value="${esc(z?z.c:'')}" placeholder="Commune" style="width:200px" onchange='smartCanplastCommune(this.value)'> <b style="color:${z?'#166534':'#b45309'}">${z?`✓ ${esc(z.z)} — CHF ${z.t}`:'⚠️ non déterminée'}</b></div>`;
+  }
+  return '';
+}
 function smartClear(){if(!confirm('Vider toute la sélection ?'))return;SMART_SEL=[];smartSave();smartRender();render();}
 function smartRender(keepForm){
   const box=document.getElementById('smartBox');
@@ -4750,16 +4781,18 @@ function smartRender(keepForm){
     return;
   }
   const o=plan.opt, chantier=plan.chantier;
+  const testTo=window._userPerms&&window._userPerms.testRecipient;
   const th=x=>`style="text-align:left;padding:4px 6px;border-bottom:1px solid #dde3ec;font-size:12px;color:#697386;${x||''}"`;
   const td=x=>`style="padding:5px 6px;border-bottom:1px solid #eef2f7;font-size:13px;vertical-align:top;${x||''}"`;
   const selRows=SMART_SEL.map(s=>{const p=smartBaseProduct(s.key);if(!p)return '';return `<tr><td ${td()}><b>${esc(p.designation)}</b><div class="muted" style="font-size:11px">${esc(p.catalog)} · N° ${esc(p.article)}</div></td><td ${td('white-space:nowrap')}><input type="number" min="0" step="any" value="${s.qty}" style="width:80px" onchange='smartSetQty(${jsAttr(s.key)},this.value)'> ${esc(p.unite||'')}</td><td ${td()}><button onclick='smartRemove(${jsAttr(s.key)})' style="border:0;background:none;cursor:pointer;color:#b91c1c">✕</button></td></tr>`;}).join('');
   const groupsHtml=o.best.groups.slice().sort((a,b)=>a.supplier.localeCompare(b.supplier,'fr')).map(g=>{
     const conf=g.lines.some(l=>l.product.confidential);
     const lines=g.lines.map(l=>{
-      const alts=l.need.options.filter(x=>x.supplier!==g.supplier).map(x=>`${esc(x.supplier)} ${fmt(x.price)}`).join(' · ');
-      return `<tr><td ${td()}>${esc(l.product.designation)}<div class="muted" style="font-size:11px">N° ${esc(l.product.article)}${alts?` · autres : ${alts}`:''}</div></td><td ${td('white-space:nowrap')}>${l.qty} ${esc(l.product.unite||'')}</td><td ${td('text-align:right;white-space:nowrap')}>${conf?'🔒':fmt(l.prix)}</td><td ${td('text-align:right;white-space:nowrap')}><b>${conf?'🔒':fmt(l.prix*l.qty)}</b></td></tr>`;}).join('');
+      const all=l.need.allOptions||l.need.options;
+      const sel=(all.length>1&&!conf)?`<div style="margin-top:3px"><select onchange='smartOverride(${jsAttr(l.need.key)},this.value)' style="font-size:11px;max-width:100%"><option value="">✅ Auto (optimum)</option>${all.map(x=>`<option value="${esc(x.supplier)}" ${l.need.overridden&&x.supplier===g.supplier?'selected':''}>${esc(x.supplier)} — ${fmt(x.price)}</option>`).join('')}</select>${l.need.overridden?' <span style="font-size:11px;color:#b45309">modifié manuellement</span>':''}</div>`:'';
+      return `<tr><td ${td()}>${esc(l.product.designation)}<div class="muted" style="font-size:11px">N° ${esc(l.product.article)}</div>${sel}</td><td ${td('white-space:nowrap')}><input type="number" min="0" step="any" value="${l.qty}" style="width:64px" onchange='smartSetQty(${jsAttr(l.need.key)},this.value)'> ${esc(l.product.unite||'')}<button onclick='smartRemove(${jsAttr(l.need.key)})' title="Retirer" style="border:0;background:none;cursor:pointer;color:#b91c1c">✕</button></td><td ${td('text-align:right;white-space:nowrap')}>${conf?'🔒':fmt(l.prix)}</td><td ${td('text-align:right;white-space:nowrap')}><b>${conf?'🔒':fmt(l.prix*l.qty)}</b></td></tr>`;}).join('');
     const tr=g.cost.extra.map(c=>`<div style="display:flex;justify-content:space-between;font-size:12px"><span>${esc(c.label)}</span><b>${fmt(c.amount)}</b></div>`).join('');
-    return `<div class="smartGroup" data-supplier="${esc(g.supplier)}" style="border:1px solid #cfd8e6;border-radius:12px;padding:10px 12px;margin-top:10px"><div style="display:flex;justify-content:space-between"><b style="font-size:15px">📦 ${esc(g.supplier)}</b><b style="color:#f1642a">${conf?'🔒 Prix confidentiel':fmt(g.cost.total)}</b></div><table style="width:100%;border-collapse:collapse;margin-top:6px"><tr><th ${th()}>Article</th><th ${th()}>Qté</th><th ${th('text-align:right')}>PU HT</th><th ${th('text-align:right')}>Total HT</th></tr>${lines}</table><div style="margin-top:6px">${conf?'<div style="font-size:12px">Conformément à nos accords cadre</div>':`<div style="display:flex;justify-content:space-between;font-size:12px"><span>Sous-total marchandise</span><b>${fmt(g.cost.sub)}</b></div>${tr}`}</div></div>`;}).join('');
+    return `<div class="smartGroup" data-supplier="${esc(g.supplier)}" style="border:1px solid #cfd8e6;border-radius:12px;padding:10px 12px;margin-top:10px"><div style="display:flex;justify-content:space-between"><b style="font-size:15px">📦 ${esc(g.supplier)}</b><b style="color:#f1642a">${conf?'🔒 Prix confidentiel':fmt(g.cost.total)}</b></div><table style="width:100%;border-collapse:collapse;margin-top:6px"><tr><th ${th()}>Article</th><th ${th()}>Qté</th><th ${th('text-align:right')}>PU HT</th><th ${th('text-align:right')}>Total HT</th></tr>${lines}</table><div style="margin-top:6px">${conf?'<div style="font-size:12px">Conformément à nos accords cadre</div>':`<div style="display:flex;justify-content:space-between;font-size:12px"><span>Sous-total marchandise</span><b>${fmt(g.cost.sub)}</b></div>${tr}`}</div>${smartZoneHtml(g.supplier)}<div style="margin-top:8px;font-size:12px;font-weight:700">📅 Livraison de cette commande * <input type="date" min="${new Date().toISOString().slice(0,10)}" value="${esc(SMART_DATES[g.supplier]||'')}" onchange='smartSetDate(${jsAttr(g.supplier)},this.value)' style="padding:4px"></div></div>`;}).join('');
   const anyConf=o.best.groups.some(g=>g.lines.some(l=>l.product.confidential));
   const noteHtml=plan.notes.map(n=>`<li style="color:${n.sev==='warn'?'#b45309':'#555'}">${n.sev==='warn'?'⚠️ ':''}${esc(n.msg)}</li>`).join('');
   const ch=smartChantierObj();
@@ -4769,21 +4802,21 @@ function smartRender(keepForm){
   box.innerHTML=head+
    `<div style="margin:10px 0;padding:8px 12px;background:#eef5ff;border-radius:10px;font-size:13px">Chantier : <b>${esc(chantier||'— non choisi —')}</b>${ch&&ch.ville?` · ${esc(ch.adresse||'')} ${esc(ch.npa||'')} ${esc(ch.ville)}`:''}</div>`+
    `<h3 style="margin:14px 0 4px;font-size:15px">Ma sélection (${SMART_SEL.length})</h3><table style="width:100%;border-collapse:collapse">${selRows}</table><button onclick="smartClear()" style="margin-top:6px;border:0;background:none;color:#b91c1c;cursor:pointer;font-size:12px">Vider la sélection</button>`+
-   `<h3 style="margin:16px 0 0;font-size:15px">Répartition optimisée — mieux-disant, transport inclus</h3>${groupsHtml}`+
+   (testTo?`<div style="margin:8px 0;padding:8px 12px;background:#fff4de;border:1px solid #f59e0b;border-radius:10px;font-size:13px;font-weight:700">🧪 Environnement test : toutes les commandes sont envoyées à ${esc(testTo)} — jamais aux fournisseurs.</div>`:'')+
+   `<h3 style="margin:16px 0 0;font-size:15px">Répartition — mieux-disant, transport inclus <span style="font-size:11px;font-weight:400;color:#697386">(modifiable : fournisseur par ligne, quantité, zone, date)</span></h3>${Object.keys(SMART_OVERRIDE).length?'<button onclick="smartResetOverrides()" style="margin-top:4px;border:0;background:none;color:#0b4f9c;cursor:pointer;font-size:12px;text-decoration:underline">↺ Rétablir la répartition optimale</button>':''}${groupsHtml}`+
    smartSupplyChainHtml(plan)+(anyConf?'<div style="font-size:11px;color:#697386;margin-top:4px">Les articles à prix confidentiel sont exclus des totaux.</div>':'')+
    `<details style="margin-top:10px" open><summary style="cursor:pointer;font-weight:800;font-size:13px">Points à clarifier / hypothèses</summary><ul style="font-size:12px;margin:6px 0 0 18px;padding:0">${noteHtml}</ul></details>`+
-   `<div style="margin-top:16px;padding:12px;border:2px solid #0b4f9c;border-radius:12px"><b>Livraison</b><div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;align-items:end"><label style="font-size:12px">Date de livraison souhaitée *<br><input type="date" id="smartDate" min="${today}" value="${esc(keep?keep.date:'')}" style="padding:6px"></label><label style="font-size:12px">Conducteur de travaux *<br><input id="smartCond" list="smartCondList" value="${esc(cond)}" style="padding:6px;min-width:200px"><datalist id="smartCondList">${techs.map(n=>`<option value="${esc(n)}">`).join('')}</datalist></label><label style="font-size:12px;flex:1;min-width:200px">Remarques<br><input id="smartRem" value="${esc(keep?keep.rem:'')}" style="padding:6px;width:100%"></label></div>`+
+   `<div style="margin-top:16px;padding:12px;border:2px solid #0b4f9c;border-radius:12px"><b>Livraison</b><div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;align-items:end"><label style="font-size:12px">Même date pour toutes les commandes<br><span style="display:flex;gap:6px"><input type="date" id="smartDate" min="${today}" value="${esc(keep?keep.date:'')}" style="padding:6px"><button type="button" onclick="smartApplyDateAll()" style="border:1px solid #0b4f9c;background:#fff;color:#0b4f9c;border-radius:8px;padding:4px 10px;cursor:pointer;font-weight:700">Appliquer à toutes</button></span></label><label style="font-size:12px">Conducteur de travaux *<br><input id="smartCond" list="smartCondList" value="${esc(cond)}" style="padding:6px;min-width:200px"><datalist id="smartCondList">${techs.map(n=>`<option value="${esc(n)}">`).join('')}</datalist></label><label style="font-size:12px;flex:1;min-width:200px">Remarques<br><input id="smartRem" value="${esc(keep?keep.rem:'')}" style="padding:6px;width:100%"></label></div>`+
    `<button id="smartSendBtn" onclick="smartSend()" class="add" style="margin-top:12px">📧 Envoyer ${o.best.nSuppliers} commande${o.best.nSuppliers>1?'s':''} aux fournisseurs</button><div id="smartResult" style="margin-top:8px;font-size:13px"></div></div>`;
 }
 
 /* ---------- Envoi : une commande par fournisseur ---------- */
 async function smartSend(){
   const chantier=smartChantierNom();
-  const dateIso=(document.getElementById('smartDate')||{}).value;
+  const dateAll=(document.getElementById('smartDate')||{}).value;
   const conducteur=((document.getElementById('smartCond')||{}).value||'').trim();
   const remarks=((document.getElementById('smartRem')||{}).value||'').trim();
   if(!chantier){alert('Choisissez d’abord un chantier (fenêtre « chantier du jour »).');return;}
-  if(!dateIso){alert('Veuillez indiquer la date de livraison.');return;}
   if(!conducteur){alert('Veuillez indiquer le conducteur de travaux.');return;}
   if(isForbiddenConducteurInduni(conducteur)){alert('Ce nom ne peut pas être indiqué comme conducteur de travaux : choisissez un technicien du chantier dans la liste.');return;}
   const btn=document.getElementById('smartSendBtn'); btn.disabled=true; btn.textContent='⏳ Recalcul avec les prix à jour…';
@@ -4798,17 +4831,21 @@ async function smartSend(){
   const c=smartChantierObj()||{};
   const adresse=[c.adresse,[c.npa,c.ville].filter(Boolean).join(' ')].filter(Boolean).join('\n');
   const contact=c.contactLivraison||c.contact||''; const phone=c.telephoneLivraison||c.telephone||'';
-  const delai=dateFR(dateIso);
-  const cc=chantierTechnicienEmail(chantier);
+  const testTo=window._userPerms&&window._userPerms.testRecipient;
+  const cc=testTo?'':chantierTechnicienEmail(chantier);
   const groups=plan.opt.best.groups;
+  // Date propre à chaque commande (à défaut, « même date pour toutes » si renseignée).
+  const noDate=groups.filter(g=>!(SMART_DATES[g.supplier]||dateAll)).map(g=>g.supplier);
+  if(noDate.length){alert('Veuillez indiquer la date de livraison de : '+noDate.join(', ')+'.');resetBtn();return;}
+  const delaiOf=g=>dateFR(SMART_DATES[g.supplier]||dateAll);
   // Destinataires vérifiés AVANT d'envoyer quoi que ce soit.
   const emails={}, missing=[];
   groups.forEach(g=>{
-    const e=cantonSupplierEmailInduni(g.supplier,chantier)||((window._userPerms.supplierDefaultEmails||{})[g.supplier])||(SUPPLIER_INFO[g.supplier]&&SUPPLIER_INFO[g.supplier].email)||'';
+    const e=testTo||cantonSupplierEmailInduni(g.supplier,chantier)||((window._userPerms.supplierDefaultEmails||{})[g.supplier])||(SUPPLIER_INFO[g.supplier]&&SUPPLIER_INFO[g.supplier].email)||'';
     if(!e) missing.push(g.supplier); else emails[g.supplier]=e;
   });
   if(missing.length){alert('Aucune adresse e-mail de commande pour : '+missing.join(', ')+'.\nRenseignez-la dans Admin > Fournisseurs.');resetBtn();return;}
-  if(!confirm('Envoyer '+groups.length+' commande(s) ('+groups.map(g=>g.supplier).join(', ')+') pour livraison le '+delai+' ?')){resetBtn();return;}
+  if(!confirm((testTo?'[TEST — envoi à '+testTo+' uniquement]\n':'')+'Envoyer '+groups.length+' commande(s) :\n'+groups.map(g=>'• '+g.supplier+' — livraison le '+delaiOf(g)).join('\n'))){resetBtn();return;}
   const body='Bonjour,\n\nVeuillez trouver ci-joint le bon de commande.\n\nMerci de bien vouloir nous faire parvenir votre confirmation de commande dans les plus brefs délais.\n\nRestant à votre disposition pour toute information complémentaire.\n\nCordialement\nINDUNI & Cie SA\nAvenue des Grandes-Communes 6\n1213 Petit-Lancy';
   const res=document.getElementById('smartResult'); res.innerHTML='';
   const sentKeys=[]; let okCount=0;
@@ -4817,14 +4854,14 @@ async function smartSend(){
     const conf=g.lines.some(l=>l.product.confidential);
     try{
       const r=await fetch('/api/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-        chantier,delai,adresse,contact,phone,conducteur,remarks,supplier:g.supplier,to:emails[g.supplier],cc,
+        chantier,delai:delaiOf(g),adresse,contact,phone,conducteur,remarks,supplier:g.supplier,to:emails[g.supplier],cc,
         subject:'Commande ESHOP_INDUNI_00',body,
         items:g.lines.map(l=>({article:l.product.article,designation:l.product.designation,descriptif:l.product.descriptif||'',qty:l.qty,prix:l.prix,catalogPrix:l.product.catalogPrix??null,unite:l.product.unite||'PCE',catalog:l.product.catalog||''})),
         extra_charges:conf?[]:g.cost.extra,modifies_order_id:null
       })});
       const t=await r.text(); let d={}; try{d=JSON.parse(t);}catch(e){d={error:t||'Réponse invalide'};}
       if(r.ok&&d.success){
-        okCount++; g.lines.forEach(l=>sentKeys.push(l.need.key));
+        okCount++; g.lines.forEach(l=>{sentKeys.push(l.need.key);delete SMART_OVERRIDE[l.need.key];}); delete SMART_DATES[g.supplier];
         res.innerHTML+=`<div style="color:#166534">✅ ${esc(g.supplier)} — ${esc(d.order_number||'')} ${d.needs_approval?'(en attente de validation — '+esc(d.message||'')+')':'envoyée à '+esc(d.supplier_email||emails[g.supplier])}</div>`;
       } else res.innerHTML+=`<div style="color:#b91c1c">❌ ${esc(g.supplier)} — ${esc(d.error||'échec')}${d.order_number?' (commande '+esc(d.order_number)+' créée, e-mail à renvoyer depuis le Dashboard)':''}</div>`;
     }catch(err){res.innerHTML+=`<div style="color:#b91c1c">❌ ${esc(g.supplier)} — ${esc(err.message)}</div>`;}
