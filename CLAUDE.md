@@ -180,7 +180,7 @@ commande déjà envoyée à une autre adresse + Cci optionnel à l'utilisateur, 
 
 ## Photos des articles HGC (récupérées sur www.hgc.ch)
 
-460 des 614 articles HGC ont une photo (`image` = `/images/products/hgc-<id média>.jpg`, 479 px,
+530 des 645 articles HGC ont une photo (`image` = `/images/products/hgc-<id média>.jpg`, 479 px,
 213 fichiers : les variantes d'un même produit partagent la photo). Source : l'API
 publique de recherche de HGC, `GET https://www.hgc.ch/api/search/autocomplete?term=<n° article>`
 (renvoie `image.medias` en 240/479/958 px) ; script réutilisable `script/fetch_hgc_images.py`
