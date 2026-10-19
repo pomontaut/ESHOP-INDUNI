@@ -1759,6 +1759,35 @@ function addCart(p){
   if(it) it.qty+=(len||1);
   else cart.push({...p,qty:len||1});
   save(); render();
+  try{ suggestFittingForPipe(p); }catch(e){}
+}
+// Produit +1 : à l'ajout d'un tuyau de canalisation, propose les coudes du
+// MÊME fournisseur, même matière et EXACTEMENT le même diamètre (jamais
+// d'approximation DN/OD, cf. equivalence_key). Rien n'est ajouté sans clic.
+function suggestFittingForPipe(p){
+  if(!p||!/^Canalisations/.test(p.famille||'')) return;
+  if(!/^Tuyau/i.test(p.sousFamille||'')||/drainage/i.test(p.sousFamille||'')||/drain/i.test(p.designation||'')) return;
+  const d=extractDiamInduni(p.designation); if(!d) return;
+  const sn=(String(p.designation).match(/SN\s*(\d+)/i)||[])[1];
+  const same=x=>normalizeSupplierName(x.catalog)===normalizeSupplierName(p.catalog)&&x.famille===p.famille;
+  const isCoude=x=>/^Coudes?$/i.test(x.sousFamille||'')&&/^Coude/i.test(x.designation||'')&&extractDiamInduni(x.designation)===d;
+  if(cart.some(i=>same(i)&&isCoude(i))) return;
+  const angle=x=>{const m=String(x.designation).match(/(\d{2})\s*°/);return m?+m[1]:0;};
+  const byAngle={};
+  PRODUCTS.filter(x=>same(x)&&isCoude(x)).forEach(x=>{
+    const sx=(String(x.designation).match(/SN\s*(\d+)/i)||[])[1];
+    if(sn&&sx&&sn!==sx) return;
+    const a=angle(x); if(!byAngle[a]) byAngle[a]=x;
+  });
+  const list=Object.keys(byAngle).map(Number).sort((a,b)=>b-a).slice(0,4).map(a=>byAngle[a]);
+  if(!list.length) return;
+  const old=document.getElementById('fittingSuggest'); if(old) old.remove();
+  const el=document.createElement('div'); el.id='fittingSuggest';
+  el.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#fff;color:#0c1d34;padding:12px 16px;border-radius:12px;font-size:14px;max-width:560px;box-shadow:0 6px 24px rgba(0,0,0,.28);z-index:9998;border:2px solid #f4a300';
+  el.innerHTML='<div style="font-weight:700;margin-bottom:8px">💡 Pensez au coude Ø'+esc(String(d))+' mm <span style="float:right;cursor:pointer" onclick="this.closest(\'#fittingSuggest\').remove()">✕</span></div>'
+    +list.map(x=>'<button class="add" style="margin:2px 4px 2px 0;width:auto;padding:6px 10px" onclick="addCartByIndex('+Number(x._idx)+');document.getElementById(\'fittingSuggest\').remove()">+ '+esc(x.designation)+'</button>').join('');
+  document.body.appendChild(el);
+  setTimeout(()=>{ if(el.isConnected) el.remove(); },20000);
 }
 function addCartByIndex(idx){const p=PRODUCTS[Number(idx)]; if(p) addCart(p);}
 
