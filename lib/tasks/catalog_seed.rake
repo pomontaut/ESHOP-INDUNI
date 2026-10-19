@@ -175,6 +175,7 @@ namespace :catalog do
           sous_sous_famille: it["sousSousFamille"],
           icone:             it["icone"],
           image:             it["image"],
+          fiche_url:         it["ficheUrl"],
           equivalence_key:   it["equivalenceKey"].presence,
           qte_palette:       it["qtePalette"],
           stock_status:      it["stockStatus"],

@@ -190,6 +190,20 @@ HGC restent sans photo (icône grue). Un nouvel article HGC : relancer le script
 renseigner `image` dans `catalog_products.json`. Les photos appartiennent à HGC (usage
 interne d'un client).
 
+## Fiche article + photos : Swisspor, Sika, ALZO
+
+`Product#fiche_url` (colonne, seed `ficheUrl` de `catalog_products.json`, exposée par `/api/products`
+en `ficheUrl`) → lien « 🔗 Fiche article » (`supplierSheetLinkHtml`, même emplacement que le lien HGC).
+Aucun stock pour ces fournisseurs. Récupération sur les sites fournisseurs (usage interne, photos
+copiées dans `public/images/products/`) : **Swisspor** `script/fetch_swisspor_media.py` (recherche du site par
+2 premiers mots du nom, page = titre dont tous les mots figurent dans l'article ; 836/1248 pages exactes
++ 820 photos 300x200, le reste = lien de recherche swisspor.com sans photo) ; **Sika**
+`script/fetch_sika_media.py` (plan du site `products.sitemap.xml`, photo seulement si le nom de fichier
+contient le produit : 19/20 liens, 13/20 photos ; Sikament MFD-1 A introuvable ; aucun prix lu —
+prix confidentiels) ; **ALZO** une seule fiche (`/francais/gamme-d-articles/saturn-s-simple/`) et sa
+photo pour les 168 articles Saturn S. Nouveaux articles : relancer le script puis fusionner
+`ficheUrl`/`image` dans le JSON.
+
 ## Leuba HIAG : bois au PAQUET (pas au m³)
 
 Les 8 articles Leuba tarifés au m³ (carrelets/planches de coffrage, plateau bois C24)

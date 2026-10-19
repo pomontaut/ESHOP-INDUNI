@@ -35,6 +35,7 @@ class Api::ProductsController < ApplicationController
         sousSousFamille:  p.sous_sous_famille,
         icone:            p.icone,
         image:            p.image,
+        ficheUrl:         p.fiche_url,
         equivalenceKey:   p.equivalence_key,
         qtePalette:       p.qte_palette,
         stockStatus:      p.stock_status,

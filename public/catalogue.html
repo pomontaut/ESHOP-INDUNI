@@ -1491,8 +1491,13 @@ async function hgcStockCheck(article,el){
     el.outerHTML=old; const m=document.createElement('small'); m.style.color='#b45309'; m.textContent=' Stock HGC indisponible, réessayez ou ouvrez la fiche.'; box.appendChild(m);
   }
 }
+// Fiche article chez les autres fournisseurs (Swisspor, Sika, ALZO) : lien fourni par le catalogue (ficheUrl).
+function supplierSheetLinkHtml(p){
+  if(!p||p.catalog==='HG COMMERCIALE'||!/^https:\/\//.test(String(p.ficheUrl||''))) return '';
+  return `<div class="hgcSheet" style="margin:4px 0;font-size:12px"><a href="${esc(p.ficheUrl)}" target="_blank" rel="noopener noreferrer" title="Ouvrir la fiche article sur le site du fournisseur" onclick="event.stopPropagation()" style="font-weight:700;color:#0b4f9c;text-decoration:none">🔗 Fiche article</a></div>`;
+}
 function stockStatusBadgeHtml(p){
-  const link=hgcSheetLinkHtml(p);
+  const link=hgcSheetLinkHtml(p)||supplierSheetLinkHtml(p);
   if(p.stockStatus==='stock') return '<div class="stockBadge stockOk" title="En stock">🟢 En stock</div>'+link;
   if(p.stockStatus==='sur_demande') return '<div class="stockBadge stockAsk" title="Sur demande — délai à confirmer par le fournisseur">🟠 Sur demande</div>'+link;
   return link;
