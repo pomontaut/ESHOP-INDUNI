@@ -5147,6 +5147,82 @@ window.voiceInputInit=function(){
     };
     try{rec.start();}catch(e){}
   };
+  /* ---------- Agent de commande vocale : panneau latéral (test uniquement) ----------
+     Conversation avec POST /api/voice_agent ; le navigateur applique les lignes de
+     panier proposées via addCart/setQty (mêmes règles que la saisie manuelle) et
+     lit les réponses à voix haute. L'envoi de la commande reste un clic humain. */
+  const abtn=document.createElement('button');
+  abtn.type='button'; abtn.id='voiceAgentBtn'; abtn.textContent='🤖';
+  abtn.title='Agent de commande vocale';
+  abtn.style.cssText='flex:0 0 auto;border:0;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;background:#f1642a;color:#fff';
+  wrap.appendChild(abtn);
+  const panel=document.createElement('div');
+  panel.id='voiceAgentPanel';
+  panel.style.cssText='display:none;position:fixed;top:0;right:0;bottom:0;width:min(400px,100vw);z-index:1100;background:#fff;box-shadow:-8px 0 30px #0b1e3544;flex-direction:column;font-size:14px;color:#10233e';
+  panel.innerHTML='<div style="background:#0b4f9c;color:#fff;padding:12px 14px;display:flex;align-items:center;gap:8px"><b style="flex:1">🤖 Agent de commande (test)</b><button type="button" id="vaMute" title="Voix" style="border:0;background:transparent;color:#fff;font-size:18px;cursor:pointer">🔊</button><button type="button" id="vaClose" style="border:0;background:transparent;color:#fff;font-size:20px;cursor:pointer">✕</button></div>'
+    +'<div id="vaLog" style="flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px"></div>'
+    +'<div style="padding:10px;border-top:1px solid #d8dde6;display:flex;gap:6px"><button type="button" id="vaMic" style="border:0;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;background:#0b4f9c;color:#fff">🎤</button><input id="vaInput" placeholder="Parlez ou écrivez votre besoin…" style="flex:1;border:1px solid #d8dde6;border-radius:10px;padding:0 10px"><button type="button" id="vaSend" style="border:0;border-radius:10px;padding:0 14px;background:#176b28;color:#fff;font-weight:700;cursor:pointer">Envoyer</button></div>';
+  document.body.appendChild(panel);
+  const log=panel.querySelector('#vaLog'), inp=panel.querySelector('#vaInput');
+  let history=[], speak=true, busy=false;
+  function bubble(role,text){
+    const d=document.createElement('div');
+    d.style.cssText='max-width:85%;padding:8px 11px;border-radius:12px;'+(role==='user'?'align-self:flex-end;background:#dbeafe':'align-self:flex-start;background:#f1f5f9');
+    d.textContent=text; log.appendChild(d); log.scrollTop=log.scrollHeight; return d;
+  }
+  function say(text){
+    if(!speak||!window.speechSynthesis||!text) return;
+    try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='fr-FR';speechSynthesis.speak(u);}catch(e){}
+  }
+  function applyActions(actions){
+    (actions||[]).forEach(a=>{
+      const p=PRODUCTS.find(x=>x.catalog===a.catalog&&String(x.article)===String(a.article));
+      if(!p){bubble('assistant','⚠ Article '+a.article+' introuvable dans le catalogue chargé.');return;}
+      window.VOICE_QTY=null; addCart(p);
+      const k=cart.findIndex(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation);
+      if(k>=0) setQty(k,a.qty);
+      bubble('assistant','🛒 Ajouté : '+a.qty+' × '+p.designation);
+    });
+  }
+  async function sendMsg(text){
+    text=String(text||'').trim(); if(!text||busy) return;
+    busy=true; inp.value=''; bubble('user',text); history.push({role:'user',content:text});
+    const wait=bubble('assistant','…');
+    try{
+      const r=await fetch('/api/voice_agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history,cart_supplier:(typeof cartSupplier==='function'?cartSupplier():null)||''})});
+      const j=await r.json(); wait.remove();
+      if(!r.ok) throw new Error(j.error||'Erreur');
+      history.push({role:'assistant',content:j.reply||''});
+      if(j.reply){bubble('assistant',j.reply);say(j.reply);}
+      applyActions(j.cart_actions);
+    }catch(e){wait.textContent='⚠ '+e.message;}
+    busy=false;
+    if(handsFree) listen();
+  }
+  let handsFree=false, arec=null;
+  function listen(){
+    if(!SR) return;
+    arec=new SR(); arec.lang='fr-CH'; arec.interimResults=false;
+    const mic=panel.querySelector('#vaMic');
+    arec.onstart=()=>{mic.style.background='#d92d20';mic.textContent='⏹';};
+    arec.onend=()=>{mic.style.background='#0b4f9c';mic.textContent='🎤';};
+    arec.onerror=e=>{handsFree=false;if(e.error!=='no-speech'&&e.error!=='aborted')bubble('assistant','🎤 Micro indisponible ('+e.error+').');};
+    arec.onresult=ev=>sendMsg(ev.results[0][0].transcript);
+    try{arec.start();}catch(e){}
+  }
+  panel.querySelector('#vaMic').onclick=function(){
+    if(!SR){bubble('assistant','Saisie vocale non supportée : utilisez Chrome ou Edge.');return;}
+    if(handsFree){handsFree=false;try{arec.stop();}catch(e){}try{speechSynthesis.cancel();}catch(e){}return;}
+    handsFree=true; listen();
+  };
+  panel.querySelector('#vaSend').onclick=()=>sendMsg(inp.value);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')sendMsg(inp.value);});
+  panel.querySelector('#vaMute').onclick=function(){speak=!speak;this.textContent=speak?'🔊':'🔇';if(!speak)try{speechSynthesis.cancel();}catch(e){}};
+  panel.querySelector('#vaClose').onclick=function(){handsFree=false;try{arec&&arec.stop();}catch(e){}try{speechSynthesis.cancel();}catch(e){}panel.style.display='none';};
+  abtn.onclick=function(){
+    const open=panel.style.display==='flex'; panel.style.display=open?'none':'flex';
+    if(!open&&!log.children.length) bubble('assistant','Bonjour ! Dites-moi ce qu\'il vous faut, par exemple « vingt coudes PVC 110 ». Cliquez sur 🎤 pour parler.');
+  };
   // Quantité dictée appliquée à l'article ajouté juste après la dictée.
   const _addCart=addCart;
   addCart=function(p){
