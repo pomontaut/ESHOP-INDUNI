@@ -4329,6 +4329,7 @@ Promise.all([
     document.getElementById('testProfileLabel').textContent=perms.dev_mode?'🛠 Environnement test — Développement (droits admin conservés, fonctions en cours de développement actives)':'🧪 Environnement test — vue '+perms.test_profile;
     document.getElementById('testProfileBanner').style.display='block';
     if(typeof smartBuyInit==='function') smartBuyInit();
+    if(typeof voiceInputInit==='function') voiceInputInit();
   }
   if(perms.admin||perms.can_create_users) document.getElementById('adminNavLink').style.display='inline-flex';
   if(perms.admin) document.getElementById('adminChantiersNavLink').style.display='inline-flex';
@@ -5075,8 +5076,9 @@ async function smartSend(){
    dicté remplit la recherche. Une quantité dite en tête (« 20 coudes PVC 110 »,
    « vingt … ») est retirée de la recherche et appliquée à l'article ajouté ensuite
    (via setQty : la règle « multiple de la longueur du tuyau » reste respectée).
-   Aucun envoi réseau côté application : l'audio est traité par le navigateur. */
-(function(){
+   Activée uniquement en environnement test (perms.test_profile, cf. voiceInputInit). Aucun envoi réseau côté application : l'audio est traité par le navigateur. */
+window.voiceInputInit=function(){
+  if(document.getElementById('voiceBtn')) return;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   const box=document.getElementById('searchBox'); if(!box) return;
   const wrap=box.parentNode;
@@ -5156,6 +5158,6 @@ async function smartSend(){
       window.voiceClear();
     }
   };
-})();
+};
 </script>
 </body></html>
