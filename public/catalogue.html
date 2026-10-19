@@ -4752,10 +4752,14 @@ function smartOptimize(needs,chantier){
   [...new Set(needs.flatMap(n=>n.options.map(o=>o.supplier)))].forEach(S=>{
     const a=[];let ok=true;
     needs.forEach(n=>{const i=n.options.findIndex(o=>o.supplier===S);if(i<0)ok=false;a.push(i);});
-    if(ok) singles.push({supplier:S,r:ev(a)});
+    if(ok) singles.push({supplier:S,r:ev(a),a:a.slice()});
   });
   singles.sort((x,y)=>x.r.total-y.r.total);
-  return {best:best.r,assign:best.a,naive,singles,combos};
+  // Logistique : une seule commande/livraison si le surcoût reste dans la tolérance [H]
+  let eco=null, chosen=best;
+  const one=singles.find(x=>x.r.nSuppliers===1&&x.r.total<=best.r.total*(1+SMART_ROBUST_TOLERANCE)&&x.r.total>best.r.total+0.005);
+  if(one&&best.r.nSuppliers>1){eco=best.r;chosen={a:one.a,r:one.r};}
+  return {best:chosen.r,assign:chosen.a,eco,naive,singles,combos};
 }
 
 /* ---------- Plan complet + points à clarifier ---------- */
@@ -4795,12 +4799,6 @@ function smartScenarioStats(r,needs){
   const transport=r.total-merch;
   return {total:r.total,merch,transport,nSuppliers:r.nSuppliers,weight:w,wMissing,delay:nowStock?'stock / standard':'sur demande (à confirmer)',mono};
 }
-function smartRisk(st,plan,r){
-  const hyp=plan.notes.some(n=>n.block||/\[H\]/.test(n.msg));
-  if(hyp||st.delay.startsWith('sur demande')) return 'moyen';
-  if(st.nSuppliers>3) return 'moyen';
-  return 'faible';
-}
 function smartFrancoOpportunities(o){
   const rules={'Canplast':CANPLAST_FRANCO,'MBT':MBT_FRANCO,'Swisspor':SWISSPOR_FRANCO};
   const out=[];
@@ -4812,73 +4810,38 @@ function smartFrancoOpportunities(o){
   return out;
 }
 function smartSupplyChainHtml(plan){
-  const o=plan.opt, needs=plan.needs;
-  const st=smartScenarioStats(o.best,needs), naive=smartScenarioStats(o.naive,needs);
-  // Scénarios comparés (périmètre identique : mêmes besoins, mêmes quantités)
-  const sc=[{name:'✅ Répartition recommandée (optimum économique parmi les scénarios étudiés)',r:o.best,st}];
-  sc.push({name:'Chaque article au prix unitaire le plus bas, sans regroupement',r:o.naive,st:naive});
-  o.singles.slice(0,3).forEach(s=>sc.push({name:'Tout chez '+s.supplier,r:s.r,st:smartScenarioStats(s.r,needs)}));
-  // Solution la plus robuste : un seul fournisseur si l'écart reste dans la tolérance [H]
-  const robustSingle=o.singles.find(s=>s.r.total<=o.best.total*(1+SMART_ROBUST_TOLERANCE)&&s.r.nSuppliers===1);
+  const o=plan.opt, b=o.best;
+  const st=smartScenarioStats(b,plan.needs);
+  const cell='padding:4px 6px;border-bottom:1px solid #eef2f7';
+  // Scénarios distincts (même coût et mêmes fournisseurs = une seule ligne)
+  const seen=new Set(), sc=[];
+  const add=(name,r)=>{const k=r.total.toFixed(2)+'|'+r.groups.map(g=>g.supplier).sort().join('+'); if(seen.has(k)) return; seen.add(k); sc.push({name,r});};
+  add('✅ Recommandé',b);
+  if(o.eco&&o.eco!==b) add('Prix le plus bas (sans regroupement des commandes)',o.eco);
+  add('Article par article, prix unitaire le plus bas',o.naive);
+  o.singles.slice(0,2).forEach(x=>add('Tout chez '+x.supplier,x.r));
   const rows=sc.map(x=>{
-    const d=x.r.total-o.best.total, pct=o.best.total>0?d/o.best.total*100:0;
-    return `<tr><td style="padding:4px 6px;border-bottom:1px solid #eef2f7">${esc(x.name)}</td><td style="padding:4px 6px;border-bottom:1px solid #eef2f7;text-align:right;white-space:nowrap">${fmt(x.st.merch)}</td><td style="padding:4px 6px;border-bottom:1px solid #eef2f7;text-align:right;white-space:nowrap">${fmt(x.st.transport)}</td><td style="padding:4px 6px;border-bottom:1px solid #eef2f7;text-align:right;white-space:nowrap"><b>${fmt(x.r.total)}</b></td><td style="padding:4px 6px;border-bottom:1px solid #eef2f7;text-align:right;white-space:nowrap">${d>0.005?'+'+fmt(d)+' ('+pct.toFixed(1)+'%)':'—'}</td><td style="padding:4px 6px;border-bottom:1px solid #eef2f7;text-align:center">${x.st.nSuppliers}</td><td style="padding:4px 6px;border-bottom:1px solid #eef2f7">${esc(x.st.delay)}</td><td style="padding:4px 6px;border-bottom:1px solid #eef2f7">${smartRisk(x.st,plan,x.r)}</td></tr>`;
+    const d=x.r.total-b.total;
+    return `<tr><td style="${cell}">${esc(x.name)}</td><td style="${cell};text-align:center">${x.r.nSuppliers}</td><td style="${cell};text-align:right;white-space:nowrap"><b>${fmt(x.r.total)}</b></td><td style="${cell};text-align:right;white-space:nowrap">${d>0.005?'+'+fmt(d):'—'}</td></tr>`;
   }).join('');
   const hd=a=>`<th style="text-align:${a};padding:4px 6px;border-bottom:1px solid #dde3ec;font-size:11px;color:#697386">`;
-  // Optimisations / inefficacités détectées
-  const opt=[];
-  const franco=smartFrancoOpportunities(o);
-  franco.forEach(f=>opt.push(`${f.supplier} : il manque ${fmt(f.missing)} pour atteindre le franco (CHF ${f.threshold.toLocaleString('fr-CH')}) et économiser ${fmt(f.fee)} de livraison [C]. À arbitrer avec un besoin réel du chantier — pas de surstock pour atteindre un seuil.`));
-  const gainNaive=o.naive.total-o.best.total;
-  if(gainNaive>0.005) opt.push(`Le regroupement évite ${fmt(gainNaive)} par rapport à un achat « article par article » au prix unitaire le plus bas : le prix unitaire seul est trompeur [C].`);
-  if(o.best.nSuppliers>1){const single=o.singles[0]; if(single&&single.r.total-o.best.total>0.005) opt.push(`Éclater en ${o.best.nSuppliers} commandes économise ${fmt(single.r.total-o.best.total)} vs ${single.supplier} seul [C], mais ajoute ${o.best.nSuppliers-1} commande(s) à suivre (réception, facturation) — coût administratif non chiffré [H].`);}
-  // Flux physiques : taux de remplissage (poids connu uniquement)
-  const flux=o.best.groups.map(g=>{
-    let w=0, miss=0; g.lines.forEach(l=>{const pw=Number(l.product.poids); if(pw>0) w+=pw*l.qty; else miss++;});
-    const fill=w>0?Math.round(w/TRUCK_CAPACITY_KG_INDUNI*100):null;
-    return `<li>${esc(g.supplier)} : ${g.lines.length} ligne(s), ${w>0?Math.round(w).toLocaleString('fr-CH')+' kg'+(miss?' (+ '+miss+' sans poids)':''):'poids non disponible'}${fill!=null?` ≈ ${fill}% d’un camion de ${(TRUCK_CAPACITY_KG_INDUNI/1000)} t [H]`:''}</li>`;
+  const detail=b.groups.slice().sort((x,y)=>x.supplier.localeCompare(y.supplier,'fr')).map(g=>{
+    const conf=g.lines.some(l=>l.product.confidential);
+    return `<li>${esc(g.supplier)} — ${conf?'🔒 accords cadre':fmt(g.cost.total)+(g.cost.transport>0.005?` (dont transport ${fmt(g.cost.transport)})`:'')}</li>`;
   }).join('');
-  // Risques
-  const risks=[];
-  const mono=needs.filter(n=>(n.allOptions||n.options).length<2);
-  if(mono.length) risks.push(`${mono.length} article(s) sans fournisseur alternatif (dépendance mono-source) : ${mono.slice(0,4).map(n=>esc(n.base.designation)).join(' ; ')}${mono.length>4?'…':''}.`);
-  const onDemand=[]; o.best.groups.forEach(g=>g.lines.forEach(l=>{if(l.product.stockStatus==='sur_demande') onDemand.push(l.product.designation);}));
-  if(onDemand.length) risks.push(`${onDemand.length} article(s) « sur demande » : délai non garanti, risque d’immobilisation du chantier.`);
-  plan.notes.filter(n=>n.sev==='warn').forEach(n=>{ if(!/sur demande/.test(n.msg)) risks.push(n.msg); });
-  risks.push('Fiabilité des fournisseurs (OTIF, litiges, ponctualité) : non évaluée — aucune donnée dans l’e-shop (absence de donnée ≠ mauvaise performance).');
-  // Recommandation
-  const reco=[`<b>Optimum économique :</b> ${o.best.groups.map(g=>esc(g.supplier)).join(' + ')} — ${fmt(o.best.total)} HT (${o.best.nSuppliers} commande${o.best.nSuppliers>1?'s':''}).`];
-  if(robustSingle&&o.best.nSuppliers>1) reco.push(`<b>Solution la plus robuste :</b> tout chez ${esc(robustSingle.supplier)} — ${fmt(robustSingle.r.total)} (+${fmt(robustSingle.r.total-o.best.total)}, ≤ ${(SMART_ROBUST_TOLERANCE*100)}% [H]) : une seule commande à suivre. À préférer si le chantier est sensible aux délais.`);
-  else reco.push('<b>Solution la plus robuste :</b> identique à l’optimum (aucun scénario mono-fournisseur dans la tolérance).');
-  // Plan d'action
-  const actions=[];
-  const blockers=plan.notes.filter(n=>n.block);
-  blockers.forEach(b=>actions.push('Bloquant avant envoi : '+b.msg));
-  actions.push(`Renseigner la date de livraison, puis envoyer ${o.best.nSuppliers} commande${o.best.nSuppliers>1?'s':''}.`);
-  franco.forEach(f=>actions.push(`Vérifier si ${fmt(f.missing)} de besoins réels peuvent s’ajouter chez ${f.supplier} (franco).`));
-  if(mono.length) actions.push('Faire référencer un équivalent pour les articles mono-source (Achats : liens d’équivalence exacts uniquement).');
-  // KPI
-  const ratio=st.merch>0?st.transport/st.merch*100:0;
-  const covered=needs.filter(n=>(n.allOptions||n.options).length>=2).length;
-  const kpi=[
-    `Coût complet HT : ${fmt(st.total)}`,
-    `Transport / marchandise : ${ratio.toFixed(1)}%`,
-    `Économie vs prix unitaire seul : ${fmt(Math.max(0,gainNaive))}`,
-    `Commandes à suivre : ${o.best.nSuppliers}`,
-    `Besoins comparables : ${covered}/${needs.length}`
-  ];
-  const li=a=>a.map(x=>`<li>${x}</li>`).join('');
-  const box=(t,b)=>`<div style="margin-top:8px"><b style="font-size:13px">${t}</b>${b}</div>`;
+  const todo=[];
+  plan.notes.filter(n=>n.block).forEach(n=>todo.push('Avant envoi : '+n.msg));
+  smartFrancoOpportunities(o).forEach(f=>todo.push(`${f.supplier} : encore ${fmt(f.missing)} pour le franco (économie ${fmt(f.fee)} de livraison).`));
+  b.groups.forEach(g=>g.lines.forEach(l=>{if(l.product.stockStatus==='sur_demande') todo.push(`« ${l.product.designation} » (${g.supplier}) : sur demande, délai à confirmer.`);}));
+  plan.notes.filter(n=>n.sev==='warn'&&!n.block&&!/sur demande/.test(n.msg)).forEach(n=>todo.push(n.msg));
+  const li=a=>a.map(x=>`<li>${esc(x)}</li>`).join('');
+  const saving=Math.max(0,o.naive.total-b.total);
+  const extra=o.eco&&o.eco!==b?` Regroupé en une commande : +${fmt(b.total-o.eco.total)} vs le prix le plus bas, mais une seule livraison et un seul suivi.`:'';
   return `<div style="margin-top:12px;padding:10px 12px;background:#f8faff;border-radius:10px;font-size:13px">
-    <div style="font-weight:900;font-size:14px;margin-bottom:4px">🧭 Analyse Supply Chain — coût complet rendu chantier</div>
-    <div style="font-size:11px;color:#697386;margin-bottom:6px">Marchandise [F] · transport [C] · hypothèses [H]. Attente, déchargement, manutention, pertes : non chiffrés (aucune donnée) — ne sont pas inclus dans les totaux.</div>
-    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><tr>${hd('left')}Scénario</th>${hd('right')}Marchandise</th>${hd('right')}Transport</th>${hd('right')}Coût total</th>${hd('right')}Écart</th>${hd('center')}Fourn.</th>${hd('left')}Délai</th>${hd('left')}Risque</th></tr>${rows}</table></div>
-    ${box('1 · Analyse des flux',`<ul style="margin:4px 0 0 18px;padding:0;font-size:12px">${flux}</ul>`)}
-    ${opt.length?box('2 · Optimisations possibles',`<ul style="margin:4px 0 0 18px;padding:0;font-size:12px">${li(opt.map(esc))}</ul>`):''}
-    ${box('3 · Risques',`<ul style="margin:4px 0 0 18px;padding:0;font-size:12px;color:#8a4b00">${li(risks.map(esc))}</ul>`)}
-    ${box('4 · Recommandation',`<ul style="margin:4px 0 0 18px;padding:0;font-size:12px">${li(reco)}</ul>`)}
-    ${box('5 · Plan d’action',`<ol style="margin:4px 0 0 18px;padding:0;font-size:12px">${li(actions.map(esc))}</ol>`)}
-    ${box('6 · KPI',`<div style="font-size:12px;margin-top:2px">${kpi.map(esc).join(' · ')}</div>`)}
+    <div style="font-weight:900;font-size:14px">🧭 Recommandation : ${b.nSuppliers} commande${b.nSuppliers>1?'s':''} — ${fmt(b.total)} HT <span style="font-weight:400;font-size:12px;color:#697386">(marchandise ${fmt(st.merch)} + transport ${fmt(st.transport)}${saving>0.005?`, économie ${fmt(saving)}`:''})</span></div>
+    <ul style="margin:4px 0 0 18px;padding:0;font-size:12px">${detail}</ul>${extra?`<div style="font-size:12px;margin-top:4px">${esc(extra.trim())}</div>`:''}
+    ${sc.length>1?`<div style="overflow-x:auto;margin-top:8px"><table style="width:100%;border-collapse:collapse;font-size:12px"><tr>${hd('left')}Scénario</th>${hd('center')}Fourn.</th>${hd('right')}Coût total</th>${hd('right')}Écart</th></tr>${rows}</table></div>`:''}
+    ${todo.length?`<ul style="margin:8px 0 0 18px;padding:0;font-size:12px;color:#8a4b00">${li(todo)}</ul>`:''}
   </div>`;
 }
 
@@ -4946,7 +4909,6 @@ function smartRender(keepForm){
     const tr=g.cost.extra.map(c=>`<div style="display:flex;justify-content:space-between;font-size:12px"><span>${esc(c.label)}</span><b>${fmt(c.amount)}</b></div>`).join('');
     return `<div class="smartGroup" data-supplier="${esc(g.supplier)}" style="border:1px solid #cfd8e6;border-radius:12px;padding:10px 12px;margin-top:10px"><div style="display:flex;justify-content:space-between"><b style="font-size:15px">📦 ${esc(g.supplier)}</b><b style="color:#f1642a">${conf?'🔒 Prix confidentiel':fmt(g.cost.total)}</b></div><table style="width:100%;border-collapse:collapse;margin-top:6px"><tr><th ${th()}>Article</th><th ${th()}>Qté</th><th ${th('text-align:right')}>PU HT</th><th ${th('text-align:right')}>Total HT</th></tr>${lines}</table><div style="margin-top:6px">${conf?'<div style="font-size:12px">Conformément à nos accords cadre</div>':`<div style="display:flex;justify-content:space-between;font-size:12px"><span>Sous-total marchandise</span><b>${fmt(g.cost.sub)}</b></div>${tr}`}</div>${smartZoneHtml(g.supplier)}<div style="margin-top:8px;font-size:12px;font-weight:700">📅 Livraison de cette commande * <input type="date" min="${new Date().toISOString().slice(0,10)}" value="${esc(SMART_DATES[g.supplier]||'')}" onchange='smartSetDate(${jsAttr(g.supplier)},this.value)' style="padding:4px"></div></div>`;}).join('');
   const anyConf=o.best.groups.some(g=>g.lines.some(l=>l.product.confidential));
-  const noteHtml=plan.notes.map(n=>`<li style="color:${n.sev==='warn'?'#b45309':'#555'}">${n.sev==='warn'?'⚠️ ':''}${esc(n.msg)}</li>`).join('');
   const ch=smartChantierObj();
   const techs=[...new Set((window._chantiers||[]).filter(x=>x.nom===chantier).reduce((acc,x)=>acc.concat(x.techniciens&&x.techniciens.length?x.techniciens:[x.technicien]),[]).map(n=>String(n||'').trim()).filter(n=>n&&!isForbiddenConducteurInduni(n)))];
   const cond=keep&&keep.cond!=null?keep.cond:(techs.length===1?techs[0]:'');
@@ -4956,8 +4918,7 @@ function smartRender(keepForm){
    `<h3 style="margin:14px 0 4px;font-size:15px">Ma sélection (${SMART_SEL.length})</h3><table style="width:100%;border-collapse:collapse">${selRows}</table><button onclick="smartClear()" style="margin-top:6px;border:0;background:none;color:#b91c1c;cursor:pointer;font-size:12px">Vider la sélection</button>`+
    (testTo?`<div style="margin:8px 0;padding:8px 12px;background:#fff4de;border:1px solid #f59e0b;border-radius:10px;font-size:13px;font-weight:700">🧪 Environnement test : toutes les commandes sont envoyées à ${esc(testTo)} — jamais aux fournisseurs.</div>`:'')+
    `<h3 style="margin:16px 0 0;font-size:15px">Répartition — mieux-disant, transport inclus <span style="font-size:11px;font-weight:400;color:#697386">(modifiable : fournisseur par ligne, quantité, zone, date)</span></h3>${Object.keys(SMART_OVERRIDE).length?'<button onclick="smartResetOverrides()" style="margin-top:4px;border:0;background:none;color:#0b4f9c;cursor:pointer;font-size:12px;text-decoration:underline">↺ Rétablir la répartition optimale</button>':''}${groupsHtml}`+
-   smartSupplyChainHtml(plan)+(anyConf?'<div style="font-size:11px;color:#697386;margin-top:4px">Les articles à prix confidentiel sont exclus des totaux.</div>':'')+
-   `<details style="margin-top:10px" open><summary style="cursor:pointer;font-weight:800;font-size:13px">Points à clarifier / hypothèses</summary><ul style="font-size:12px;margin:6px 0 0 18px;padding:0">${noteHtml}</ul></details>`+
+   smartSupplyChainHtml(plan)+(anyConf?'<div style="font-size:11px;color:#697386;margin-top:4px">Articles à prix confidentiel exclus des totaux.</div>':'')+
    `<div style="margin-top:16px;padding:12px;border:2px solid #0b4f9c;border-radius:12px"><b>Livraison</b><div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;align-items:end"><label style="font-size:12px">Même date pour toutes les commandes<br><span style="display:flex;gap:6px"><input type="date" id="smartDate" min="${today}" value="${esc(keep?keep.date:'')}" style="padding:6px"><button type="button" onclick="smartApplyDateAll()" style="border:1px solid #0b4f9c;background:#fff;color:#0b4f9c;border-radius:8px;padding:4px 10px;cursor:pointer;font-weight:700">Appliquer à toutes</button></span></label><label style="font-size:12px">Conducteur de travaux *<br><input id="smartCond" list="smartCondList" value="${esc(cond)}" style="padding:6px;min-width:200px"><datalist id="smartCondList">${techs.map(n=>`<option value="${esc(n)}">`).join('')}</datalist></label><label style="font-size:12px;flex:1;min-width:200px">Remarques<br><input id="smartRem" value="${esc(keep?keep.rem:'')}" style="padding:6px;width:100%"></label></div>`+
    `<button id="smartSendBtn" onclick="smartSend()" class="add" style="margin-top:12px">📧 Envoyer ${o.best.nSuppliers} commande${o.best.nSuppliers>1?'s':''} aux fournisseurs</button><div id="smartResult" style="margin-top:8px;font-size:13px"></div></div>`;
 }
