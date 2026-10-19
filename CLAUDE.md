@@ -208,6 +208,17 @@ par n° d'article, retenu seulement si le n° figure dans le bloc produit : 345/
 API interne inaccessible : ni page exacte ni photo ; recherche non vérifiée côté navigateur). Nouveaux articles : relancer le script puis fusionner
 `ficheUrl`/`image` dans le JSON.
 
+## Photos « Matériel Induni » (catalogue dépôt logistique, PDF 25.02)
+
+195 des 997 articles Matériel Induni ont une photo extraite du PDF « Catalogue Dépôt 25.02 »
+(`public/images/products/induni-<page>-<n>.jpg`, 57 fichiers, ≤ 480 px). Aucun article ajouté : seules
+les lignes du PDF retrouvées dans notre catalogue (nom exact ou proche ≥ 0.85, 626/997) reçoivent une photo.
+Le PDF ne place qu'une photo par bloc de lignes (souvent hétérogène : la fontaine à eau en face des
+chauffe-gamelles) : chaque photo a été contrôlée à l'œil et limitée aux libellés qu'elle montre vraiment
+(règles par photo, ex. « Cône de signalisation », « Mèche SDS-plus »). Les conteneurs, machines et
+locations du PDF ne sont pas dans notre catalogue. Nouveau PDF : refaire l'extraction (`pdfimages`,
+`pdftohtml -xml` pour les positions) et le contrôle visuel — ne jamais attribuer une photo de bloc à tout le bloc.
+
 ## Leuba HIAG : bois au PAQUET (pas au m³)
 
 Les 8 articles Leuba tarifés au m³ (carrelets/planches de coffrage, plateau bois C24)
