@@ -20,6 +20,9 @@ Rails.application.routes.draw do
       member { patch :confirm_reception; post :resend; post :forward; post :approve; post :refuse; post :cancel; post :relance; get :relance_preview }
     end
     resources :products, only: [ :index ]
+    resources :favorites, only: [ :index ] do
+      collection { post :toggle }
+    end
     get "hgc_stock/:article", to: "hgc_stock#show", as: :hgc_stock
     resources :devis_imports, only: [ :create ] do
       collection { post :confirm_products; post :equivalent; get :fournisseurs }

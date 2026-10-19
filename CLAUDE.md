@@ -300,6 +300,16 @@ Pas d'API HGC : la fiche embarque `stockLevelStatus` calculé pour le NPA du coo
 son site ; en cas d'échec le bouton affiche « indisponible » sans bloquer. Statut
 purement informatif, jamais utilisé pour bloquer une commande.
 
+## Articles favoris (par fournisseur)
+
+Étoile ☆/★ sur chaque fiche article (`favStarHtml`, dans `productCard` ET `productCardFast`) et vue
+« ⭐ Mes favoris » (`renderFavorites`, bouton `#favoritesNavLink`) : favoris groupés par fournisseur,
+cartes complètes (ajout au panier possible), limités aux catalogues autorisés. Table `favorites`
+(user_id, catalog, article, designation — même clé que le panier, donc stable après re-seed ; pas de
+product_id), `GET /api/favorites` + `POST /api/favorites/toggle` (`Api::FavoritesController`), propres à
+chaque utilisateur. Prix confidentiels : la carte réutilise `/api/products` (déjà masqué), rien de plus
+n'est exposé. Un favori dont l'article a disparu du catalogue est simplement masqué.
+
 ## Deploy workflow (always follow this exact sequence)
 
 1. Edit, then run the full test suite: `bin/rails test` (must be 0

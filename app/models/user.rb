@@ -2,6 +2,7 @@ class User < ApplicationRecord
   has_secure_password
   serialize :allowed_suppliers, coder: JSON, type: Array
   has_many :push_subscriptions, dependent: :destroy
+  has_many :favorites, dependent: :destroy
   has_many :chantier_assignments, dependent: :destroy
   has_many :assigned_chantiers, through: :chantier_assignments, source: :chantier
 

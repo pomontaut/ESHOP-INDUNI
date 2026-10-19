@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_16_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_19_090000) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -85,6 +85,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_170000) do
     t.datetime "updated_at", null: false
     t.date "week_start", null: false
     t.index ["week_start"], name: "index_diesel_prices_on_week_start", unique: true
+  end
+
+  create_table "favorites", force: :cascade do |t|
+    t.string "article", null: false
+    t.string "catalog", null: false
+    t.datetime "created_at", null: false
+    t.string "designation", default: "", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["user_id", "catalog", "article", "designation"], name: "index_favorites_unique_product", unique: true
+    t.index ["user_id"], name: "index_favorites_on_user_id"
   end
 
   create_table "order_lines", force: :cascade do |t|
@@ -282,6 +293,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_170000) do
   add_foreign_key "chantier_assignments", "chantiers"
   add_foreign_key "chantier_assignments", "users"
   add_foreign_key "chantier_contacts", "chantiers"
+  add_foreign_key "favorites", "users"
   add_foreign_key "order_lines", "orders"
   add_foreign_key "order_lines", "products"
   add_foreign_key "orders", "orders", column: "modifies_order_id", on_delete: :nullify
