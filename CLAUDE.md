@@ -310,6 +310,13 @@ product_id), `GET /api/favorites` + `POST /api/favorites/toggle` (`Api::Favorite
 chaque utilisateur. Prix confidentiels : la carte réutilise `/api/products` (déjà masqué), rien de plus
 n'est exposé. Un favori dont l'article a disparu du catalogue est simplement masqué.
 
+## CreaBeton : livraison Genève (mardi et jeudi)
+
+Sous « Délai de livraison souhaité » (`#creabetonGeneveNote`, géré par `toggleCanplastOptions`, rappelé à la
+frappe dans « N° de chantier ») : note d'avertissement affichée seulement si le panier est CreaBeton ET que
+`chantierCanton(chantier) === 'GENEVE'` — CreaBeton ne livre que les mardis et jeudis sur Genève. Simple
+annotation : aucun blocage ni contrôle de la date saisie.
+
 ## Deploy workflow (always follow this exact sequence)
 
 1. Edit, then run the full test suite: `bin/rails test` (must be 0
