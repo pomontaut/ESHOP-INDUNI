@@ -201,7 +201,11 @@ copiées dans `public/images/products/`) : **Swisspor** `script/fetch_swisspor_m
 `script/fetch_sika_media.py` (plan du site `products.sitemap.xml`, photo seulement si le nom de fichier
 contient le produit : 19/20 liens, 13/20 photos ; Sikament MFD-1 A introuvable ; aucun prix lu —
 prix confidentiels) ; **ALZO** une seule fiche (`/francais/gamme-d-articles/saturn-s-simple/`) et sa
-photo pour les 168 articles Saturn S. Nouveaux articles : relancer le script puis fusionner
+photo pour les 168 articles Saturn S ; **EFCO** `script/fetch_efco_media.py` (boutique efco.swiss, recherche
+par n° d'article, retenu seulement si le n° figure dans le bloc produit : 345/347 pages + photos 300x300, les
+51 photos déjà présentes sont conservées ; les liens de variantes portent leurs paramètres `?…=`) ;
+**HILTI** simple lien de recherche `hilti.ch/fr/search?text=<n° article>` (site protégé par un script anti-robot,
+API interne inaccessible : ni page exacte ni photo ; recherche non vérifiée côté navigateur). Nouveaux articles : relancer le script puis fusionner
 `ficheUrl`/`image` dans le JSON.
 
 ## Leuba HIAG : bois au PAQUET (pas au m³)
