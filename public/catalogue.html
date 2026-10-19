@@ -5069,4 +5069,93 @@ async function smartSend(){
   });
 })();
 </script>
+<script>
+/* ---------- Saisie vocale d'un besoin (🎤 à côté de la recherche) ----------
+   Reconnaissance vocale du navigateur (Web Speech API, fr-CH puis fr-FR) : le texte
+   dicté remplit la recherche. Une quantité dite en tête (« 20 coudes PVC 110 »,
+   « vingt … ») est retirée de la recherche et appliquée à l'article ajouté ensuite
+   (via setQty : la règle « multiple de la longueur du tuyau » reste respectée).
+   Aucun envoi réseau côté application : l'audio est traité par le navigateur. */
+(function(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const box=document.getElementById('searchBox'); if(!box) return;
+  const wrap=box.parentNode;
+  wrap.style.cssText+=';display:flex;align-items:center;gap:8px';
+  const btn=document.createElement('button');
+  btn.type='button'; btn.id='voiceBtn'; btn.textContent='🎤';
+  btn.title=SR?'Dicter un besoin (ex. « 20 coudes PVC 110 »)':'Saisie vocale non supportée par ce navigateur';
+  btn.style.cssText='flex:0 0 auto;border:0;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;background:#0b4f9c;color:#fff';
+  if(!SR){btn.disabled=true;btn.style.opacity='.4';}
+  wrap.appendChild(btn);
+  const info=document.createElement('div');
+  info.id='voiceInfo';
+  info.style.cssText='display:none;margin:10px 6% 0;background:#eef5ff;border:1px solid #bcd0e8;border-radius:12px;padding:10px 14px;color:#10233e;font-size:14px';
+  const row=document.querySelector('.topbarSearchRow');
+  if(row&&row.parentNode) row.parentNode.insertBefore(info,row.nextSibling);
+
+  const UNITS={zero:0,un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,onze:11,douze:12,treize:13,quatorze:14,quinze:15,seize:16,
+    'dix-sept':17,'dix-huit':18,'dix-neuf':19,vingt:20,trente:30,quarante:40,cinquante:50,soixante:60,septante:70,huitante:80,octante:80,nonante:90,cent:100,cents:100};
+  function wordsToNumber(ws){ // « vingt-cinq », « trente et un », « cent vingt »
+    let tot=0,cur=0,used=0;
+    for(const w0 of ws){
+      const w=w0.replace(/^(et)$/,'');
+      if(w===''){used++;continue;}
+      const parts=w.split('-'); let ok=true,sub=0;
+      for(const p of parts){ if(UNITS[p]===undefined){ok=false;break;} sub+=UNITS[p]; }
+      if(!ok) break;
+      if(parts.length===1&&(w==='cent'||w==='cents')) cur=(cur||1)*100; else cur+=sub;
+      used++;
+    }
+    tot+=cur; return used&&tot>0?{n:tot,used}:null;
+  }
+  function parseNeed(text){
+    let t=String(text||'').trim().replace(/\s+/g,' ');
+    let m=t.match(/^(\d+(?:[.,]\d+)?)\s*(?:x|fois|pièces?|pcs|unités?)?\s+(.+)$/i);
+    if(m) return {qty:parseFloat(m[1].replace(',','.')),q:m[2].trim()};
+    const ws=t.toLowerCase().split(' ');
+    const r=wordsToNumber(ws.slice(0,4));
+    if(r&&ws.length>r.used) return {qty:r.n,q:t.split(' ').slice(r.used).join(' ').replace(/^(de|d'|du|des)\s*/i,'').trim()};
+    return {qty:null,q:t};
+  }
+  window.VOICE_QTY=null;
+  function showInfo(qty,q,msg){
+    if(msg){info.innerHTML=msg;info.style.display='block';return;}
+    info.innerHTML='🎤 Besoin dicté : <b>'+(qty?qty+' × ':'')+esc(q)+'</b>'+(qty?' — la quantité sera appliquée à l\'article que vous ajoutez au panier.':'')
+      +' <button type="button" onclick="voiceClear()" style="margin-left:8px;border:0;background:#0b4f9c;color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer">✕</button>';
+    info.style.display='block';
+  }
+  window.voiceClear=function(){window.VOICE_QTY=null;info.style.display='none';};
+  let rec=null,listening=false;
+  btn.onclick=function(){
+    if(!SR) return;
+    if(listening&&rec){rec.stop();return;}
+    rec=new SR(); rec.lang='fr-CH'; rec.interimResults=false; rec.maxAlternatives=1;
+    rec.onstart=function(){listening=true;btn.textContent='⏹';btn.style.background='#d92d20';showInfo(0,'','🎤 Je vous écoute… dites par ex. « 20 coudes PVC 110 ».');};
+    rec.onend=function(){listening=false;btn.textContent='🎤';btn.style.background='#0b4f9c';};
+    rec.onerror=function(e){
+      const m=e.error==='not-allowed'||e.error==='service-not-allowed'?'Micro refusé : autorisez le micro pour ce site dans le navigateur.':e.error==='no-speech'?'Rien entendu, réessayez.':'Saisie vocale indisponible ('+esc(e.error)+').';
+      showInfo(0,'','🎤 '+m);
+    };
+    rec.onresult=function(ev){
+      const text=ev.results[0][0].transcript, need=parseNeed(text);
+      window.VOICE_QTY=need.qty>0?need.qty:null;
+      box.value=need.q;
+      box.dispatchEvent(new Event('input',{bubbles:true}));
+      showInfo(window.VOICE_QTY,need.q);
+    };
+    try{rec.start();}catch(e){}
+  };
+  // Quantité dictée appliquée à l'article ajouté juste après la dictée.
+  const _addCart=addCart;
+  addCart=function(p){
+    const vq=window.VOICE_QTY;
+    _addCart(p);
+    if(vq){
+      const k=cart.findIndex(i=>normalizeSupplierName(i.catalog)===normalizeSupplierName(p.catalog)&&i.article===p.article&&i.designation===p.designation);
+      if(k>=0) setQty(k,vq);
+      window.voiceClear();
+    }
+  };
+})();
+</script>
 </body></html>
