@@ -49,6 +49,12 @@ class Order < ApplicationRecord
   # sinon uniquement celles des chantiers qui lui sont visibles
   # (Chantier.visible_to : e-mail du fiche chantier, secteur, ou affectation
   # explicite Admin > Utilisateurs), quel que soit l'auteur de la commande.
+  # Environnement test (admin) et production ne se mélangent jamais : chacun a
+  # son Dashboard et sa numérotation.
+  def self.in_environment(test)
+    where(test_order: test ? true : false)
+  end
+
   def self.visible_to(user)
     return all if user&.admin?
     return none unless user
@@ -114,7 +120,13 @@ class Order < ApplicationRecord
   # show/let the user edit the real subject before sending. Racy under
   # concurrent submissions — purely cosmetic if two land at once, since the
   # actual number is still assigned atomically by set_number on save.
-  def self.next_number
+  def self.next_number(test: false)
+    if test
+      last_seq = where(test_order: true).pluck(:number)
+                   .filter_map { |n| n[/\AESHOP_TEST_(\d+)\z/, 1]&.to_i }.max || 0
+      return "ESHOP_TEST_#{(last_seq + 1).to_s.rjust(2, '0')}"
+    end
+
     last_seq = where("number LIKE 'ESHOP_INDUNI_%'").pluck(:number)
                  .filter_map { |n| n[/\AESHOP_INDUNI_(\d+)\z/, 1]&.to_i }.max || 0
     last_seq = [ last_seq, OrderNumberFloor.value ].max
@@ -133,6 +145,6 @@ class Order < ApplicationRecord
   end
 
   def set_number
-    self.number = modifies_order ? self.class.next_version_number(modifies_order) : self.class.next_number
+    self.number = modifies_order ? self.class.next_version_number(modifies_order) : self.class.next_number(test: test_order)
   end
 end

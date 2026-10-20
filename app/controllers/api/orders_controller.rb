@@ -22,7 +22,8 @@ class Api::OrdersController < ApplicationController
   # envoyer" step before the order actually exists. See Order.next_number.
   def next_number
     modifies_order = Order.find_by(id: params[:modifies_order_id]) if params[:modifies_order_id].present?
-    render json: { number: modifies_order ? Order.next_version_number(modifies_order) : Order.next_number }
+    test_mode = Api::TestProfilesController.active_profile(session, current_user).present?
+    render json: { number: modifies_order ? Order.next_version_number(modifies_order) : Order.next_number(test: test_mode) }
   end
 
   # Manual fallback for the reception accusé — the automated e-mail button
@@ -64,7 +65,9 @@ class Api::OrdersController < ApplicationController
   def index
     # Dashboard : un utilisateur ne voit que les commandes des chantiers qui lui
     # sont visibles/affectés (Order.visible_to), quel que soit l'auteur.
-    orders = Order.visible_to(current_user)
+    # Environnement test (admin) : Dashboard distinct, uniquement les commandes
+    # de test ; en production, jamais les commandes de test.
+    orders = Order.visible_to(current_user).in_environment(Api::TestProfilesController.active_profile(session, current_user).present?)
     # Recherche (barre du Dashboard) : sur TOUTES les commandes visibles, pas
     # seulement les 100 dernières affichées par défaut.
     searching = params[:q].present?
@@ -255,6 +258,7 @@ class Api::OrdersController < ApplicationController
       order_date:         Date.today,
       notes:              "Chantier: #{chantier} | Délai souhaité: #{delai}",
       modifies_order:     modifies_order,
+      test_order:         test_mode,
       contact:            contact,
       phone:              phone,
       delivery_address:   delivery_address,
@@ -322,7 +326,7 @@ class Api::OrdersController < ApplicationController
       # The order number itself is never user-editable content, so any
       # ESHOP_NN pattern found is corrected to the real one rather than left
       # to silently mismatch the attachment.
-      subject = subject.gsub(/ESHOP(?:_INDUNI)?_\d+(?:-V\d+)?/, order.number) if subject&.match?(/ESHOP(?:_INDUNI)?_\d+(?:-V\d+)?/)
+      subject = subject.gsub(/ESHOP(?:_INDUNI|_TEST)?_\d+(?:-V\d+)?/, order.number) if subject&.match?(/ESHOP(?:_INDUNI|_TEST)?_\d+(?:-V\d+)?/)
       body    = params[:body].to_s.strip.presence
       # Persisted so a failed send can be retried later (see #resend) with the
       # exact same recipients/message, instead of falling back to generic
@@ -423,7 +427,8 @@ class Api::OrdersController < ApplicationController
   # sur les liens Approuver/Refuser envoyés par e-mail.
   def pending_approvals
     return render json: [] unless current_user&.email
-    orders = Order.where(approver_email: current_user.email, approval_status: "pending_approval")
+    orders = Order.in_environment(Api::TestProfilesController.active_profile(session, current_user).present?)
+                  .where(approver_email: current_user.email, approval_status: "pending_approval")
                   .includes(:supplier, :user).order(created_at: :desc)
     can_see_confidential = current_user.admin? || current_user.effective_can_view_analysis?
     render json: orders.map { |o|

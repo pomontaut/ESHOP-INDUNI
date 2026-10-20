@@ -2,7 +2,7 @@ class OrdersController < ApplicationController
   before_action :set_order, only: [ :show, :edit, :update, :destroy, :send_to_supplier, :download_eml, :resubmit_approval ]
 
   def index
-    @orders = Order.visible_to(current_user).includes(:supplier, :user)
+    @orders = Order.visible_to(current_user).in_environment(false).includes(:supplier, :user)
   end
 
   def show

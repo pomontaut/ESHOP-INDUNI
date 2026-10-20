@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_19_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_20_100000) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -133,6 +133,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_100000) do
     t.string "sent_to"
     t.string "status"
     t.integer "supplier_id", null: false
+    t.boolean "test_order", default: false, null: false
     t.datetime "updated_at", null: false
     t.integer "user_id"
     t.index ["modifies_order_id"], name: "index_orders_on_modifies_order_id"

@@ -710,6 +710,31 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_match(/\A\[TEST\] /, mail.subject)
   end
 
+  test "test environment and production have separate dashboards and numbering" do
+    item = [ { article: "ART-1", designation: "Article test", qty: 1, prix: 10.0 } ]
+    order_params = { chantier: "12345-Chantier Test", delai: "20.10.2026", supplier: "HGC Test Fixture", items: item }
+
+    post api_orders_url, params: order_params
+    prod_number = JSON.parse(response.body)["order_number"]
+    assert_match(/\AESHOP_INDUNI_\d+\z/, prod_number)
+
+    post api_test_profile_url, params: { profile: "Développement" }
+    get next_number_api_orders_url
+    assert_equal "ESHOP_TEST_01", JSON.parse(response.body)["number"]
+    post api_orders_url, params: order_params
+    assert_equal "ESHOP_TEST_01", JSON.parse(response.body)["order_number"]
+    assert Order.find_by!(number: "ESHOP_TEST_01").test_order?
+
+    get api_orders_url
+    assert_equal [ "ESHOP_TEST_01" ], JSON.parse(response.body).map { |o| o["no"] }
+
+    delete api_test_profile_url
+    get api_orders_url
+    numbers = JSON.parse(response.body).map { |o| o["no"] }
+    assert_includes numbers, prod_number
+    assert_not_includes numbers, "ESHOP_TEST_01"
+  end
+
   test "outside the test environment the supplier still receives the order" do
     post api_orders_url, params: {
       chantier: "12345-Chantier Test", delai: "20.10.2026", supplier: "HGC Test Fixture",

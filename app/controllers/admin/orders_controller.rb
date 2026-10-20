@@ -13,7 +13,7 @@ class Admin::OrdersController < ApplicationController
     @count        = Order.count
     @line_count   = OrderLine.count
     @by_supplier  = Order.joins(:supplier).group("suppliers.name").order("suppliers.name").count
-    @last_number  = Order.where("number LIKE 'ESHOP_INDUNI_%'").pluck(:number)
+    @last_number  = Order.where(test_order: false).where("number LIKE 'ESHOP_INDUNI_%'").pluck(:number)
                          .filter_map { |n| n[/\AESHOP_INDUNI_(\d+)/, 1]&.to_i }.max
     @phrase       = CONFIRMATION_PHRASE
   end

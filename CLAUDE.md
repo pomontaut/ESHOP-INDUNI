@@ -302,6 +302,13 @@ multi-fournisseurs : date de livraison PAR commande (`SMART_DATES`), zone Soreva
 Canplast modifiable, fournisseur imposé par ligne (`SMART_OVERRIDE`), quantités et
 retrait de lignes éditables dans la page.
 
+**Dashboard distinct test / production** : `Order#test_order` (posée par `Api::OrdersController#create`
+quand un profil de l'environnement test est actif). `Order.in_environment(test)` filtre `GET /api/orders` et
+`pending_approvals` (test = uniquement les commandes de test, production = jamais celles-ci) ; les pages
+serveur `/orders` et Admin > Commandes (dernier n°) ne montrent que la production. Numérotation séparée :
+`ESHOP_TEST_nn` (jamais `ESHOP_INDUNI_nn`, `OrderNumberFloor` non touché). La migration a reclassé les
+commandes déjà envoyées avec objet « [TEST] » ; celles alors en attente d'approbation restent en production.
+
 ## E-shops en test : Tinguely (VD) et SGTT (GE)
 
 Prestations d'aspiratrice/pompage/transport de déchets (4 articles chacun, dans
