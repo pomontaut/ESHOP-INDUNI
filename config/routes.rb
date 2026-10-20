@@ -28,6 +28,18 @@ Rails.application.routes.draw do
     patch "nomenclature/:id", to: "nomenclature#update"
     resources :diesel_prices, only: [ :index, :create ]
     resources :canplast_surcharges, only: [ :index, :create ]
+    # Réception de commande / appels de livraison (environnement test uniquement)
+    scope :reception, as: :reception do
+      get    "orders",                         to: "receptions#orders",            as: :orders
+      get    "orders/:id",                     to: "receptions#order",             as: :order
+      patch  "orders/:id",                     to: "receptions#update_order",      as: :update_order
+      post   "orders/:id/delivery_calls",      to: "receptions#create_call",       as: :create_call
+      patch  "delivery_calls/:id",             to: "receptions#update_call",       as: :update_call
+      post   "orders/:id/receptions",          to: "receptions#create_reception",  as: :create_reception
+      post   "receptions/:id/scans",           to: "receptions#add_scans",         as: :add_scans
+      get    "receptions/:id/scans/:scan_id",  to: "receptions#scan",              as: :scan
+      delete "receptions/:id",                 to: "receptions#destroy_reception", as: :destroy_reception
+    end
     get :me, to: "sessions#me"
     post   "test_profile", to: "test_profiles#create"
     delete "test_profile", to: "test_profiles#destroy"

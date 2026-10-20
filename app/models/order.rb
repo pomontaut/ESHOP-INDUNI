@@ -16,6 +16,8 @@ class Order < ApplicationRecord
   has_many :revisions, class_name: "Order", foreign_key: :modifies_order_id, inverse_of: :modifies_order
   has_many :order_lines, dependent: :destroy
   has_many :products, through: :order_lines
+  has_many :delivery_calls, dependent: :destroy
+  has_many :receptions, dependent: :destroy
 
   before_create :generate_approval_token
   before_create :generate_reception_token

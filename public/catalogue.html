@@ -633,7 +633,7 @@ function goFunnel(cat,fam){
   funnelSel={catalog:null,famille:null,sous:null,sous2:null,diam:null,long:null};
   render();
 }
-function render(){const q=document.getElementById('searchBox').value.trim().toLowerCase(); if(q){return renderSearch(q)} if(state.view==='home')return renderHome(); if(state.view==='catalog')return renderCatalog(); if(state.view==='family')return renderFamily(); if(state.view==='subfamily')return renderSubFamily(); if(state.view==='level4')return renderLevel4(); if(state.view==='products')return renderProducts(); if(state.view==='dashboard')return renderDashboard(); if(state.view==='analysis')return renderAnalysis(); if(state.view==='marketIndices')return renderMarketIndices(); if(state.view==='intelligenceBuying')return renderIntelligenceBuying(); if(state.view==='depotInduni')return renderDepotInduni();}
+function render(){const q=document.getElementById('searchBox').value.trim().toLowerCase(); if(q){return renderSearch(q)} if(state.view==='home')return renderHome(); if(state.view==='catalog')return renderCatalog(); if(state.view==='family')return renderFamily(); if(state.view==='subfamily')return renderSubFamily(); if(state.view==='level4')return renderLevel4(); if(state.view==='products')return renderProducts(); if(state.view==='dashboard')return renderDashboard(); if(state.view==='analysis')return renderAnalysis(); if(state.view==='marketIndices')return renderMarketIndices(); if(state.view==='intelligenceBuying')return renderIntelligenceBuying(); if(state.view==='depotInduni')return renderDepotInduni(); if(state.view==='receptions'&&window.renderReceptions)return window.renderReceptions();}
 function renderHome(){const h=PRODUCTS.filter(p=>p.catalog==='HG COMMERCIALE').length, c=PRODUCTS.filter(p=>p.catalog==='Canplast').length, l=PRODUCTS.filter(p=>p.catalog==='Leuba HIAG').length, cb=PRODUCTS.filter(p=>p.catalog==='CreaBeton').length, mbt=PRODUCTS.filter(p=>p.catalog==='MBT').length, alz=PRODUCTS.filter(p=>p.catalog==='ALZO AG').length, srv=PRODUCTS.filter(p=>p.catalog==='Soreval').length, bt=PRODUCTS.filter(p=>p.catalog==='BTest').length, lcbe=PRODUCTS.filter(p=>p.catalog==='LCBE').length, sika=PRODUCTS.filter(p=>p.catalog==='Sika').length, gan=PRODUCTS.filter(p=>p.catalog==='GANAMAT SA').length, swi=PRODUCTS.filter(p=>p.catalog==='Swisspor').length, ting=PRODUCTS.filter(p=>p.catalog==='Tinguely').length, sgtt=PRODUCTS.filter(p=>p.catalog==='SGTT').length, efco=PRODUCTS.filter(p=>p.catalog==='EFCO').length, hilti=PRODUCTS.filter(p=>p.catalog==='HILTI').length;
 const allowed=window._userPerms&&window._userPerms.allowed_suppliers;
 function canSee(key){return !allowed||allowed.length===0||allowed.includes(key);}
@@ -4330,6 +4330,7 @@ Promise.all([
     document.getElementById('testProfileBanner').style.display='block';
     if(typeof smartBuyInit==='function') smartBuyInit();
     if(typeof voiceInputInit==='function') voiceInputInit();
+    if(typeof recInit==='function') recInit();
   }
   if(perms.admin||perms.can_create_users) document.getElementById('adminNavLink').style.display='inline-flex';
   if(perms.admin) document.getElementById('adminChantiersNavLink').style.display='inline-flex';
@@ -5159,5 +5160,248 @@ window.voiceInputInit=function(){
     }
   };
 };
+</script>
+<script>
+/* ============================================================
+   RÉCEPTION DE COMMANDE ET APPEL DE LIVRAISON (environnement test uniquement)
+   Commande d'achat = commande de l'e-shop (pas d'ABACUS). Types : C1 diffus,
+   C2 livraison unique, C3 multijours, C4 multirotations, C5 prestation /
+   sous-traitance (réception par avancement). Suivi automatique par ligne :
+   Commandé / Planifié / Livré / Accepté / Restant, puis Facturé. Scan ou photo
+   du bon de livraison (réduite dans le navigateur, stockée en base).
+   Aucun prix n'est affiché ni transmis ici (prix confidentiels). API :
+   /api/reception/* (refusée hors environnement test). Activé par recInit().
+   ============================================================ */
+(function(){
+  const REC_STATUS_COLORS={ordered:'#697386',planned:'#0b4f9c',partial:'#b26a00',delivered:'#7a3db8',accepted:'#1a7f37',invoiced:'#0c1d34'};
+  const REC_RSTATUS={accepte:'✅ Accepté',reserves:'⚠️ Accepté avec réserves',refuse:'⛔ Refusé'};
+  const REC_TYPES={
+    C1:['C1 – Diffus','Commande < 5\'000 CHF via catalogue : commande simple, réception simplifiée'],
+    C2:['C2 – Livraison unique','Commande > 5\'000 CHF, une livraison : commande + réception unique'],
+    C3:['C3 – Multijours','Commande > 5\'000 CHF, livraisons échelonnées : commande + appels de livraison + réceptions'],
+    C4:['C4 – Multirotations','Tous montants, plusieurs livraisons dans une journée : commande + programme journalier + réceptions par rotation'],
+    C5:['C5 – Prestation / sous-traitance','Réception par avancement, attachement ou validation de service (pas de livraison physique)']
+  };
+  const FILTERS=[['all','Toutes'],['todo','À planifier'],['planned','Planifiées'],['partial','Livraison en cours / à solder'],['accepted','Soldées'],['invoiced','Facturées']];
+  let recRows=[], recFilter='all', recText='', recDetail=null;
+  const num=n=>{n=Number(n)||0;return Number.isInteger(n)?String(n):String(Math.round(n*1000)/1000)};
+  const badge=(st,label)=>`<span style="display:inline-block;padding:3px 10px;border-radius:999px;background:${REC_STATUS_COLORS[st]||'#697386'};color:#fff;font-size:12px;font-weight:800;white-space:nowrap">${esc(label)}</span>`;
+  const bar=p=>`<div style="background:#e5e7eb;border-radius:999px;height:9px;min-width:90px"><div style="width:${Math.min(100,Math.max(0,p))}%;background:#1a7f37;height:9px;border-radius:999px"></div></div>`;
+  async function api(path,opts){
+    const r=await fetch('/api/reception/'+path,opts); let j={};
+    try{j=await r.json();}catch(e){}
+    if(!r.ok) throw new Error(j.error||('Erreur '+r.status));
+    return j;
+  }
+  const jpost=(path,body,method)=>api(path,{method:method||'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+
+  window.recInit=function(){
+    if(document.getElementById('receptionNavLink')) return;
+    const anchor=document.getElementById('dashboardNavLink')||document.querySelector('.topbar .home');
+    if(!anchor) return;
+    const b=document.createElement('button');
+    b.id='receptionNavLink'; b.className='home'; b.innerHTML='📦 Réceptions 🧪';
+    b.onclick=function(){window.showReceptions();};
+    anchor.parentNode.insertBefore(b,anchor.nextSibling);
+  };
+  window.showReceptions=function(id){
+    if(typeof closeNavDropdowns==='function') closeNavDropdowns();
+    state={view:'receptions',recOrder:id||null,catalog:null,famille:null,sous:null};
+    document.getElementById('searchBox').value='';
+    render();
+  };
+  window.renderReceptions=function(){
+    if(state.recOrder) return recRenderDetail(state.recOrder);
+    return recRenderList();
+  };
+
+  /* ---------- Liste ---------- */
+  async function recRenderList(){
+    app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › Réceptions</div><div class="toolbar"><h2>📦 Réception de commande &amp; appels de livraison 🧪</h2></div>
+    <p class="muted">Environnement test. La commande d'achat est celle de l'e-shop ; ici on planifie les livraisons, on réceptionne chaque bon de livraison (avec scan) et le suivi se met à jour automatiquement : <b>Commandé → Planifié → Livré → Accepté → Restant → Facturé</b>.</p>
+    <div id="recFilters" style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"></div><div id="recList"><p class="muted">Chargement…</p></div>`;
+    try{ recRows=await api('orders'); }catch(e){ document.getElementById('recList').innerHTML='<p style="color:#b42318">'+esc(e.message)+'</p>'; return; }
+    recDrawList();
+  }
+  function recMatchFilter(r){
+    if(recFilter==='all') return true;
+    if(recFilter==='todo') return r.status==='ordered';
+    if(recFilter==='planned') return r.status==='planned';
+    if(recFilter==='partial') return r.status==='partial'||r.status==='delivered';
+    return r.status===recFilter;
+  }
+  function recDrawList(){
+    const f=document.getElementById('recFilters'); if(!f) return;
+    f.innerHTML=FILTERS.map(([k,l])=>`<button class="miniBtn ${recFilter===k?'':'gray'}" onclick="recSetFilter('${k}')">${l} (${recRows.filter(r=>k==='all'||(k==='todo'?r.status==='ordered':k==='planned'?r.status==='planned':k==='partial'?(r.status==='partial'||r.status==='delivered'):r.status===k)).length})</button>`).join('')
+      +`<input id="recSearch" placeholder="Rechercher n°, fournisseur, chantier…" value="${esc(recText)}" oninput="recSetText(this.value)" style="flex:1;min-width:200px;border:1px solid var(--line);border-radius:10px;padding:8px 12px">`;
+    const words=recText.toLowerCase().split(/\s+/).filter(Boolean);
+    const rows=recRows.filter(recMatchFilter).filter(r=>{const t=(r.no+' '+r.supplier+' '+r.chantier+' '+r.user_name).toLowerCase();return words.every(w=>t.includes(w));});
+    document.getElementById('recList').innerHTML=rows.length?`<div style="overflow-x:auto"><table class="dashTable"><thead><tr><th>N° commande</th><th>Date</th><th>Fournisseur</th><th>Chantier</th><th>Type</th><th>Statut</th><th>Accepté</th><th>Prochaine livraison</th><th>BL</th></tr></thead><tbody>${rows.map(r=>`<tr style="cursor:pointer" onclick="showReceptions(${r.id})"><td><b>${esc(r.no)}</b></td><td>${esc(r.date)}</td><td>${esc(r.supplier)}</td><td>${esc(r.chantier)}</td><td>${esc(r.type)}${r.typeSuggested?' <span class="muted" title="Type proposé automatiquement">*</span>':''}</td><td>${badge(r.status,r.statusLabel)}</td><td style="min-width:120px">${bar(r.acceptedPercent)}<small class="muted">${num(r.acceptedPercent)} %</small></td><td>${r.nextDelivery?esc(r.nextDelivery)+(r.nextDeliveryTime?' · '+esc(r.nextDeliveryTime):''):'—'}</td><td>${r.scans?'📎 '+r.scans:'—'}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">Aucune commande pour ce filtre.</p>';
+    const s=document.getElementById('recSearch'); if(s&&document.activeElement!==s&&recText){}
+  }
+  window.recSetFilter=function(k){recFilter=k;recDrawList();};
+  window.recSetText=function(v){recText=v;const pos=v.length;recDrawList();const s=document.getElementById('recSearch');if(s){s.focus();s.setSelectionRange(pos,pos);}};
+
+  /* ---------- Détail ---------- */
+  async function recRenderDetail(id){
+    app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showReceptions()">Réceptions</a> › Commande</div><p class="muted">Chargement…</p>`;
+    try{ recDetail=await api('orders/'+id); }catch(e){ app.innerHTML+=`<p style="color:#b42318">${esc(e.message)}</p>`; return; }
+    recDrawDetail();
+  }
+  function recDrawDetail(){
+    const d=recDetail; if(!d) return;
+    const svc=d.type==='C5';
+    const typeOpts=Object.keys(REC_TYPES).map(k=>`<option value="${k}" ${k===d.type?'selected':''}>${REC_TYPES[k][0]}</option>`).join('');
+    const lineTable=svc?'':`<div style="overflow-x:auto"><table class="dashTable"><thead><tr><th>Article</th><th>Désignation</th><th>Unité</th><th>Commandé</th><th>Planifié</th><th>Livré</th><th>Accepté</th><th>Restant</th></tr></thead><tbody>${d.lines.map(l=>`<tr><td>${esc(l.article)}</td><td>${esc(l.designation)}</td><td>${esc(l.unit||'')}</td><td>${num(l.ordered)}</td><td>${num(l.planned)}</td><td>${num(l.delivered)}</td><td>${num(l.accepted)}</td><td><b style="color:${l.remaining>0?'#b26a00':'#1a7f37'}">${num(l.remaining)}</b></td></tr>`).join('')}</tbody></table></div>`;
+    const calls=d.calls.length?d.calls.map(c=>{
+      const cls=c.status==='cancelled'?'#98a2b3':c.status==='delivered'?'#1a7f37':'#0b4f9c';
+      const lines=c.lines.map(cl=>{const l=d.lines.find(x=>x.id===cl.id);return l?esc(l.designation)+' × '+num(cl.quantity):''}).filter(Boolean).join(' · ');
+      const slots=(c.slots||[]).length?'<div style="margin-top:4px;font-size:13px">Programme : '+c.slots.map(s=>`<b>${esc(s.time||'')}</b> ${esc(s.label||'')}`).join(' · ')+'</div>':'';
+      return `<div style="border:1px solid var(--line);border-left:5px solid ${cls};border-radius:10px;padding:10px 14px;margin:8px 0;background:#fff"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b>📅 ${esc(c.plannedOn)}${c.time?' à '+esc(c.time):''}</b><span class="muted">${c.status==='planned'?'Planifié':c.status==='delivered'?'Livré':'Annulé'}</span><span style="flex:1"></span>${c.status==='planned'?`<button class="miniBtn" onclick="recOpenReceive(${c.id})">📥 Réceptionner</button><button class="miniBtn gray" onclick="recCancelCall(${c.id})">Annuler</button>`:''}</div>${lines?`<div style="font-size:13px;margin-top:4px">${lines}</div>`:''}${slots}${c.notes?`<div class="muted" style="font-size:13px;margin-top:4px">${esc(c.notes)}</div>`:''}</div>`;
+    }).join(''):'<p class="muted">Aucun appel de livraison.</p>';
+    const recs=d.receptionList.length?d.receptionList.map(r=>{
+      const lines=svc?`Avancement validé : <b>${num(r.progress)} %</b>`:r.lines.map(rl=>{const l=d.lines.find(x=>x.id===rl.id);return l?esc(l.designation)+' : livré '+num(rl.received)+' / accepté '+num(rl.accepted):''}).filter(Boolean).join('<br>');
+      const scans=r.scans.map(s=>s.type==='application/pdf'?`<a href="${s.url}" target="_blank" style="display:inline-block;margin:4px 6px 0 0;padding:6px 10px;border:1px solid var(--line);border-radius:8px;text-decoration:none">📄 ${esc(s.name||'BL.pdf')}</a>`:`<a href="${s.url}" target="_blank"><img src="${s.url}" alt="BL" style="height:70px;margin:4px 6px 0 0;border:1px solid var(--line);border-radius:8px"></a>`).join('');
+      return `<div style="border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:8px 0;background:#fff"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b>📥 ${esc(r.receivedOn)}</b>${r.bl?`<span>BL <b>${esc(r.bl)}</b></span>`:''}<span>${REC_RSTATUS[r.status]||''}</span><span class="muted">${esc(r.user||'')}</span><span style="flex:1"></span><button class="miniBtn gray" onclick="recAddScan(${r.id})">＋ Scan BL</button><button class="miniBtn gray" onclick="recDeleteReception(${r.id})" title="Supprimer cette saisie">🗑</button></div><div style="font-size:13px;margin-top:6px">${lines}</div>${r.comment?`<div class="muted" style="font-size:13px;margin-top:4px">💬 ${esc(r.comment)}</div>`:''}<div>${scans}</div></div>`;
+    }).join(''):'<p class="muted">Aucune réception enregistrée.</p>';
+    app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showReceptions()">Réceptions</a> › ${esc(d.no)}</div>
+    <div class="toolbar"><h2>${esc(d.no)} — ${esc(d.supplier)}</h2>${badge(d.status,d.statusLabel)}</div>
+    <p class="muted">Chantier : <b>${esc(d.chantier)}</b>${d.deliveryDate?' · Délai souhaité : <b>'+esc(d.deliveryDate)+'</b>':''}${d.address?' · Livraison : '+esc(d.address):''}${d.invoicedAt?' · Facturé le '+esc(d.invoicedAt):''}</p>
+    <div style="background:#fff;border-radius:14px;box-shadow:0 8px 22px #0b1e3515;padding:14px 18px;margin:14px 0">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><label><b>Type de gestion</b> <select id="recType" onchange="recSetType(this.value)" style="border:1px solid var(--line);border-radius:8px;padding:6px 10px">${typeOpts}</select></label>${d.typeSuggested?'<span class="muted">(proposé automatiquement — modifiable)</span>':''}</div>
+      <div class="muted" style="margin-top:6px">${esc(REC_TYPES[d.type][1])}</div>
+      <div style="display:flex;gap:14px;align-items:center;margin-top:10px"><div style="flex:1">${bar(d.acceptedPercent)}</div><b>${num(d.acceptedPercent)} % accepté</b></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button class="miniBtn" onclick="recOpenCall()">📅 Nouvel appel de livraison</button><button class="miniBtn" onclick="recOpenReceive()">📥 ${svc?'Valider un avancement':'Réceptionner une livraison'}</button><button class="miniBtn gray" onclick="recToggleInvoiced()">${d.invoicedAt?'↩︎ Retirer « Facturé »':'🧾 Marquer facturé'}</button></div>
+    ${svc?'':'<h3>Suivi par article</h3>'+lineTable}
+    <h3>Appels de livraison</h3>${calls}
+    <h3>Réceptions (bons de livraison)</h3>${recs}`;
+  }
+  async function recApply(p){ try{ recDetail=await p; recDrawDetail(); recCloseModal(); }catch(e){ recModalError(e.message); if(!document.getElementById('recModal')) alert(e.message); } }
+  window.recSetType=function(v){recApply(jpost('orders/'+recDetail.id,{reception_type:v},'PATCH'));};
+  window.recToggleInvoiced=function(){recApply(jpost('orders/'+recDetail.id,{invoiced:!recDetail.invoicedAt},'PATCH'));};
+  window.recCancelCall=function(id){if(confirm('Annuler cet appel de livraison ?')) recApply(jpost('delivery_calls/'+id,{status:'cancelled'},'PATCH'));};
+  window.recDeleteReception=function(id){if(confirm('Supprimer cette réception (quantités et scans) ? À utiliser pour corriger une erreur de saisie.')) recApply(api('receptions/'+id,{method:'DELETE'}));};
+
+  /* ---------- Fenêtre modale ---------- */
+  function recOpenModal(title,html){
+    recCloseModal();
+    const m=document.createElement('div'); m.id='recModal';
+    m.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(12,29,52,.55);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:4vh 12px';
+    m.innerHTML=`<div style="background:#fff;border-radius:16px;max-width:720px;width:100%;padding:20px 22px;box-shadow:0 20px 60px #0008"><div style="display:flex;align-items:center"><h3 style="margin:0;flex:1">${title}</h3><button onclick="recCloseModal()" style="border:0;background:none;font-size:22px;cursor:pointer">✕</button></div><div id="recModalErr" style="display:none;margin:10px 0;background:#fef3f2;color:#b42318;border-radius:8px;padding:8px 12px"></div>${html}</div>`;
+    document.body.appendChild(m);
+  }
+  window.recCloseModal=function(){const m=document.getElementById('recModal');if(m)m.remove();recFiles=[];};
+  function recModalError(msg){const e=document.getElementById('recModalErr');if(e){e.textContent=msg;e.style.display='block';e.scrollIntoView({block:'nearest'});}}
+  const inp='style="border:1px solid var(--line);border-radius:8px;padding:7px 10px;width:100%"';
+
+  /* ---------- Appel de livraison ---------- */
+  window.recOpenCall=function(){
+    const d=recDetail, svc=d.type==='C5', c4=d.type==='C4';
+    const rows=svc?'':d.lines.map(l=>`<tr><td>${esc(l.designation)}<br><small class="muted">${esc(l.article||'')} · restant à planifier ${num(l.unplanned)} ${esc(l.unit||'')}</small></td><td style="width:120px"><input type="number" min="0" step="any" class="recQty" data-id="${l.id}" value="${l.unplanned>0?l.unplanned:''}" ${inp}></td></tr>`).join('');
+    recOpenModal('📅 Appel de livraison',`<p class="muted">Date et heure demandées au fournisseur${c4?' — ajoutez les rotations (camions) de la journée dans le programme':''}.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label>Date<input type="date" id="recDate" ${inp}></label><label>Heure<input type="time" id="recTime" ${inp}></label></div>
+      ${c4?`<div id="recSlots" style="margin:10px 0"></div><button class="miniBtn gray" onclick="recAddSlot()">＋ Rotation</button>`:''}
+      ${svc?'':`<table class="dashTable" style="margin-top:10px"><thead><tr><th>Article</th><th>Quantité à livrer</th></tr></thead><tbody>${rows}</tbody></table>`}
+      <label style="display:block;margin-top:10px">Remarque<textarea id="recNotes" rows="2" ${inp}></textarea></label>
+      <div style="text-align:right;margin-top:14px"><button class="miniBtn gray" onclick="recCloseModal()">Annuler</button> <button class="miniBtn" onclick="recSubmitCall()">Enregistrer l'appel</button></div>`);
+    if(c4){recAddSlot();recAddSlot();}
+  };
+  window.recAddSlot=function(){
+    const box=document.getElementById('recSlots'); if(!box) return;
+    const n=box.children.length+1, div=document.createElement('div');
+    div.style.cssText='display:grid;grid-template-columns:110px 1fr 36px;gap:8px;margin:6px 0';
+    div.innerHTML=`<input type="time" class="recSlotTime" ${inp}><input type="text" class="recSlotLabel" placeholder="Rotation ${n} (camion, remarque…)" ${inp}><button type="button" class="miniBtn gray" onclick="this.parentNode.remove()">✕</button>`;
+    box.appendChild(div);
+  };
+  window.recSubmitCall=function(){
+    const lines=[...document.querySelectorAll('.recQty')].filter(i=>Number(i.value)>0).map(i=>({id:Number(i.dataset.id),quantity:Number(i.value)}));
+    const slots=[...document.querySelectorAll('#recSlots > div')].map(r=>({time:r.querySelector('.recSlotTime').value,label:r.querySelector('.recSlotLabel').value})).filter(s=>s.time||s.label);
+    const date=document.getElementById('recDate').value;
+    if(!date) return recModalError('Indiquez la date de livraison.');
+    recApply(jpost('orders/'+recDetail.id+'/delivery_calls',{planned_on:date,planned_time:document.getElementById('recTime').value,notes:document.getElementById('recNotes').value,slots,lines}));
+  };
+
+  /* ---------- Réception ---------- */
+  let recFiles=[];
+  window.recOpenReceive=function(callId){
+    const d=recDetail, svc=d.type==='C5';
+    const call=callId?d.calls.find(c=>c.id===callId):null;
+    const today=new Date().toISOString().slice(0,10);
+    const rows=svc?'':d.lines.filter(l=>call?call.lines.some(cl=>cl.id===l.id):true).map(l=>{
+      const q=call?call.lines.find(cl=>cl.id===l.id).quantity:l.remaining;
+      return `<tr><td>${esc(l.designation)}<br><small class="muted">${esc(l.article||'')} · restant ${num(l.remaining)} ${esc(l.unit||'')}</small></td><td style="width:105px"><input type="number" min="0" step="any" class="recRecv" data-id="${l.id}" value="${q>0?q:''}" oninput="recSyncAccepted(this)" ${inp}></td><td style="width:105px"><input type="number" min="0" step="any" class="recAcc" data-id="${l.id}" value="${q>0?q:''}" ${inp}></td></tr>`;}).join('');
+    const callOpts=d.calls.filter(c=>c.status==='planned'||c.id===callId).map(c=>`<option value="${c.id}" ${c.id===callId?'selected':''}>${esc(c.plannedOn)}${c.time?' '+esc(c.time):''}</option>`).join('');
+    recOpenModal(svc?'📥 Validation d\'avancement':'📥 Réception de livraison',`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label>Date de réception<input type="date" id="rcDate" value="${today}" ${inp}></label><label>N° de bon de livraison<input type="text" id="rcBl" placeholder="ex. 2026-48213" ${inp}></label></div>
+      ${callOpts?`<label style="display:block;margin-top:10px">Appel de livraison concerné<select id="rcCall" ${inp}><option value="">— hors appel —</option>${callOpts}</select></label>`:''}
+      ${svc?`<label style="display:block;margin-top:10px">Avancement validé cumulé (%)<input type="number" id="rcProg" min="0" max="100" step="any" value="${d.acceptedPercent||''}" ${inp}></label>`
+           :`<table class="dashTable" style="margin-top:10px"><thead><tr><th>Article</th><th>Livré</th><th>Accepté</th></tr></thead><tbody>${rows}</tbody></table><p class="muted" style="font-size:12px">Accepté &lt; livré = marchandise refusée ou non conforme (reste à livrer).</p>`}
+      <label style="display:block;margin-top:10px">Décision<select id="rcStatus" ${inp}><option value="accepte">✅ Accepté</option><option value="reserves">⚠️ Accepté avec réserves</option><option value="refuse">⛔ Refusé</option></select></label>
+      <label style="display:block;margin-top:10px">Commentaire / réserves<textarea id="rcComment" rows="2" ${inp}></textarea></label>
+      <div style="margin-top:10px"><b>Bon de livraison (scan / photo)</b>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button type="button" class="miniBtn" onclick="document.getElementById('rcCam').click()">📷 Prendre une photo</button><button type="button" class="miniBtn gray" onclick="document.getElementById('rcFile').click()">📎 Joindre un fichier</button></div>
+        <input type="file" id="rcCam" accept="image/*" capture="environment" style="display:none" onchange="recPickFiles(this)"><input type="file" id="rcFile" accept="image/*,application/pdf" multiple style="display:none" onchange="recPickFiles(this)">
+        <div id="rcPreview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div></div>
+      <div style="text-align:right;margin-top:14px"><button class="miniBtn gray" onclick="recCloseModal()">Annuler</button> <button class="miniBtn" id="rcSave" onclick="recSubmitReceive()">Enregistrer la réception</button></div>`);
+    recFiles=[];
+  };
+  window.recSyncAccepted=function(el){const acc=document.querySelector('.recAcc[data-id="'+el.dataset.id+'"]');if(acc)acc.value=el.value;};
+  window.recPickFiles=async function(el){
+    for(const f of [...el.files]){ try{ recFiles.push(await recShrink(f)); }catch(e){ recModalError('Fichier illisible : '+f.name); } }
+    el.value=''; recDrawPreview();
+  };
+  // Photo de BL : réduite à 1800 px max, JPEG 0,8 (un téléphone produit 5-10 Mo).
+  async function recShrink(f){
+    if(f.type==='application/pdf'||!/^image\//.test(f.type)) return f;
+    const url=URL.createObjectURL(f);
+    try{
+      const img=await new Promise((ok,ko)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=ko;i.src=url;});
+      const k=Math.min(1,1800/Math.max(img.naturalWidth,img.naturalHeight));
+      const c=document.createElement('canvas'); c.width=Math.round(img.naturalWidth*k); c.height=Math.round(img.naturalHeight*k);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.8));
+      return blob?new File([blob],(f.name||'bl').replace(/\.[^.]+$/,'')+'.jpg',{type:'image/jpeg'}):f;
+    } finally { URL.revokeObjectURL(url); }
+  }
+  function recDrawPreview(){
+    const p=document.getElementById('rcPreview'); if(!p) return;
+    p.innerHTML=recFiles.map((f,i)=>`<div style="position:relative;border:1px solid var(--line);border-radius:8px;padding:4px">${f.type==='application/pdf'?`<div style="width:70px;height:70px;display:flex;align-items:center;justify-content:center;font-size:28px">📄</div>`:`<img src="${URL.createObjectURL(f)}" style="height:70px;display:block">`}<button type="button" onclick="recFiles_remove(${i})" style="position:absolute;top:-8px;right:-8px;border:0;border-radius:50%;width:20px;height:20px;background:#d92d20;color:#fff;cursor:pointer">×</button></div>`).join('');
+  }
+  window.recFiles_remove=function(i){recFiles.splice(i,1);recDrawPreview();};
+  function recFormData(extra){
+    const fd=new FormData();
+    Object.keys(extra).forEach(k=>{ if(extra[k]!==undefined&&extra[k]!==null) fd.append(k,extra[k]); });
+    recFiles.forEach(f=>fd.append('scans[]',f,f.name));
+    return fd;
+  }
+  window.recSubmitReceive=function(){
+    const d=recDetail, svc=d.type==='C5';
+    const extra={received_on:document.getElementById('rcDate').value,bl_number:document.getElementById('rcBl').value,comment:document.getElementById('rcComment').value,status:document.getElementById('rcStatus').value,delivery_call_id:(document.getElementById('rcCall')||{}).value||''};
+    if(svc){ extra.progress_percent=document.getElementById('rcProg').value; if(extra.progress_percent==='') return recModalError("Indiquez l'avancement validé."); }
+    else{
+      let n=0;
+      document.querySelectorAll('.recRecv').forEach(r=>{
+        const q=Number(r.value)||0; if(q<=0) return;
+        const acc=document.querySelector('.recAcc[data-id="'+r.dataset.id+'"]'); const a=acc.value===''?q:Number(acc.value);
+        extra['lines['+n+'][id]']=r.dataset.id; extra['lines['+n+'][quantity]']=q; extra['lines['+n+'][accepted]']=Math.min(a,q); n++;
+      });
+      if(!n) return recModalError('Indiquez au moins une quantité livrée.');
+    }
+    const b=document.getElementById('rcSave'); if(b){b.disabled=true;b.textContent='Envoi…';}
+    recApply(api('orders/'+d.id+'/receptions',{method:'POST',body:recFormData(extra)})).finally(()=>{const b2=document.getElementById('rcSave');if(b2){b2.disabled=false;b2.textContent='Enregistrer la réception';}});
+  };
+  window.recAddScan=function(recId){
+    recOpenModal('📎 Ajouter un scan de BL',`<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="miniBtn" onclick="document.getElementById('rcCam').click()">📷 Prendre une photo</button><button type="button" class="miniBtn gray" onclick="document.getElementById('rcFile').click()">📎 Joindre un fichier</button></div>
+      <input type="file" id="rcCam" accept="image/*" capture="environment" style="display:none" onchange="recPickFiles(this)"><input type="file" id="rcFile" accept="image/*,application/pdf" multiple style="display:none" onchange="recPickFiles(this)">
+      <div id="rcPreview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"></div>
+      <div style="text-align:right;margin-top:14px"><button class="miniBtn gray" onclick="recCloseModal()">Annuler</button> <button class="miniBtn" onclick="recSubmitScans(${recId})">Enregistrer</button></div>`);
+    recFiles=[];
+  };
+  window.recSubmitScans=function(recId){
+    if(!recFiles.length) return recModalError('Choisissez une photo ou un fichier.');
+    recApply(api('receptions/'+recId+'/scans',{method:'POST',body:recFormData({})}));
+  };
+})();
 </script>
 </body></html>

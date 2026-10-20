@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_19_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_20_090000) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -79,6 +79,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_100000) do
     t.index ["email_technicien"], name: "index_chantiers_on_email_technicien"
   end
 
+  create_table "delivery_call_lines", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "delivery_call_id", null: false
+    t.integer "order_line_id", null: false
+    t.decimal "quantity", precision: 14, scale: 3, default: "0.0", null: false
+    t.datetime "updated_at", null: false
+    t.index ["delivery_call_id"], name: "index_delivery_call_lines_on_delivery_call_id"
+    t.index ["order_line_id"], name: "index_delivery_call_lines_on_order_line_id"
+  end
+
+  create_table "delivery_calls", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "notes"
+    t.integer "order_id", null: false
+    t.date "planned_on", null: false
+    t.string "planned_time"
+    t.text "slots"
+    t.string "status", default: "planned", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id"
+    t.index ["order_id"], name: "index_delivery_calls_on_order_id"
+    t.index ["user_id"], name: "index_delivery_calls_on_user_id"
+  end
+
   create_table "diesel_prices", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.decimal "price", precision: 6, scale: 3, null: false
@@ -117,6 +141,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_100000) do
     t.text "delivery_address"
     t.datetime "email_sent_at"
     t.text "extra_charges"
+    t.datetime "invoiced_at"
     t.integer "modifies_order_id"
     t.text "notes"
     t.string "number"
@@ -125,6 +150,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_100000) do
     t.boolean "pickup", default: false, null: false
     t.datetime "reception_confirmed_at"
     t.string "reception_token"
+    t.string "reception_type"
     t.string "relance_kind"
     t.datetime "relance_sent_at"
     t.text "sent_body"
@@ -201,6 +227,44 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_100000) do
     t.integer "user_id", null: false
     t.index ["endpoint"], name: "index_push_subscriptions_on_endpoint", unique: true
     t.index ["user_id"], name: "index_push_subscriptions_on_user_id"
+  end
+
+  create_table "reception_lines", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "order_line_id", null: false
+    t.decimal "quantity_accepted", precision: 14, scale: 3, default: "0.0", null: false
+    t.decimal "quantity_received", precision: 14, scale: 3, default: "0.0", null: false
+    t.integer "reception_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_line_id"], name: "index_reception_lines_on_order_line_id"
+    t.index ["reception_id"], name: "index_reception_lines_on_reception_id"
+  end
+
+  create_table "reception_scans", force: :cascade do |t|
+    t.integer "byte_size", default: 0, null: false
+    t.string "content_type", null: false
+    t.datetime "created_at", null: false
+    t.binary "data", null: false
+    t.string "filename"
+    t.integer "reception_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["reception_id"], name: "index_reception_scans_on_reception_id"
+  end
+
+  create_table "receptions", force: :cascade do |t|
+    t.string "bl_number"
+    t.text "comment"
+    t.datetime "created_at", null: false
+    t.integer "delivery_call_id"
+    t.integer "order_id", null: false
+    t.decimal "progress_percent", precision: 6, scale: 2
+    t.date "received_on", null: false
+    t.string "status", default: "accepte", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id"
+    t.index ["delivery_call_id"], name: "index_receptions_on_delivery_call_id"
+    t.index ["order_id"], name: "index_receptions_on_order_id"
+    t.index ["user_id"], name: "index_receptions_on_user_id"
   end
 
   create_table "seance_lancements", force: :cascade do |t|

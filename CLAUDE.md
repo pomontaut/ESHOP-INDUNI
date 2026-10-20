@@ -302,6 +302,22 @@ multi-fournisseurs : date de livraison PAR commande (`SMART_DATES`), zone Soreva
 Canplast modifiable, fournisseur imposé par ligne (`SMART_OVERRIDE`), quantités et
 retrait de lignes éditables dans la page.
 
+## Réception de commande et appels de livraison (environnement test uniquement)
+
+Bouton « 📦 Réceptions 🧪 » (`recInit()`, dernier `<script>` de `catalogue.html`, préfixe `rec*`, vue
+`state.view === 'receptions'` branchée dans `render()`), visible seulement avec un profil de l'environnement
+test ; `Api::ReceptionsController` (`/api/reception/*`) refuse (403) hors profil test. La commande d'achat =
+la commande de l'e-shop (pas d'ABACUS), périmètre `Order.visible_to`. Types `OrderReceptionTracker::TYPES` :
+C1 diffus (< 5'000 CHF), C2 livraison unique, C3 multijours, C4 multirotations (programme journalier =
+`DeliveryCall#slots`), C5 prestation/sous-traitance (réception par avancement %, `Reception#progress_percent`) ;
+type proposé automatiquement (C2 pour un fournisseur à prix confidentiel, jamais de seuil exposé), modifiable
+(`Order#reception_type`). Modèles : `DeliveryCall`(+`Line`) = appel de livraison, `Reception`(+`ReceptionLine` livré/
+accepté) = un BL/camion, `ReceptionScan` = scan/photo de BL **stockée en base** (JPEG/PNG/WebP/PDF ≤ 8 Mo, 10
+max ; photos réduites à 1800 px côté navigateur), `Order#invoiced_at` = Facturé. Suivi calculé par
+`OrderReceptionTracker` (Commandé / Planifié / Livré / Accepté / Restant / Facturé). Aucun prix n'est exposé.
+Tables sans clé étrangère SQL : la purge Admin > Commandes les nettoie elle-même. Pour sortir du test :
+retirer le garde `require_test_environment` et rendre le bouton visible à tous.
+
 ## E-shops en test : Tinguely (VD) et SGTT (GE)
 
 Prestations d'aspiratrice/pompage/transport de déchets (4 articles chacun, dans
