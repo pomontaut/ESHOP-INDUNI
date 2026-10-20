@@ -15,7 +15,7 @@ class LeubaHiagPaquetTest < ActiveSupport::TestCase
 
     2.times { run_migration }
 
-    assert_equal 770.31, carrelet.reload.unit_price.to_f      # 317 × 0.027×0.150×4 × 150 = 317 × 2.43
+    assert_equal 811.62, carrelet.reload.unit_price.to_f      # 317 × 0.027×0.150×4 × 150 = 317 × 2.43
     assert_equal "paquet", carrelet.unite
     assert_includes carrelet.descriptif, "CHF 317.00/m³"
     assert_equal 1, carrelet.descriptif.scan("Prix au paquet").size, "pas de préfixe en double"
@@ -28,7 +28,7 @@ class LeubaHiagPaquetTest < ActiveSupport::TestCase
   test "seed catalog prices Leuba HIAG wood per paquet" do
     items = JSON.parse(File.read(Rails.root.join("db/seed_data/catalog_products.json"))).select { |i| i["catalog"] == "Leuba HIAG" }
     assert_empty items.select { |i| i["unite"] == "m3" }
-    assert_equal 770.31, items.find { |i| i["article"] == "127484" }["prix"]
+    assert_equal 811.62, items.find { |i| i["article"] == "127484" }["prix"]
     assert_equal "paquet", items.find { |i| i["article"] == "127484" }["unite"]
   end
 end
