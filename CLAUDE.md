@@ -305,8 +305,8 @@ retrait de lignes éditables dans la page.
 ## Réception de commande et appels de livraison (environnement test uniquement)
 
 Bouton « 📦 Réceptions 🧪 » (`recInit()`, dernier `<script>` de `catalogue.html`, préfixe `rec*`, vue
-`state.view === 'receptions'` branchée dans `render()`), visible seulement avec un profil de l'environnement
-test ; `Api::ReceptionsController` (`/api/reception/*`) refuse (403) hors profil test. La commande d'achat =
+`state.view === 'receptions'` branchée dans `render()`), visible seulement dans « Environnement test : Développement » (`perms.dev_mode`),
+pas dans les vues Contremaître / Conducteur ; `Api::ReceptionsController` (`/api/reception/*`) refuse (403) hors dev_mode. La commande d'achat =
 la commande de l'e-shop (pas d'ABACUS), périmètre `Order.visible_to`. Types `OrderReceptionTracker::TYPES` :
 C1 diffus (< 5'000 CHF), C2 livraison unique, C3 multijours, C4 multirotations (programme journalier =
 `DeliveryCall#slots`), C5 prestation/sous-traitance (réception par avancement %, `Reception#progress_percent`) ;

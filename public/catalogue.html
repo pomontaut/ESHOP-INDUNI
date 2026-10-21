@@ -4330,7 +4330,7 @@ Promise.all([
     document.getElementById('testProfileBanner').style.display='block';
     if(typeof smartBuyInit==='function') smartBuyInit();
     if(typeof voiceInputInit==='function') voiceInputInit();
-    if(typeof recInit==='function') recInit();
+    if(perms.dev_mode&&typeof recInit==='function') recInit();
   }
   if(perms.admin||perms.can_create_users) document.getElementById('adminNavLink').style.display='inline-flex';
   if(perms.admin) document.getElementById('adminChantiersNavLink').style.display='inline-flex';

@@ -14,6 +14,14 @@ class Api::ReceptionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
+  test "refusé dans les vues Contremaître et Conducteur de travaux de l'environnement test" do
+    [ "Contremaître", "Conducteur de travaux" ].each do |profile|
+      post api_test_profile_url, params: { profile: profile }
+      get api_reception_orders_url
+      assert_response :forbidden
+    end
+  end
+
   test "commande, appel de livraison, réception partielle puis solde avec scan de BL" do
     post api_test_profile_url, params: { profile: "Développement" }
     get api_reception_orders_url

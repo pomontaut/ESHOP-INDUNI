@@ -1,5 +1,6 @@
 # Module « Réception de commande et appel de livraison » — ENVIRONNEMENT TEST
-# uniquement (admin avec un profil test actif, cf. Api::TestProfilesController).
+# « Développement » uniquement (pas les vues Contremaître / Conducteur de travaux,
+# cf. Api::TestProfilesController).
 # La commande d'achat est celle de l'e-shop ; périmètre = Order.visible_to.
 # Aucun prix n'est exposé : quantités et statuts seulement.
 class Api::ReceptionsController < ApplicationController
@@ -125,7 +126,7 @@ class Api::ReceptionsController < ApplicationController
   private
 
   def require_test_environment
-    return if Api::TestProfilesController.active_profile(session, current_user)
+    return if Api::TestProfilesController.dev_mode?(session, current_user)
 
     render json: { error: "Module disponible uniquement dans l'environnement test." }, status: :forbidden
   end
