@@ -4329,8 +4329,11 @@ Promise.all([
     if(!perms.dev_mode){ var approvalsBtn=document.getElementById('orderApprovalsNavLink'); if(approvalsBtn) approvalsBtn.style.display='none'; var pushBtn=document.getElementById('pushNotifBtn'); if(pushBtn) pushBtn.style.display='none'; window._hidePushBtn=true; }
     document.getElementById('testProfileLabel').textContent=perms.dev_mode?'🛠 Environnement test — Développement (droits admin conservés, fonctions en cours de développement actives)':perms.test_profile==='Formation contremaître'?'🎓 FORMATION — vue Contremaître (aucun e-mail envoyé aux fournisseurs, commandes de formation)':'🧪 Environnement test — vue '+perms.test_profile;
     document.getElementById('testProfileBanner').style.display='block';
+    // Formation : interface de production (panier unique), sans les fonctions de l'environnement test.
+    if(perms.test_profile!=='Formation contremaître'){
     if(typeof smartBuyInit==='function') smartBuyInit();
     if(typeof voiceInputInit==='function') voiceInputInit();
+    }
     if(perms.dev_mode&&typeof recInit==='function') recInit();
   }
   if(perms.admin||perms.can_create_users) document.getElementById('adminNavLink').style.display='inline-flex';

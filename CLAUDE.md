@@ -269,6 +269,12 @@ existante est conservée), cases dans Admin > Droits (`new`/`edit`), exposées p
 d'interface : les liens Approuver/Refuser des e-mails et les abonnements push
 déjà créés continuent de fonctionner.
 
+## Profil « Formation : vue Contremaître » (production)
+
+Profil admin (`TestProfilesController::TRAINING_PROFILE`) pour former en production : vue Contremaître, interface de
+PRODUCTION (panier unique : ni sélection multi-fournisseurs ni saisie vocale, ni onglet Réceptions), aucun e-mail
+fournisseur (mêmes garde-fous que l'environnement test), bandeau « FORMATION ».
+
 ## Sélection multi-fournisseurs (environnement test uniquement)
 
 Dernier `<script>` de `public/catalogue.html` (préfixe `smart*`), activé par
