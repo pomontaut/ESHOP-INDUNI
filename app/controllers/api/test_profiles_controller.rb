@@ -15,7 +15,11 @@ class Api::TestProfilesController < ApplicationController
   # copie au technicien / à l'approbateur réel) — tout est redirigé ici, côté
   # serveur, quoi que le navigateur envoie (voir Api::OrdersController#create).
   TEST_RECIPIENT = "pomontaut@induni.ch".freeze
-  PROFILES = [ "Contremaître", "Conducteur de travaux", DEV_PROFILE ].freeze
+  # « Formation » : vue Contremaître identique, pour former les utilisateurs en
+  # production — mêmes garde-fous que l'environnement test (aucun e-mail au
+  # fournisseur, tout redirigé vers TEST_RECIPIENT), seul le bandeau change.
+  TRAINING_PROFILE = "Formation contremaître".freeze
+  PROFILES = [ "Contremaître", "Conducteur de travaux", DEV_PROFILE, TRAINING_PROFILE ].freeze
 
   def self.active_profile(session, user)
     profile = session[:test_profile]

@@ -122,6 +122,17 @@ class Api::SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
+  test "admin can enter the training profile, seen as a Contremaître" do
+    post login_url, params: { email: users(:one).email, password: "password123" }
+    post api_test_profile_url, params: { profile: "Formation contremaître" }
+    assert_response :success
+    get api_me_url
+    body = JSON.parse(response.body)
+    assert_equal "Formation contremaître", body["test_profile"]
+    assert_equal false, body["admin"]
+    assert body["can_view_dashboard"]
+  end
+
   test "admin development environment keeps full admin rights and flags dev_mode" do
     post login_url, params: { email: users(:one).email, password: "password123" }
     post api_test_profile_url, params: { profile: "Développement" }

@@ -97,7 +97,7 @@ class Api::SessionsController < ApplicationController
       can_modify_orders: false,
       can_import_quote:  false,
       can_generic_order: false,
-      can_view_dashboard:    profile == "Contremaître",
+      can_view_dashboard:    [ "Contremaître", Api::TestProfilesController::TRAINING_PROFILE ].include?(profile),
       can_validate_orders:   false,
       can_enable_alerts:     false,
       can_view_analysis:     false,
