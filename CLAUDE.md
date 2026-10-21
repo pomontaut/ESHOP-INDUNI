@@ -351,6 +351,17 @@ Pas d'API HGC : la fiche embarque `stockLevelStatus` calculé pour le NPA du coo
 son site ; en cas d'échec le bouton affiche « indisponible » sans bloquer. Statut
 purement informatif, jamais utilisé pour bloquer une commande.
 
+## Reporting articles (Analyse achat + export SLA)
+
+`ArticleReport` (`app/services/article_report.rb`) agrège les commandes à la maille article (quantité, montant, prix
+moyen/dernier, variation, écart vs `catalog_price`) + indicateurs de fonctionnement (annulées, remplacées, e-mail non
+envoyé, approbations, relances, réceptions, facturées, catalogue jamais commandé). Exclut commandes annulées/remplacées
+des totaux et commandes `[TEST]`. `GET /api/reporting/articles` (Analyse achat, droit « Analyse », périmètre
+`Order.visible_to`, page « 🧾 Reporting articles » en fin de `catalogue.html`, préfixe `arep*`) et
+`GET /api/reporting/sla` (serveur à serveur, `Authorization: Bearer $SLA_REPORTING_TOKEN`, 503 si non défini ;
+**prix confidentiels toujours masqués**, quantités conservées) lu par la fiche fournisseur de SLA via sa fonction Supabase
+`eshop-reporting`. Toute nouvelle donnée de ligne doit rester masquée pour un fournisseur `confidential_pricing`.
+
 ## Deploy workflow (always follow this exact sequence)
 
 1. Edit, then run the full test suite: `bin/rails test` (must be 0

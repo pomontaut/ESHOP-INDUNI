@@ -2968,7 +2968,7 @@ function renderAnalysis(){
   const pct=(v)=>consortiumSoloTotal?Math.round(v/consortiumSoloTotal*100):0;
   const consortiumBlock=rows.length?`<div class="analysisBlock"><h3>Commandes consortium vs Induni seul</h3><table class="dashTable"><thead><tr><th>Type de chantier</th><th>Nb commandes</th><th>Montant total</th><th>% du total</th></tr></thead><tbody><tr><td><b>Consortium</b></td><td>${consortiumRows.length}</td><td>${fmt(consortiumTotal)}</td><td>${pct(consortiumTotal)}%</td></tr><tr><td><b>Induni seul</b></td><td>${soloRows.length}</td><td>${fmt(soloTotal)}</td><td>${pct(soloTotal)}%</td></tr></tbody></table></div>`:'';
 
-  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › Analyse achat</div><div class="toolbar"><h2>Analyse achat</h2><p class="muted">Indicateurs calculés sur les commandes générées dans cet outil.</p><button class="miniBtn" style="background:#0b4f9c;color:white" onclick="showMarketIndices()">📈 Indicateurs de marché</button></div><div class="dashboardCards"><div class="kpi"><small>Dépense totale suivie</small><b>${fmt(total)}</b></div><div class="kpi"><small>Nombre de commandes</small><b>${rows.length}</b></div><div class="kpi"><small>Panier moyen</small><b>${fmt(rows.length?total/rows.length:0)}</b></div><div class="kpi"><small>Fournisseur principal</small><b style="font-size:22px">${esc(supRows[0]?.[0]||'-')}</b></div>${eshopKpi}</div><div class="chartGrid">${svgPieV49(supRows,'Répartition dépenses par fournisseur')}${svgBarsV49(famRows,'Top familles d’achat')}${svgBarsV49(siteRows,'Dépenses par chantier')}${svgBarsV49(artRows,'Top articles commandés')}</div><div class="analysisBlock"><h3>Dépenses par fournisseur</h3>${supRows.length?supRows.map(([k,v])=>`<div class="barRow"><b>${esc(k)}</b><div class="barOuter"><div class="barInner" style="width:${Math.round(v/maxSup*100)}%"></div></div><span>${fmt(v)}</span></div>`).join(''):'<p class="muted">Aucune donnée.</p>'}</div>${consortiumBlock}${eshopBlock}${eshopLinesBlock}<div class="analysisBlock"><h3>Actions achats proposées</h3><p>1. Consolider les volumes par famille forte et négocier en priorité avec le fournisseur principal.</p><p>2. Suivre les chantiers récurrents pour anticiper les commandes répétitives via la fonction Dupliquer.</p><p>3. Contrôler les articles à fort montant et utiliser le comparatif fournisseur avant validation.</p></div>`;
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › Analyse achat</div><div class="toolbar"><h2>Analyse achat</h2><p class="muted">Indicateurs calculés sur les commandes générées dans cet outil.</p><button class="miniBtn" style="background:#0b4f9c;color:white" onclick="showMarketIndices()">📈 Indicateurs de marché</button> <button class="miniBtn" style="background:#0b4f9c;color:white" onclick="showArticleReport()">🧾 Reporting articles</button></div><div class="dashboardCards"><div class="kpi"><small>Dépense totale suivie</small><b>${fmt(total)}</b></div><div class="kpi"><small>Nombre de commandes</small><b>${rows.length}</b></div><div class="kpi"><small>Panier moyen</small><b>${fmt(rows.length?total/rows.length:0)}</b></div><div class="kpi"><small>Fournisseur principal</small><b style="font-size:22px">${esc(supRows[0]?.[0]||'-')}</b></div>${eshopKpi}</div><div class="chartGrid">${svgPieV49(supRows,'Répartition dépenses par fournisseur')}${svgBarsV49(famRows,'Top familles d’achat')}${svgBarsV49(siteRows,'Dépenses par chantier')}${svgBarsV49(artRows,'Top articles commandés')}</div><div class="analysisBlock"><h3>Dépenses par fournisseur</h3>${supRows.length?supRows.map(([k,v])=>`<div class="barRow"><b>${esc(k)}</b><div class="barOuter"><div class="barInner" style="width:${Math.round(v/maxSup*100)}%"></div></div><span>${fmt(v)}</span></div>`).join(''):'<p class="muted">Aucune donnée.</p>'}</div>${consortiumBlock}${eshopBlock}${eshopLinesBlock}<div class="analysisBlock"><h3>Actions achats proposées</h3><p>1. Consolider les volumes par famille forte et négocier en priorité avec le fournisseur principal.</p><p>2. Suivre les chantiers récurrents pour anticiper les commandes répétitives via la fonction Dupliquer.</p><p>3. Contrôler les articles à fort montant et utiliser le comparatif fournisseur avant validation.</p></div>`;
 }
 
 /* ===================================================
@@ -5406,6 +5406,73 @@ window.voiceInputInit=function(){
     if(!recFiles.length) return recModalError('Choisissez une photo ou un fichier.');
     recApply(api('receptions/'+recId+'/scans',{method:'POST',body:recFormData({})}));
   };
+})();
+</script>
+<script>
+/* Reporting articles (Analyse achat) : ce qu'on commande à la maille article
+   + indicateurs « l'e-shop fonctionne-t-il bien ? ». Données : GET /api/reporting/articles
+   (ArticleReport, même source que l'export lu par SLA). */
+(function(){
+  let data=null, filter={from:'',to:'',supplier:'',q:''}, sortKey='amount', sortDir=-1;
+  const n=v=>v==null?'🔒':Number(v).toLocaleString('fr-CH');
+  const money=v=>v==null?'🔒':fmt(v);
+  function load(){
+    const qs=new URLSearchParams();
+    if(filter.from)qs.set('from',filter.from); if(filter.to)qs.set('to',filter.to); if(filter.supplier)qs.set('supplier',filter.supplier);
+    return fetch('/api/reporting/articles?'+qs,{headers:{'Accept':'application/json'}}).then(r=>r.ok?r.json():Promise.reject(r.status)).then(d=>{data=d});
+  }
+  function csvOf(rows,cols){
+    const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+    return '﻿'+[cols.map(c=>q(c[0])).join(';')].concat(rows.map(r=>cols.map(c=>q(r[c[1]])).join(';'))).join('\n');
+  }
+  window.arepCsv=function(){
+    const rows=filtered();
+    const blob=new Blob([csvOf(rows,[['Fournisseur','supplier'],['Référence','reference'],['Désignation','name'],['Famille','famille'],['Unité','unite'],['Quantité','qty'],['Nb commandes','nbOrders'],['Montant','amount'],['Prix moyen','avgPrice'],['Dernier prix','lastPrice'],['Prix catalogue','catalogPrice'],['Variation prix %','priceVariationPct'],['Écart vs catalogue','gain']])],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='reporting_articles_eshop.csv';a.click();
+  };
+  function filtered(){
+    const words=filter.q.toLowerCase().split(/\s+/).filter(Boolean);
+    const rows=data.articles.filter(a=>words.every(w=>(a.supplier+' '+a.reference+' '+a.name+' '+a.famille).toLowerCase().includes(w)));
+    return rows.sort((a,b)=>{const x=a[sortKey],y=b[sortKey];return ((x==null?-Infinity:x)>(y==null?-Infinity:y)?1:-1)*sortDir});
+  }
+  window.arepSort=function(k){sortDir=sortKey===k?-sortDir:-1;sortKey=k;draw()};
+  window.arepSet=function(k,v){filter[k]=v;if(k==='q'){draw();const i=document.getElementById('arepQ');if(i){i.focus();i.setSelectionRange(v.length,v.length)}}else{show()}};
+  function kpi(l,v,s){return `<div class="kpi"><small>${l}</small><b style="font-size:22px">${v}</b>${s?`<small>${s}</small>`:''}</div>`}
+  function draw(){
+    if(!data)return;
+    const k=data.kpis, rows=filtered();
+    const pct=(a,b)=>b?Math.round(a/b*100)+' %':'—';
+    window._arepSups=data.suppliers.map(s=>s.name);
+    const th=(key,label)=>`<th style="cursor:pointer" onclick="arepSort('${key}')">${label}${sortKey===key?(sortDir<0?' ▼':' ▲'):''}</th>`;
+    const monthRows=data.months.map(m=>`<tr><td>${m.month}</td><td>${m.nbOrders}</td><td>${m.users}</td><td>${fmt(m.amount)}</td></tr>`).join('');
+    const supRows=data.suppliers.map(s=>`<tr><td>${esc(s.name)}</td><td>${s.nbOrders}</td><td>${s.nbArticles}</td><td>${n(s.qty)}</td><td>${money(s.amount)}</td></tr>`).join('');
+    const artRows=rows.slice(0,500).map(a=>`<tr><td>${esc(a.supplier)}</td><td>${esc(a.reference)}</td><td>${esc(a.name)}</td><td style="text-align:right">${n(a.qty)} ${esc(a.unite||'')}</td><td style="text-align:right">${a.nbOrders}</td><td style="text-align:right">${money(a.amount)}</td><td style="text-align:right">${a.avgPrice==null?'🔒':fmt(a.avgPrice)}</td><td style="text-align:right">${a.priceVariationPct==null?'—':a.priceVariationPct+' %'}</td><td style="text-align:right;color:${(a.gain||0)>=0?'#176b28':'#b91c1c'}">${a.gain==null?'🔒':fmt(a.gain)}</td></tr>`).join('');
+    document.getElementById('arepBody').innerHTML=`
+      <div class="dashboardCards">${kpi('Commandes (hors annulées)',k.nbOrders,'sur '+k.nbOrdersAll+' créées')}${kpi('Articles commandés',k.nbArticlesOrdered,'sur '+k.nbCatalogArticles+' au catalogue')}${kpi('Utilisateurs actifs',k.nbActiveUsers,k.nbChantiers+' chantiers')}${kpi('Écart vs prix catalogue',fmt(k.gainVsCatalog),'gain cumulé')}</div>
+      <div class="analysisBlock"><h3>L’e-shop fonctionne-t-il bien ?</h3><table class="dashTable"><tbody>
+        <tr><td>Commandes annulées</td><td>${k.nbCancelled}</td><td>${pct(k.nbCancelled,k.nbOrdersAll)}</td></tr>
+        <tr><td>Commandes remplacées (ANNULE ET REMPLACE)</td><td>${k.nbSuperseded}</td><td>${pct(k.nbSuperseded,k.nbOrdersAll)}</td></tr>
+        <tr><td>E-mail fournisseur non envoyé</td><td>${k.nbEmailNotSent}</td><td>${pct(k.nbEmailNotSent,k.nbOrdersAll)}</td></tr>
+        <tr><td>En attente d’approbation / refusées</td><td>${k.nbPendingApproval} / ${k.nbRefused}</td><td></td></tr>
+        <tr><td>Commandes relancées</td><td>${k.nbRelanced}</td><td>${pct(k.nbRelanced,k.nbOrders)}</td></tr>
+        <tr><td>Réception confirmée</td><td>${k.nbReceptionConfirmed}</td><td>${pct(k.nbReceptionConfirmed,k.nbOrders)}</td></tr>
+        <tr><td>Facturées</td><td>${k.nbInvoiced}</td><td>${pct(k.nbInvoiced,k.nbOrders)}</td></tr>
+        <tr><td>Articles dont le prix a varié</td><td>${k.nbPricesChanged}</td><td></td></tr>
+        <tr><td>Articles du catalogue jamais commandés</td><td>${k.nbCatalogNeverOrdered}</td><td>${pct(k.nbCatalogNeverOrdered,k.nbCatalogArticles)}</td></tr>
+      </tbody></table></div>
+      <div class="analysisBlock"><h3>Par mois</h3><table class="dashTable"><thead><tr><th>Mois</th><th>Commandes</th><th>Utilisateurs</th><th>Montant</th></tr></thead><tbody>${monthRows||'<tr><td colspan="4">—</td></tr>'}</tbody></table></div>
+      <div class="analysisBlock"><h3>Par fournisseur</h3><table class="dashTable"><thead><tr><th>Fournisseur</th><th>Commandes</th><th>Articles</th><th>Quantité</th><th>Montant</th></tr></thead><tbody>${supRows||'<tr><td colspan="5">—</td></tr>'}</tbody></table></div>
+      <div class="analysisBlock"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h3>Détail par article (${rows.length})</h3><div><input id="arepQ" placeholder="Rechercher…" value="${esc(filter.q)}" oninput="arepSet('q',this.value)"> <button class="miniBtn" onclick="arepCsv()">⬇ Export CSV</button></div></div>
+      <table class="dashTable"><thead><tr>${th('supplier','Fournisseur')}${th('reference','Réf.')}${th('name','Désignation')}${th('qty','Quantité')}${th('nbOrders','Cmd')}${th('amount','Montant')}${th('avgPrice','Prix moyen')}${th('priceVariationPct','Var. prix')}${th('gain','Écart catalogue')}</tr></thead><tbody>${artRows||'<tr><td colspan="9">Aucune donnée.</td></tr>'}</tbody></table>${rows.length>500?'<p class="muted">500 premières lignes affichées — export CSV pour la liste complète.</p>':''}</div>`;
+  }
+  function show(){
+    const app=document.getElementById('app');
+    app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="showAnalysis()">Analyse achat</a> › Reporting articles</div><div class="toolbar"><h2>Reporting articles</h2><p class="muted">Ce que nous commandons à la maille article (commandes annulées et remplacées exclues).</p>
+      <label>Du <input type="date" value="${esc(filter.from)}" onchange="arepSet('from',this.value)"></label> <label>au <input type="date" value="${esc(filter.to)}" onchange="arepSet('to',this.value)"></label>
+      <select onchange="arepSet('supplier',this.value)"><option value="">Tous les fournisseurs</option>${(window._arepSups||[]).map(s=>`<option ${s===filter.supplier?'selected':''}>${esc(s)}</option>`).join('')}</select></div><div id="arepBody"><p class="muted">Chargement…</p></div>`;
+    load().then(draw).catch(e=>{document.getElementById('arepBody').innerHTML='<p class="muted">Reporting indisponible ('+(e===403?'accès réservé à l’Analyse achat':e)+').</p>'});
+  }
+  window.showArticleReport=show;
 })();
 </script>
 </body></html>
