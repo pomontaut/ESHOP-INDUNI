@@ -2772,8 +2772,13 @@ function renderSearch(q){
   // La recherche manuelle ne doit renvoyer que les articles quasi identiques
   // à la requête (>=90% du meilleur score), et jamais une longue liste : 5
   // résultats maximum, même quand plusieurs se partagent le meilleur score.
+  // Mise à jour : sont aussi conservés TOUS les articles dont le texte contient
+  // chacun des mots tapés (début ou milieu de mot, sans accents), p. ex. « socle »
+  // → « Socle caoutchouc pour clôture MUBA » ; classés par score, 60 max.
   const top=all[0]?.score||0;
-  const scored=(top?all.filter(x=>x.score>=top*0.9):all).slice(0,5);
+  const qWords=wordsV49(q);
+  const hasAll=x=>{if(!qWords.length)return false;const t=productTextV49(x.p);return qWords.every(w=>t.raw.includes(w)||t.compact.includes(w));};
+  const scored=(top?all.filter(x=>x.score>=top*0.9||hasAll(x)):all).slice(0,60);
   const expanded=enrichTokensV49(q).slice(0,15).join(', ');
   app.innerHTML=`<h2>Recherche : "${esc(q)}"</h2>${locked?`<p class="muted">Panier verrouillé sur ${locked}.</p>`:''}<div class="searchExplain"><b>🔍 Recherche experte</b> : matching exact, synonymes BTP, DN, matières. Cliquez sur un article pour voir le comparatif fournisseurs.<br><span class="spark">Termes interprétés : ${esc(expanded)}</span></div><p class="muted">${scored.length} résultat(s)</p><div class="products">${scored.length?scored.map(x=>productCardFast(x.p,Math.round(x.score))).join(''):'<div class="empty">Aucun article trouvé.</div>'}</div>`;
 }
