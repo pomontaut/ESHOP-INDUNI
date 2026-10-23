@@ -5069,13 +5069,32 @@ async function smartSend(){
   render=function(){ baseRender.apply(this,arguments); track(); };
   // Entrée de départ : marque la page actuelle pour pouvoir y revenir.
   try{ const sn=snap(); last=keyOf(sn); history.replaceState(sn,''); }catch(e){}
+  // Le panier (tiroir) a sa propre entrée d'historique : « retour » le referme
+  // sans quitter l'écran en cours ; le contenu du panier (localStorage) n'est
+  // jamais touché par la navigation.
+  const baseOpenCart=openCart, baseCloseCart=closeCart;
+  openCart=function(){
+    baseOpenCart();
+    try{ if(!(history.state&&history.state.cartOpen)) history.pushState(Object.assign({},snap(),{cartOpen:true}),''); }catch(err){}
+  };
+  closeCart=function(){
+    try{ if(history.state&&history.state.cartOpen){ history.back(); return; } }catch(err){}
+    baseCloseCart();
+  };
+  // Retour du navigateur depuis le cache (bfcache) : on relit le panier enregistré.
+  window.addEventListener('pageshow',function(e){
+    if(!e.persisted) return;
+    try{ cart=JSON.parse(localStorage.getItem('induni_panier_v3')||'[]'); }catch(err){}
+    updateCart();
+  });
   window.addEventListener('popstate',function(e){
     const sn=e.state; if(!sn||!sn.s) return;       // entrée hors e-shop : le navigateur gère
+    if(sn.cartOpen){ baseOpenCart(); return; }     // retour/avance sur l'entrée « panier » : on rouvre juste le tiroir
     restoring=true;
     try{
       state=Object.assign({},sn.s);
       if(box()) box().value=sn.q||'';
-      if(typeof closeCart==='function') closeCart();
+      baseCloseCart();
       document.querySelectorAll('.modal.open').forEach(m=>m.classList.remove('open'));
       baseRender.call(window);
       last=keyOf(sn);
