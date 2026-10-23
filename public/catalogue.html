@@ -1377,6 +1377,8 @@ function exactishDims(a,b){const da=dimsArray(a), db=dimsArray(b); if(!da.length
 // Volume (m³) d'un paquet de bois, d'après la désignation « 27x150x4000 mm » et
 // « Pcs/pqt 150 » du descriptif (Leuba HIAG, prix au paquet) ; null si inconnu.
 function paquetVolumeM3(p){
+  const vd=String(p.descriptif||'').match(/=\s*(\d+(?:\.\d+)?)\s*m³/);
+  if(vd&&Number(vd[1])>0) return Number(vd[1]);
   const m=String(p.designation||'').replace(/,/g,'.').match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*mm/i);
   const n=String(p.descriptif||'').match(/Pcs\/pqt\s*(\d+)/i);
   if(!m||!n) return null;
