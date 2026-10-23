@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_20_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_23_090000) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -109,6 +109,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_20_090000) do
     t.datetime "updated_at", null: false
     t.date "week_start", null: false
     t.index ["week_start"], name: "index_diesel_prices_on_week_start", unique: true
+  end
+
+  create_table "nomenclature_entries", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "induni_designation"
+    t.string "induni_reference", null: false
+    t.string "n_compta"
+    t.string "price_unit"
+    t.string "segmentation1"
+    t.string "segmentation2"
+    t.string "segmentation3"
+    t.string "supplier_designation"
+    t.string "supplier_name", null: false
+    t.string "supplier_reference", null: false
+    t.datetime "updated_at", null: false
+    t.index ["induni_reference", "supplier_name"], name: "index_nomenclature_entries_on_induni_reference_and_supplier_name", unique: true
   end
 
   create_table "order_lines", force: :cascade do |t|

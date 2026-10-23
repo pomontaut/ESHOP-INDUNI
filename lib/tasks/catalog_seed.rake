@@ -238,6 +238,8 @@ namespace :catalog do
       rows.each_slice(500) { |slice| Chantier.insert_all(slice) }
     end
 
+    NomenclatureEntry.seed_from_json! if NomenclatureEntry.table_exists?
+
     puts "catalog:seed — #{Supplier.count} fournisseurs, #{Product.count} produits, #{Chantier.count} chantiers"
   end
 end

@@ -351,6 +351,19 @@ Pas d'API HGC : la fiche embarque `stockLevelStatus` calculé pour le NPA du coo
 son site ; en cas d'échec le bouton affiche « indisponible » sans bloquer. Statut
 purement informatif, jamais utilisé pour bloquer une commande.
 
+## Nomenclature Induni (bibliothèque d'articles, admin seulement)
+
+Menu Admin > « 📚 Nomenclature Induni » (`showNomenclatureInduni()`, `state.view === 'nomenclatureInduni'`,
+dernier bloc avant `confirmNomenclature` dans `catalogue.html`) : une ligne = un article Induni (n° compta,
+segmentation 1-3, n° de référence INDUNI + désignation) rattaché à l'article d'UN fournisseur (référence,
+désignation, unité de prix) ; plusieurs fournisseurs = plusieurs lignes de même référence INDUNI. Table
+`nomenclature_entries` (`NomenclatureEntry`), alimentée de façon idempotente par `catalog:seed` depuis
+`db/seed_data/nomenclature_induni.json` (clé référence INDUNI + fournisseur ; ne supprime jamais). API
+`GET /api/nomenclature_induni` (`Api::NomenclatureInduniController`, 403 hors `admin?`, AUCUN prix) ; colonne ✓/⚠
+= la référence fournisseur existe encore au catalogue (`Product`). Filtre multi-mots + export CSV (« ; », UTF-8 BOM).
+À ne pas confondre avec « Gestion nouveaux articles » (`/api/nomenclature`, classement des articles issus d'un
+import de devis, profils achats). Ajouter des articles = compléter le JSON (le déploiement les insère).
+
 ## Deploy workflow (always follow this exact sequence)
 
 1. Edit, then run the full test suite: `bin/rails test` (must be 0
