@@ -2,6 +2,30 @@ fr:
   errors:
     messages:
       confirmation: "ne correspond pas à la confirmation"
+      taken: "est déjà utilisé(e) par un autre compte"
+      blank: "doit être renseigné(e)"
+      empty: "doit être renseigné(e)"
+      present: "doit être vide"
+      invalid: "n'est pas valide"
+      inclusion: "n'est pas inclus(e) dans la liste"
+      exclusion: "n'est pas disponible"
+      not_a_number: "n'est pas un nombre"
+      too_short:
+        one: "est trop court(e) (au moins %{count} caractère)"
+        other: "est trop court(e) (au moins %{count} caractères)"
+      too_long:
+        one: "est trop long(ue) (au plus %{count} caractère)"
+        other: "est trop long(ue) (au plus %{count} caractères)"
+      wrong_length:
+        one: "doit comporter %{count} caractère"
+        other: "doit comporter %{count} caractères"
+  activerecord:
+    attributes:
+      user:
+        email: "L'adresse e-mail"
+        password: "Le mot de passe"
+        first_name: "Le prénom"
+        last_name: "Le nom"
   date:
     formats:
       default: "%d.%m.%Y"
