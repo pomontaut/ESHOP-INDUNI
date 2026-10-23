@@ -363,6 +363,9 @@ désignation, unité de prix) ; plusieurs fournisseurs = plusieurs lignes de mê
 = la référence fournisseur existe encore au catalogue (`Product`). Filtre multi-mots + export CSV (« ; », UTF-8 BOM).
 À ne pas confondre avec « Gestion nouveaux articles » (`/api/nomenclature`, classement des articles issus d'un
 import de devis, profils achats). Ajouter des articles = compléter le JSON (le déploiement les insère).
+Sur les fiches : `/api/products` ajoute `induniReference` / `induniDesignation` (jointure fournisseur + référence, sans prix,
+pour tous les utilisateurs) ; `induniRefHtml()` les affiche en petit sous le n° d'article (`productCard`, `productCardFast`) et
+`productTextV49` / `scoreProductV49` les indexent : le n° INDUNI sert à la recherche.
 
 ## Deploy workflow (always follow this exact sequence)
 

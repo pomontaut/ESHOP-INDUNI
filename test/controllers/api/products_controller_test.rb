@@ -106,4 +106,20 @@ class Api::ProductsControllerTest < ActionDispatch::IntegrationTest
     get api_products_url
     assert_not_includes JSON.parse(response.body).map { |p| p["catalog"] }, "SGTT"
   end
+
+  test "index exposes the Induni reference and designation of nomenclature articles" do
+    supplier = Supplier.create!(name: "Fournisseur ouvert")
+    Product.create!(supplier: supplier, reference: "ART-NOM", name: "Article nomenclature", famille: "Bois")
+    Product.create!(supplier: supplier, reference: "ART-LIBRE", name: "Article libre", famille: "Bois")
+    NomenclatureEntry.create!(induni_reference: "340200001", induni_designation: "Carrelets 80/120 400cm",
+                              supplier_name: "Fournisseur ouvert", supplier_reference: "ART-NOM")
+
+    post login_url, params: { email: users(:one).email, password: "password123" }
+    get api_products_url
+    rows = JSON.parse(response.body)
+    nom = rows.find { |p| p["article"] == "ART-NOM" }
+    assert_equal "340200001", nom["induniReference"]
+    assert_equal "Carrelets 80/120 400cm", nom["induniDesignation"]
+    assert_nil rows.find { |p| p["article"] == "ART-LIBRE" }["induniReference"]
+  end
 end
