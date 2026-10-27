@@ -324,14 +324,13 @@ max ; photos réduites à 1800 px côté navigateur), `Order#invoiced_at` = Fact
 Tables sans clé étrangère SQL : la purge Admin > Commandes les nettoie elle-même. Pour sortir du test :
 retirer le garde `require_test_environment` et rendre le bouton visible à tous.
 
-## E-shops en test : Tinguely (VD) et SGTT (GE)
+## E-shops Tinguely (VD) et SGTT (GE) — en production
 
 Prestations d'aspiratrice/pompage/transport de déchets (4 articles chacun, dans
-`db/seed_data/catalog_products.json`). Listés dans `Supplier::TEST_ONLY_NAMES` :
-`Api::ProductsController` et `allowed_suppliers` (`/api/me`) les masquent hors
-« Environnement test : Développement » (admin) ; la couverture d'accueil exige
-`perms.dev_mode`. Pour les retirer du test = vider `TEST_ONLY_NAMES` et enlever
-la condition `dev_mode` dans `renderHome`. Réservés à un canton via
+`db/seed_data/catalog_products.json`). Mis en production : `Supplier::TEST_ONLY_NAMES`
+est vide (le masquage hors mode Développement reste en place pour un futur e-shop en test) et la
+couverture d'accueil n'exige plus `perms.dev_mode`. Visibles selon `effective_visible_suppliers`
+(cocher le catalogue dans Admin > Utilisateurs en cas de restriction). Réservés à un canton via
 `Supplier#visible_cantons` (Tinguely = VAUD, SGTT = GENEVE), contrôlé avant
 envoi par `supplierCantonGuardInduni` (bloque si le canton du chantier diffère,
 confirmation s'il est inconnu). Tinguely : prix = tarif − rabais 8 % déjà
