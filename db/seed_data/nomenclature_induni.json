@@ -976,35 +976,11 @@
   "segmentation1": "PRODUITS DE GENIE-CIVIL",
   "segmentation2": "Canalisation",
   "segmentation3": "Canalisation PVC CR4 Compact",
-  "induniReference": "380300005",
-  "induniDesignation": "Tuyau PVC Compact SN4 125mm - 1m",
-  "supplierName": "HG COMMERCIALE",
-  "supplierReference": "100099739",
-  "supplierDesignation": "Tuyau canal.PVC SN4 incl.joint Ø125mm L1m",
-  "priceUnit": "ml"
- },
- {
-  "nCompta": "38000",
-  "segmentation1": "PRODUITS DE GENIE-CIVIL",
-  "segmentation2": "Canalisation",
-  "segmentation3": "Canalisation PVC CR4 Compact",
   "induniReference": "380300006",
   "induniDesignation": "Tuyau PVC Compact SN4 125mm - 2m",
   "supplierName": "Canplast",
   "supplierReference": "LDT1252",
   "supplierDesignation": "Tuyau PVC COMPACT SN4 Ø 125 x 3.2 mm L=2 M, joint incorporé",
-  "priceUnit": "ml"
- },
- {
-  "nCompta": "38000",
-  "segmentation1": "PRODUITS DE GENIE-CIVIL",
-  "segmentation2": "Canalisation",
-  "segmentation3": "Canalisation PVC CR4 Compact",
-  "induniReference": "380300006",
-  "induniDesignation": "Tuyau PVC Compact SN4 125mm - 2m",
-  "supplierName": "HG COMMERCIALE",
-  "supplierReference": "100099800",
-  "supplierDesignation": "Tuyau canal.PVC SN4 incl.joint Ø125mm L2m",
   "priceUnit": "ml"
  },
  {
@@ -1027,8 +1003,8 @@
   "induniReference": "380300007",
   "induniDesignation": "Tuyau PVC Compact SN4 125mm - 5m",
   "supplierName": "HG COMMERCIALE",
-  "supplierReference": "100099801",
-  "supplierDesignation": "Tuyau canal.PVC SN4 incl.joint Ø125mm L5m",
+  "supplierReference": "100063069",
+  "supplierDesignation": "Tuyau PVC COMPACT SN4 a.manchon a.joint Ø125mm L5m",
   "priceUnit": "ml"
  },
  {
@@ -1051,8 +1027,8 @@
   "induniReference": "380300008",
   "induniDesignation": "Tuyau PVC Compact SN4 200mm - 5m",
   "supplierName": "HG COMMERCIALE",
-  "supplierReference": "100099806",
-  "supplierDesignation": "Tuyau canal.PVC SN4 incl.joint Ø200mm L5m",
+  "supplierReference": "100072422",
+  "supplierDesignation": "Tuyau PVC COMPACT SN4 a.manchon a.joint Ø200mm L5m",
   "priceUnit": "ml"
  },
  {
@@ -1075,8 +1051,8 @@
   "induniReference": "380300009",
   "induniDesignation": "Tuyau PVC Compact SN4 250mm - 5m",
   "supplierName": "HG COMMERCIALE",
-  "supplierReference": "100099807",
-  "supplierDesignation": "Tuyau canal.PVC SN4 incl.joint Ø250mm L5m",
+  "supplierReference": "100072423",
+  "supplierDesignation": "Tuyau PVC COMPACT SN4 a.manchon a.joint Ø250mm L5m",
   "priceUnit": "ml"
  },
  {
