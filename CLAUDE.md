@@ -366,6 +366,19 @@ Sur les fiches : `/api/products` ajoute `induniReference` / `induniDesignation` 
 pour tous les utilisateurs) ; `induniRefHtml()` les affiche en petit sous le n° d'article (`productCard`, `productCardFast`) et
 `productTextV49` / `scoreProductV49` les indexent : le n° INDUNI sert à la recherche.
 
+## Note de marché PowerPoint (GC / BAT)
+
+Boutons « 📊 Note de marché PowerPoint » en tête de Analyse achat > Indicateurs de marché
+(`downloadNoteMarche('GC'|'BAT')` dans `catalogue.html`). Génération 100 % navigateur, en un clic :
+`public/note_marche_pptx.js` (`NoteMarchePptx.generate`) + `public/jszip.min.js` (JSZip 3.10.1, copie locale)
+reprennent le modèle `public/templates/modele_induni.pptx` (diapos d'origine supprimées, couverture / chapitres / pages
+« Vierge Light » du modèle) et les données déjà exposées à l'écran (KBOB, Brent, EUR/CHF, ASTAG, Canplast,
+`acier_armature_prices.json`, captures `market_charts/ferraille_turquie.png` et `zinc.png`). Sections : 1 énergie – matières
+premières (identique GC/BAT), 2 taux de change + ASTAG + acier d'armature (+ Canplast pour GC seulement), 3 produits finis
+KBOB (listes `PRODUCTS` : GC = béton frais, carrelets, tuyaux plastique, non-tissés ; BAT = ciment, béton frais, planches,
+bitume d'étanchéité, tuyaux plastique, isolant), 4 recommandations (règle automatique ±3 % sur 3 mois, pas de prévision
+inventée). Aucun prix fournisseur ni prix confidentiel. Ajouter un indicateur = l'ajouter dans `buildSpec`.
+
 ## Deploy workflow (always follow this exact sequence)
 
 1. Edit, then run the full test suite: `bin/rails test` (must be 0
