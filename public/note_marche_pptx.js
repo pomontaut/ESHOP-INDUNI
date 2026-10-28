@@ -75,7 +75,7 @@ function buildSpec(entity,d){
     {kind:'cards',title:'Énergie : pétrole, gaz, électricité',cards:[cBrent,cGaz,cElec],note:'Pétrole : prix en USD/baril (variation sur 4, 13 et 52 semaines). Gaz et électricité : indices KBOB (variation sur 1, 3 et 12 mois). Hausse en rouge, baisse en vert (point de vue achat).'},
     {kind:'images',title:'Matières premières : ferraille et zinc',images:[
       {key:'ferraille',caption:'Ferraille CFR Turquie (Platts), USD/tonne',source:'Source : Platts (capture)'},
-      {key:'zinc',caption:'Zinc (LME), USD/tonne',source:'Source : LME (capture)'}],
+      {key:'zinc',caption:'Zinc (LME), USD/tonne',source:'Source : LME (capture mise à jour le 28.10.2026, cours au 27.10.2026)'}],
      note:'Captures de cours fournies et intégrées dans l\'e-shop : pas de série chiffrée exploitable pour calculer des variations.'}]};
   spec.sections.push(s1);
 
