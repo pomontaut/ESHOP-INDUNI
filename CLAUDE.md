@@ -381,6 +381,8 @@ inventée). Aucun prix fournisseur ni prix confidentiel. Ajouter un indicateur =
 
 ## Deploy workflow (always follow this exact sequence)
 
+**Déploiement automatique** : une fois les vérifications faites, déployer sur `main` sans attendre de « pousse »/« déploie » du propriétaire — sauf si une validation de sa part est nécessaire (choix ambigu, action risquée ou irréversible, données à confirmer).
+
 1. Edit, then run the full test suite: `bin/rails test` (must be 0
    failures/errors before committing).
 2. For any `public/catalogue.html` change, also run the JS syntax-check
