@@ -3408,14 +3408,17 @@ function mktDeltaInline(ch){
   const up=ch.deltaAbs>=0; const color=up?'#b91c1c':'#176b28'; const arrow=up?'▲':'▼';
   return `<span style="color:${color};font-weight:800">${arrow} ${ch.deltaPct>=0?'+':''}${ch.deltaPct.toFixed(1)}%</span>`;
 }
+// Dernière mise à jour + source de chaque ligne : window._mktMeta[key]={upd,src}
+// (rempli dans renderMarketIndexDetail avec les vraies dates des données).
 function mktRowHtml(icon,label,valueText,changeHtml,key,sub){
-  return `<tr><td>${icon} ${esc(label)}${sub?`<div class="muted" style="font-size:11px;font-weight:400">${sub}</div>`:''}</td><td><b>${valueText}</b></td><td>${changeHtml}</td><td style="text-align:center"><button class="miniBtn" onclick="toggleMarketDetail('${key}')" title="Afficher le détail">🔍</button></td></tr>`;
+  const m=(window._mktMeta||{})[key]||{};
+  return `<tr><td>${icon} ${esc(label)}${sub?`<div class="muted" style="font-size:11px;font-weight:400">${sub}</div>`:''}</td><td><b>${valueText}</b></td><td>${changeHtml}</td><td style="font-size:12.5px">${m.upd||'<span class="muted">n/d</span>'}</td><td style="font-size:12px;color:#5b6b82">${m.src||''}</td><td style="text-align:center"><button class="miniBtn" onclick="toggleMarketDetail('${key}')" title="Afficher le détail">🔍</button></td></tr>`;
 }
 function mktPlaceholderRowHtml(icon,label){
-  return `<tr style="opacity:.55"><td>${icon} ${esc(label)}</td><td colspan="2" class="muted">Donnée non disponible — fichier à fournir</td><td style="text-align:center" class="muted">—</td></tr>`;
+  return `<tr style="opacity:.55"><td>${icon} ${esc(label)}</td><td colspan="4" class="muted">Donnée non disponible — fichier à fournir</td><td style="text-align:center" class="muted">—</td></tr>`;
 }
 function mktCategoryHeaderHtml(title){
-  return `<tr><td colspan="4" style="background:#f3f6fa;font-weight:800;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;color:#5b6b82;padding:8px 10px">${esc(title)}</td></tr>`;
+  return `<tr><td colspan="6" style="background:#f3f6fa;font-weight:800;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;color:#5b6b82;padding:8px 10px">${esc(title)}</td></tr>`;
 }
 // Générateur générique des boutons d'intervalle + réinitialiser, réutilisé
 // par les graphiques diesel et Brent.
@@ -3657,7 +3660,23 @@ function renderMarketIndexDetail(data,current,diesel,canplast,brent,eurchf,usdch
   const cpAdminForm=(window._userPerms&&window._userPerms.admin)?`<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label style="font-size:12.5px;font-weight:800">Nouvelle date d'effet</label><input id="canplastNewDate" type="date" style="border:1px solid #ddd;border-radius:6px;padding:6px"><label style="font-size:12.5px;font-weight:800">Surrenchérissement %</label><input id="canplastNewPct" type="number" step="0.1" min="0" placeholder="ex. 65" style="width:90px;border:1px solid #ddd;border-radius:6px;padding:6px"><button class="miniBtn" onclick="saveCanplastSurcharge()">Enregistrer pour ce groupe</button></div>`:'';
   const cpTable=cpTimeline.length?`<table class="dashTable" style="margin-top:10px"><thead><tr><th>Date d'effet</th><th>Surrenchérissement</th><th>Source</th></tr></thead><tbody>${cpTimeline.map(r=>`<tr><td>${dateFR(r.effectiveDate)}</td><td><b>${r.surchargePct.toFixed(1)}%</b></td><td class="muted">${esc(r.source||'')}</td></tr>`).join('')}</tbody></table>`:'';
 
-  const mktSummaryRows=
+    const mktMonth=ym=>{ if(!ym) return null; const p=String(ym).split('-'); return ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'][parseInt(p[1],10)-1]+' '+p[0]; };
+  const kbobLast=name=>{ const v=data.series[name]||[]; let i=v.length-1; while(i>=0&&v[i]==null) i--; return i>=0?mktMonth(dates[i]):null; };
+  const lastOf=a=>a&&a.length?a[a.length-1]:null;
+  const KBOB_SRC='KBOB — indices des prix à la production';
+  const CAPT='capture, date non renseignée';
+  window._mktMeta={
+    kbob:{upd:kbobLast(current),src:KBOB_SRC}, gaz:{upd:kbobLast('Gaz (artisanat, industries, services)'),src:KBOB_SRC}, elec:{upd:kbobLast('Electricité (artisanat, industries, services)'),src:KBOB_SRC},
+    astag:{upd:dieselLast?'semaine du '+dateFR(dieselLast.weekStart):null,src:'ASTAG — prix moyen hebdomadaire du diesel'},
+    corr:{upd:dieselLast?'semaine du '+dateFR(dieselLast.weekStart):null,src:'ASTAG et Brent'},
+    alu:{upd:CAPT,src:'LME'}, cuivre:{upd:CAPT,src:'LME'}, nickel:{upd:CAPT,src:'LME'}, zinc:{upd:CAPT,src:'LME'}, ferraille:{upd:CAPT,src:'Platts'}, hrc:{upd:CAPT,src:'Argus'}, rebar:{upd:CAPT,src:'Platts'},
+    acier:{upd:lastOf(acier.dates)?'relevé du '+dateFR(lastOf(acier.dates)):null,src:'Aurélien (Achats)'},
+    brent:{upd:lastOf(brentDatesAll)?'semaine du '+dateFR(lastOf(brentDatesAll)):null,src:'Brent Crude Oil — clôtures hebdomadaires'},
+    eurchf:{upd:lastOf(eDatesAll)?'semaine du '+dateFR(lastOf(eDatesAll)):null,src:'EUR/CHF spot — clôtures hebdomadaires'},
+    usdchf:{upd:lastOf(uDatesAll)?'semaine du '+dateFR(lastOf(uDatesAll)):null,src:'USD/CHF spot — clôtures hebdomadaires'},
+    canplast:{upd:cpLast?'avis du '+dateFR(cpLast.effectiveDate):null,src:'Avis Canplast (saisie admin)'}
+  };
+const mktSummaryRows=
     mktCategoryHeaderHtml('KBOB')+
     mktRowHtml('🧱','Indices KBOB (matériaux)',currentValue!=null?currentValue.toFixed(1):'n/d',mktDeltaInline(c1),'kbob',esc(current))+
     mktCategoryHeaderHtml('ASTAG')+
@@ -3682,7 +3701,7 @@ function renderMarketIndexDetail(data,current,diesel,canplast,brent,eurchf,usdch
     mktCategoryHeaderHtml('Plastiques')+
     mktRowHtml('🧱','Indice Canplast',cpLast?cpLast.surchargePct.toFixed(1)+'%':'n/d','','canplast',cpLast?esc(cpGroups.find(g=>g.codes===cpCurrent).label):'');
 
-  const mktTable=`<table class="dashTable"><thead><tr><th>Indicateur</th><th>Valeur actuelle</th><th>Évolution</th><th style="text-align:center">Graphique</th></tr></thead><tbody>${mktSummaryRows}</tbody></table>`;
+  const mktTable=`<table class="dashTable"><thead><tr><th>Indicateur</th><th>Valeur actuelle</th><th>Évolution</th><th>Dernière mise à jour</th><th>Source</th><th style="text-align:center">Graphique</th></tr></thead><tbody>${mktSummaryRows}</tbody></table>`;
 
   const panelKbob=`<div id="mkt-kbob" class="marketDetailPanel" ${mktHidden('kbob')}><div class="analysisBlock" style="margin-top:18px"><h3>🧱 KBOB — indices des prix à la production</h3><p class="muted">Indices des prix à la production (KBOB, publiés par trimestre). Une variation nulle sur 1 mois est normale si le mois choisi reste dans le même trimestre que le précédent relevé — les hausses (rouge) et baisses (vert) sont vues du point de vue d'un acheteur.</p><div style="max-width:560px;margin-bottom:16px"><label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:4px">Matériau / indice KBOB</label><select onchange="onMarketIndexChange(this.value)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:9px">${options}</select></div><div class="dashboardCards">${marketChangeTile('Évolution 1 mois',c1)}${marketChangeTile('Évolution 3 mois',c3)}${marketChangeTile('Évolution 1 an',c12)}<div class="kpi"><small>Indice actuel</small><b style="font-size:22px">${currentValue!=null?currentValue.toFixed(1):'n/d'}</b><small class="muted">${esc(data.codes[current]||'')}</small></div></div><div class="chartGrid"><div class="chartCard"><h3>${esc(current)} — 3 dernières années</h3>${svgTrendChartV52(rDates,rValues,{decimals:1})}</div></div></div></div>`;
 
