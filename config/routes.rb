@@ -27,6 +27,7 @@ Rails.application.routes.draw do
     get   "nomenclature",     to: "nomenclature#index"
     patch "nomenclature/:id", to: "nomenclature#update"
     get   "nomenclature_induni", to: "nomenclature_induni#index"
+    get   "indicators",         to: "indicators#index"
     get   "search_memory",      to: "search_memory#index"
     get   "search_agent",       to: "search_agent#history"
     post  "search_agent/chat",  to: "search_agent#chat"

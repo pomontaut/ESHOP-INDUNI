@@ -77,3 +77,18 @@ if ENV["USAGE_REPORT_AUTO"] != "false"
     end
   end
 end
+
+# Indicateurs de construction de l'e-shop (voir EshopMetric) : relevé du jour mis à jour toutes les 30 minutes
+# (la dernière valeur du jour fait foi).
+on_booted do
+  Thread.new do
+    loop do
+      begin
+        Rails.application.executor.wrap { EshopMetric.snapshot! if EshopMetric.table_exists? }
+      rescue => e
+        Rails.logger.error("[eshop_metrics] #{e.class}: #{e.message}")
+      end
+      sleep 30 * 60
+    end
+  end
+end

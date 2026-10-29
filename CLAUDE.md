@@ -398,6 +398,17 @@ vrai moteur du navigateur. Détail : `docs/agents/agent_moteur_recherche.md`. La
 catalogue › famille › sous-famille, `renderFunnelWidget`) est aussi présente sur la page d'un groupe de familles HGC
 (ex. Canalisation).
 
+## Indicateurs (administrateurs seulement) : construction de l'e-shop, commandes, utilisation
+
+Menu Admin > « 📊 Indicateurs » (`showIndicators()`, `state.view === 'indicators'`, dernier `<script>` de `catalogue.html`, préfixe `ind*`,
+graphiques SVG) ← `GET /api/indicators?from=` (`Api::IndicatorsController`, admin). **Construction** (table `eshop_metrics`, `EshopMetric`,
+un relevé par jour) : références articles (avec une famille), articles en équivalence (clé partagée par ≥ 2 catalogues) et %,
+articles avec n° + désignation INDUNI et %, catalogues fournisseurs, photos et %. L'historique depuis le 1er octobre est reconstitué depuis
+git (`python3 script/build_eshop_metrics_history.py` → `db/seed_data/eshop_metrics_history.json`, nécessite `git fetch --unshallow`),
+semé par la migration ; les jours suivants sont mesurés en direct (thread Puma toutes les 30 min, `EshopMetric.snapshot!`, la dernière valeur
+du jour fait foi). **Commandes** : par jour de création (Zurich) hors commandes d'essai `[TEST]`, avec cumul. **Utilisation** : séries
+journalières de l'agent d'usage (`UsageReport.build`).
+
 ## Note de marché PowerPoint (GC / BAT)
 
 Boutons « 📊 Note de marché PowerPoint » en tête de Analyse achat > Indicateurs de marché
