@@ -15,6 +15,8 @@ class SearchAgent
     • « synonyme : culotte = embranchement, raccord en Y » (dans les deux sens)
     • « quand on tape siphon de cour, il faut trouver 100006411 » (un seul sens)
     • « teste tuyau drainage 125 » (essaie le vrai moteur et montre les 5 premiers résultats)
+    • « règle : pénalise drainage sauf si on tape drain » · « règle : favorise sn4 quand on tape sn4 » (règles de classement)
+    • « pourquoi quand je tape … je tombe sur … ? » (explique le classement avec le vrai moteur)
     • « bilan » (qualité de la recherche d'après l'agent d'usage, 7 jours) · « suggestions » puis « valide 12 13 », « valide tout » ou « ignore 14 »
     • « mémoire » (ce que j'ai appris) · « oublie 12 » ou « oublie culotte »
     Tout ce que je mémorise s'applique tout de suite pour tous les utilisateurs.
@@ -24,9 +26,34 @@ class SearchAgent
     @user = user
   end
 
-  def reply(text)
+  # `engine` : mesures du vrai moteur faites dans le navigateur de l'administrateur pour les requêtes citées
+  # dans son message (classement, détail par article) — voir srchEngineContext dans catalogue.html.
+  def reply(text, engine: nil)
+    @engine = engine
+    note = nil
+    if Brain.available?
+      begin
+        return Brain.new(self, @user).run(text, engine)
+      rescue StandardError => e
+        Rails.logger.error("[search_agent] #{e.class}: #{e.message}")
+        note = "⚠️ La compréhension du français libre est indisponible pour le moment (#{e.class}) : j'applique seulement les commandes simples.\n\n"
+      end
+    else
+      note = :no_key
+    end
+    res = reply_by_rules(text)
+    if note == :no_key && res.reply.start_with?("Je n'ai pas compris")
+      res.reply = "Je n'ai pas compris cette formulation : la compréhension du français libre demande la clé ANTHROPIC_API_KEY sur le serveur (elle n'est pas configurée). En attendant, voici les commandes que je sais exécuter.\n\n#{HELP}"
+    elsif note.is_a?(String)
+      res.reply = note + res.reply
+    end
+    res
+  end
+
+  def reply_by_rules(text)
     s = text.to_s.strip.sub(/[.!]+\z/, "")
     return result(HELP) if s.blank? || s =~ /\A(aide|help|\?|commandes?|que sais-tu faire)\z/i
+    return explain_engine if @engine.present? && s =~ /pourquoi|explique|comment se fait|comprends pas|devrait|au lieu de|et non/i
 
     case s
     when /\A(?:oublie|supprime|retire|efface)\s+(.+)\z/i then forget(Regexp.last_match(1))
@@ -36,6 +63,10 @@ class SearchAgent
     when /\A(?:bilan|analyse|retours?|diagnostic|qualit[eé]|difficult[eé]s?|recherches? sans r[eé]sultats?|stats?)\b/i then insights
     when /\A(?:m[eé]moire|que sais-tu|liste)\b/i         then list_memory
     when /\Asynonymes?\s*:?\s*(.+)\z/i                  then add_synonym(Regexp.last_match(1))
+    when /\Ar[eè]gle\s*:?\s*(?:p[eé]nalise|descends?|recule|rel[eè]gue)\s+(.+?)\s+sauf\s+si\s+(?:on tape|la requ[eê]te (?:contient|parle de))\s+(.+?)(?:\s*\(?([+-]?\d+)\)?)?\z/i
+      add_rule_from(Regexp.last_match(1), Regexp.last_match(2), -(Regexp.last_match(3) || 120).to_i.abs, nil)
+    when /\Ar[eè]gle\s*:?\s*(?:monte|favorise|remonte)\s+(.+?)\s+quand\s+(?:on tape|la requ[eê]te contient)\s+(.+?)(?:\s*\(?([+-]?\d+)\)?)?\z/i
+      add_rule_from(Regexp.last_match(1), nil, (Regexp.last_match(3) || 120).to_i.abs, Regexp.last_match(2))
     when /(?:quand|si)\s+(?:on|un utilisateur|l'utilisateur|les gens|ils)?\s*(?:tape|saisit|cherche|recherche)\w*\s+(.+?)\s*[,;]?\s*(?:alors\s+)?(?:il faut\s+|on doit\s+|doit\s+|faut\s+)?(?:trouver|proposer|afficher|retourner|renvoyer)\s+(.+)\z/i
       when_typing(Regexp.last_match(1), Regexp.last_match(2))
     when /\A(?:ajoute|rajoute|m[eé]morise|retiens)\s+(?:les |le |la |ces |ce )?(?:mots?\s*cl[eé]f?s?|mots?|termes?|expressions?)?\s*:?\s*(.+)\z/i,
@@ -154,6 +185,106 @@ class SearchAgent
     verb = status == "active" ? "Mémorisé et appliqué" : "Ignoré (je ne le reproposerai pas)"
     result("#{verb} :\n#{list.map { |m| "##{m.id} « #{m.value} » → #{m.target_label}" }.join("\n")}",
            changed: status == "active", updates: status == "active" ? updates_for(list) : [], synonyms: false)
+  end
+
+  # ----------------------------------------------------------- règles de classement
+  def add_rule(label:, product_has_any: [], query_has_any: [], query_lacks_any: [], points: -100)
+    prod = Array(product_has_any).flat_map { |w| SearchMemory.norm(w).split }.uniq
+    return result("Une règle doit nommer au moins un mot de l'article concerné.") if prod.empty?
+
+    pts = points.to_i.clamp(-300, 300)
+    rule = { product_has_any: prod, query_has_any: Array(query_has_any).flat_map { |w| SearchMemory.norm(w).split }.uniq,
+             query_lacks_any: Array(query_lacks_any).flat_map { |w| SearchMemory.norm(w).split }.uniq, points: pts }
+    row = SearchMemory.create!(kind: "rule", term: label.to_s[0, 200], value: rule.to_json, created_by_id: @user.id)
+    result("Règle ##{row.id} mémorisée et appliquée à tous : #{rule_text(row.term, rule)}", changed: true, synonyms: true)
+  end
+
+  def add_rule_from(product_words, lacks, points, has)
+    add_rule(label: "#{points.negative? ? 'Descendre' : 'Monter'} #{product_words}#{lacks ? " sauf si la requête contient #{lacks}" : " quand la requête contient #{has}"}",
+             product_has_any: SearchMemory.split_list(product_words.gsub(/\s+(?:ou|et)\s+/i, ",")),
+             query_lacks_any: lacks ? SearchMemory.split_list(lacks.gsub(/\s+(?:ou|et)\s+/i, ",")) : [],
+             query_has_any: has ? SearchMemory.split_list(has.gsub(/\s+(?:ou|et)\s+/i, ",")) : [], points: points)
+  end
+
+  def rule_text(label, r)
+    parts = [ "articles contenant #{Array(r[:product_has_any]).join(' / ')}" ]
+    parts << "quand la requête contient #{Array(r[:query_has_any]).join(' / ')}" if Array(r[:query_has_any]).any?
+    parts << "sauf si la requête contient #{Array(r[:query_lacks_any]).join(' / ')}" if Array(r[:query_lacks_any]).any?
+    "« #{label} » : #{parts.join(', ')} → #{r[:points].to_i.positive? ? '+' : ''}#{r[:points]} points."
+  end
+
+  def disable_rule(id)
+    id = id.to_s
+    if id.start_with?("m") && (row = SearchMemory.find_by(id: id.delete("m"), kind: "rule"))
+      row.destroy
+      return result("Règle #{id} supprimée.", changed: true, synonyms: true)
+    end
+    if SearchMemory::DEFAULT_RULES.any? { |r| r[:id] == id }
+      SearchMemory.find_or_create_by!(kind: "rule_off", value: id, status: "active")
+      return result("Règle intégrée #{id} désactivée.", changed: true, synonyms: true)
+    end
+    result("Règle #{id} introuvable.")
+  end
+
+  def rules_overview
+    SearchMemory.rules_json.map { |r| "#{r[:id]} — #{rule_text(r[:label], r)}" }.join("\n")
+  end
+
+  # Explication du classement d'après les mesures du vrai moteur (navigateur).
+  def explain_engine
+    blocks = Array(@engine).filter_map do |e|
+      e = e.with_indifferent_access
+      top = Array(e[:top])
+      next if top.empty? && Array(e[:targets]).empty?
+
+      lines = [ "Requête « #{e[:q]} » — #{e[:total]} résultat(s). Premiers :" ]
+      top.first(3).each_with_index { |t, i| lines << "#{i + 1}. #{t[:designation]} (#{t[:catalog]} #{t[:article]}#{t[:induni].present? ? " · INDUNI #{t[:induni]}" : ''}) score #{t[:score]} — #{t[:why]}" }
+      Array(e[:targets]).each { |t| lines << "Article visé : #{t[:designation]} (#{t[:catalog]} #{t[:article]}) rang #{t[:rank]}, score #{t[:score]} — #{t[:why]}" }
+      lines.join("\n")
+    end
+    return result("Je n'ai pas pu mesurer le moteur pour cette requête. Écrivez par exemple « teste tuyau pvc 125 sn4 compact 5m ».") if blocks.empty?
+
+    result(blocks.join("\n\n") + "\n\nPour corriger : « règle : pénalise <mots de l'article> sauf si on tape <mots> », « ajoute les mots clefs … pour <article> » ou « synonyme : … ».")
+  end
+
+  # --- outils appelés par le cerveau (Brain) : renvoient un texte, accumulent les effets pour le navigateur
+  def tool_call(name, a)
+    a = (a || {}).with_indifferent_access
+    res =
+      case name
+      when "add_synonym"   then save_synonym(clean_term(a[:term]), Array(a[:equivalents]).map(&:to_s), one_way: a[:one_way] == true)
+      when "add_keywords"  then tool_keywords(a[:target].to_s, Array(a[:keywords]).map(&:to_s))
+      when "add_ranking_rule" then add_rule(label: a[:label].to_s, product_has_any: a[:product_has_any], query_has_any: a[:query_has_any], query_lacks_any: a[:query_lacks_any], points: a[:points])
+      when "remove_memory" then forget(a[:what].to_s)
+      when "disable_rule"  then disable_rule(a[:id])
+      when "list_memory"   then result("#{list_memory.reply}\n\nRègles de classement :\n#{rules_overview}")
+      when "search_quality" then insights((a[:days] || 7).to_i.clamp(1, 30))
+      when "suggestions"   then suggestions
+      when "decide_suggestions" then decide(a[:all] == true ? "tout" : Array(a[:ids]).join(" "), a[:accept] == false ? "ignored" : "active")
+      else result("Outil inconnu : #{name}")
+      end
+    absorb(res)
+    res.reply
+  end
+
+  def tool_keywords(target, words)
+    return result("Mots clefs vides.") if words.empty? || SearchMemory.split_list(words.join(",")).empty?
+
+    cands = candidates(target)
+    return result("Aucun article ne correspond à « #{target} ».") if cands.empty?
+    return ambiguous(cands) if cands.size > 1
+
+    add_keyword_rows(words.flat_map { |w| SearchMemory.split_list(w) }, cands.first)
+  end
+
+  def absorb(res)
+    @changed = true if res.changed
+    @synonyms = true if res.synonyms
+    @updates = (@updates || []) + Array(res.updates)
+  end
+
+  def collected(reply_text)
+    Result.new(reply: reply_text, changed: !!@changed, updates: (@updates || []).uniq { |u| [ u[:catalog], u[:article] ] }, synonyms: !!@synonyms)
   end
 
   private

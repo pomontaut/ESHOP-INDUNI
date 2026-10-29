@@ -2,7 +2,10 @@
 
 Objectif : faire progresser le bandeau de recherche (le « moteur de recherche ») pour que les utilisateurs
 trouvent plus vite. Chat réservé aux administrateurs (bouton « 🔎 Agent recherche », en bas à gauche) ;
-méthode déterministe, commandes en français, aucun appel à un modèle (`SearchAgent`).
+`SearchAgent`. **Compréhension du français libre** (remarques, questions « pourquoi ? », consignes) par l'API Claude
+(`SearchAgent::Brain`, modèle `SEARCH_AGENT_MODEL`, défaut `claude-sonnet-5-5`, clé `ANTHROPIC_API_KEY` du serveur, déjà utilisée par l'import de devis) :
+l'agent appelle des outils (synonymes, mots clefs, règles de classement, bilan, suggestions) et APPLIQUE les remarques. Sans clé ou
+en cas d'erreur API, repli sur des commandes à formulation fixe (et le chat le dit).
 
 **Mémoire de recherche** (`SearchMemory`, appliquée immédiatement à tous les utilisateurs) :
 - synonymes : « synonyme : culotte = embranchement, raccord en Y » (dans les deux sens) ou
@@ -25,3 +28,14 @@ tapé avant l'ajout d'un article au panier et ne figure pas dans le texte de cet
 **Limites** : pas de compréhension libre du langage (formulations ci-dessus) ; une suggestion n'est qu'une
 proposition tant qu'elle n'est pas validée ; les synonymes ne changent pas le classement par pertinence mais
 élargissent les mots recherchés.
+
+**Règles de classement** (`SearchMemory` kind `rule`, `DEFAULT_RULES`, servies par `/api/search_memory` → `rules`, appliquées par
+`srchRuleBonus` qui enveloppe `scoreProductV49`) : ajoutent des points au score d'un article qui contient un mot de
+`product_has_any` (désignation, descriptif, familles), quand la requête contient un mot de `query_has_any` et aucun de
+`query_lacks_any`. Intégrées : tube de drainage/perforé après les tuyaux pleins si la requête ne parle pas de drainage (-120) ;
+structuré après le compact si la requête demande du compact (-100). L'administrateur en ajoute : « règle : pénalise drainage sauf
+si on tape drain (-120) » (ou en français libre) ; « disable_rule » / « oublie m12 » les retire.
+
+**« Pourquoi ? »** : à chaque message, le navigateur mesure le vrai moteur pour les requêtes citées (entre guillemets ou après
+« tape / cherche ») et les articles visés (n° INDUNI ou référence) et envoie le contexte (`engine` : classement, scores, mots
+retrouvés / absents / seulement par mots clefs, mots non demandés, règles) à l'agent (`srchEngineContext`, `srchWhy`).

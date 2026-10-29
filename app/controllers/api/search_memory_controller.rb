@@ -2,6 +2,6 @@
 # les utilisateurs connectés : le navigateur l'injecte dans la table de synonymes du bandeau de recherche.
 class Api::SearchMemoryController < ApplicationController
   def index
-    render json: { synonyms: SearchMemory.synonyms_json }
+    render json: { synonyms: SearchMemory.synonyms_json, rules: SearchMemory.rules_json }
   end
 end

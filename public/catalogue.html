@@ -5666,10 +5666,66 @@ function srchApplySynonyms(list){
 (function(){
   let tries=0; const iv=setInterval(()=>{tries++;
     if(window._userPerms){clearInterval(iv);
-      fetch('/api/search_memory').then(r=>r.ok?r.json():null).then(j=>{if(j)srchApplySynonyms(j.synonyms)}).catch(()=>{});
+      fetch('/api/search_memory').then(r=>r.ok?r.json():null).then(j=>{if(j){srchApplySynonyms(j.synonyms);srchApplyRules(j.rules)}}).catch(()=>{});
       const p=window._userPerms; if(p.admin&&p.real_admin&&!p.test_profile) srchChatInit();
     } else if(tries>120) clearInterval(iv)},500);
 })();
+/* Règles de classement (mémoire de l'agent : GET /api/search_memory → rules) : ajoutent des points au score du moteur. */
+let srchRules=[];
+const srchStem=w=>String(w).replace(/s$/,'');
+function srchWordSet(t){return new Set(wordsV49(t).map(srchStem))}
+function srchHas(arr,set){return (arr||[]).some(w=>set.has(srchStem(normV49(w))))}
+function srchRuleBonus(p,q){
+  if(!srchRules.length) return {b:0,hits:[]};
+  const qs=srchWordSet(q);
+  if(!p._srchW) p._srchW=srchWordSet([p.designation,p.descriptif,p.famille,p.sousFamille,p.sousSousFamille].join(' '));
+  let b=0; const hits=[];
+  for(const r of srchRules){
+    if(!srchHas(r.product_has_any,p._srchW)) continue;
+    if(r.query_has_any&&r.query_has_any.length&&!srchHas(r.query_has_any,qs)) continue;
+    if(r.query_lacks_any&&r.query_lacks_any.length&&srchHas(r.query_lacks_any,qs)) continue;
+    b+=Number(r.points)||0; hits.push(r);
+  }
+  return {b:b,hits:hits};
+}
+(function(){const s0=window.scoreProductV49; if(typeof s0!=='function') return;
+  window.scoreProductV49=function(p,q){const base=s0(p,q); if(base<=0||!srchRules.length) return base; const r=srchRuleBonus(p,q); return r.b?Math.max(1,base+r.b):base};})();
+function srchApplyRules(list){srchRules=Array.isArray(list)?list:[]; if(typeof _scoreCache!=='undefined'){_scoreCache.clear();_scoreCacheQuery=''}}
+/* Pourquoi un article est classé où il est : mots retrouvés / absents / seulement via mots clefs, mots non demandés, règles. */
+const SRCH_QUALIFIERS=['drainage','drain','perfore','perfores','structure','structuree','fente','fentes','flexible','facon','faconnee','sablee','annele'];
+function srchWhy(p,q){
+  const qw=[...new Set(wordsV49(q))], base=srchWordSet([p.designation,p.descriptif,p.famille,p.sousFamille,p.sousSousFamille,p.article,p.induniReference].join(' ')), kw=srchWordSet(p.induniKeywords||'');
+  const found=[],viaKw=[],missing=[];
+  const txt=normV49([p.designation,p.descriptif,p.article,p.induniReference].join(' '));
+  const numIn=w=>{const m=String(w).match(/^(\d+(?:[.,]\d+)?)(mm|cm|m)?$/); if(!m) return false; const n=m[1].replace('.','[.,]'), u=m[2];
+    return u?new RegExp('(?<![0-9])'+n+'\\s*'+u+'(?![a-z])|\\bl\\s*=?\\s*'+n+'\\s*'+u+'(?![a-z])','i').test(txt):new RegExp('(?<![0-9])'+n+'(?![0-9])').test(txt)};
+  qw.forEach(w=>{const k=srchStem(w); if(base.has(k)||numIn(w)) found.push(w); else if(kw.has(k)) viaKw.push(w); else missing.push(w)});
+  const qs=srchWordSet(q), extra=SRCH_QUALIFIERS.filter(w=>base.has(srchStem(w))&&!qs.has(srchStem(w)));
+  const r=srchRuleBonus(p,q);
+  const parts=[];
+  if(found.length) parts.push('retrouvés : '+found.join(', '));
+  if(viaKw.length) parts.push('retrouvés seulement par les mots clefs : '+viaKw.join(', '));
+  if(missing.length) parts.push('absents : '+missing.join(', '));
+  if(extra.length) parts.push('contient aussi (non demandé) : '+extra.join(', '));
+  if(r.hits.length) parts.push('règles : '+r.hits.map(h=>h.label+' ('+(h.points>0?'+':'')+h.points+')').join(' ; '));
+  return parts.join(' · ');
+}
+/* Mesures du vrai moteur pour les requêtes citées dans le message de l'administrateur (envoyées à l'agent). */
+function srchEngineContext(text){
+  const qs=[];
+  [...text.matchAll(/[«"“]([^»"”]{3,90})[»"”]/g)].forEach(m=>qs.push(m[1].trim()));
+  [...text.matchAll(/(?:tape|tapes|tapé|saisis|saisi|cherche|recherche|écris|ecris)\s*:?\s*([^,;?«»"“”]{3,90}?)(?=\s+(?:je|j'|on|il|elle|et|mais|alors|pourquoi|ça|ca|le|la|les|l')\b|[,;?]|$)/gi)].forEach(m=>qs.push(m[1].trim()));
+  const uniq=[...new Set(qs.map(q=>q.replace(/\s+/g,' ')))].filter(q=>wordsV49(q).length>=1).slice(0,3);
+  const refs=[...new Set([...text.matchAll(/\b(\d{9})\b/g)].map(m=>m[1]))].slice(0,4);
+  return uniq.map(q=>{
+    const ql=q.toLowerCase();
+    const all=PRODUCTS.map(p=>({p,s:scoreProductV49(p,ql)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s||String(a.p.designation).localeCompare(String(b.p.designation),'fr'));
+    const row=(x,i)=>({rank:i+1,designation:String(x.p.designation).slice(0,100),catalog:x.p.catalog,article:x.p.article,induni:x.p.induniReference||'',score:x.s,why:srchWhy(x.p,ql)});
+    const targets=[];
+    all.forEach((x,i)=>{if(targets.length<4&&(refs.includes(String(x.p.induniReference))||refs.includes(String(x.p.article)))) targets.push(row(x,i))});
+    return {q:q,total:all.length,top:all.slice(0,6).map(row),targets:targets};
+  }).filter(e=>e.total>0||e.targets.length);
+}
 function srchEsc(t){return String(t==null?'':t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
 function srchAdd(role,text,at){
   const box=document.getElementById('srchMsgs'); if(!box) return;
@@ -5693,7 +5749,7 @@ function srchToggle(){
   if(open&&!p.dataset.loaded){p.dataset.loaded='1';
     fetch('/api/search_agent').then(r=>r.json()).then(j=>{
       (j.messages||[]).forEach(m=>srchAdd(m.role,m.content,m.at));
-      srchAdd('agent',"Bonjour. Mémoire : "+j.memory+" élément(s), "+j.pending+" suggestion(s) en attente. Écrivez « aide » pour voir ce que je sais faire, « bilan » pour la qualité de la recherche, « suggestions » pour mes propositions.");
+      srchAdd('agent',"Bonjour. Mémoire : "+j.memory+" élément(s), "+j.rules+" règle(s) de classement, "+j.pending+" suggestion(s) en attente. "+(j.brain?"Parlez-moi librement : remarques sur un mauvais classement, questions « pourquoi ? », mots à retenir — j'applique et je vous dis ce que j'ai changé. « teste <requête> » vérifie avec le vrai moteur.":"⚠️ La compréhension du français libre n'est pas active (clé ANTHROPIC_API_KEY absente du serveur) : j'exécute les commandes simples (« aide »).")+" « bilan » : qualité de la recherche ; « suggestions » : mes propositions.");
     }).catch(()=>srchAdd('agent','Historique indisponible.'));
   }
   if(open) setTimeout(()=>{const i=document.getElementById('srchInput'); if(i)i.focus()},50);
@@ -5707,9 +5763,10 @@ function srchSend(ev){
     srchAdd('agent',res.length?'Recherche « '+q+' » — '+res.length+' premiers résultats du moteur :\n'+res.map((x,k)=>(k+1)+'. '+x.p.designation+' ('+x.p.catalog+' '+x.p.article+(x.p.induniReference?' · INDUNI '+x.p.induniReference:'')+') score '+x.s).join('\n'):'Recherche « '+q+' » : aucun résultat. Donnez-moi un synonyme ou des mots clefs pour l\'article attendu.');
     return;
   }
-  fetch('/api/search_agent/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})}).then(r=>r.json()).then(j=>{
+  fetch('/api/search_agent/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,engine:srchEngineContext(text)})}).then(r=>r.json()).then(j=>{
     srchAdd('agent',j.reply||j.error||'…');
     if(j.synonyms) srchApplySynonyms(j.synonyms);
+    if(j.rules) srchApplyRules(j.rules);
     if(j.updates&&j.updates.length){
       j.updates.forEach(u=>{const p=PRODUCTS.find(x=>x.catalog===u.catalog&&x.article===u.article); if(p) p.induniKeywords=u.induniKeywords});
       if(typeof _scoreCache!=='undefined'){_scoreCache.clear();_scoreCacheQuery=''}

@@ -394,7 +394,9 @@ chat (`Api::SearchAgentController`, `SearchAgent`) qui mémorise synonymes et mo
 (`SearchMemory`, tables `search_memories` / `search_agent_messages`). Appliqué tout de suite à tous : synonymes via
 `GET /api/search_memory` (injectés dans `SEARCH_SYNONYM_MAP_V49`), mots clefs fusionnés dans `induniKeywords` de `/api/products`.
 Lit les retours de l'agent d'usage (« bilan », « suggestions » = mots clefs d'après les parcours réels). « teste … » lance le
-vrai moteur du navigateur. Détail : `docs/agents/agent_moteur_recherche.md`. La « Recherche guidée » (menu déroulant
+vrai moteur du navigateur. Français libre via l'API Claude (`SearchAgent::Brain`, outils, `ANTHROPIC_API_KEY`) avec repli sur commandes fixes ;
+**règles de classement** (`SearchMemory.rules_json`, `srchRuleBonus` enveloppe `scoreProductV49`, règles intégrées drainage/structuré) ; le navigateur envoie à
+l'agent le contexte mesuré du moteur (`srchEngineContext`) pour les « pourquoi ». Détail : `docs/agents/agent_moteur_recherche.md`. La « Recherche guidée » (menu déroulant
 catalogue › famille › sous-famille, `renderFunnelWidget`) est aussi présente sur la page d'un groupe de familles HGC
 (ex. Canalisation).
 
