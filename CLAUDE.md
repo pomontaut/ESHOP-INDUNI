@@ -363,8 +363,8 @@ source de vérité : le seed crée/met à jour ET supprime les lignes absentes, 
 = la référence fournisseur existe encore au catalogue (`Product`). Filtre multi-mots + export CSV (« ; », UTF-8 BOM).
 À ne pas confondre avec « Gestion nouveaux articles » (`/api/nomenclature`, classement des articles issus d'un
 import de devis, profils achats). Ajouter des articles = régénérer le JSON depuis le classeur « Nomenclature INDUNI » :
-`python3 script/build_nomenclature_json.py <classeur.xlsx>` (feuille « Base article », **seules les lignes dont la colonne A
-= « oui » sont intégrées** ; colonnes B n°compta, C-E segmentation 1-3, F n° INDUNI, G désignation INDUNI, H-J fournisseur,
+`python3 script/build_nomenclature_json.py <classeur.xlsx>` (feuille « Base article », **toutes les lignes avec un n° INDUNI sont
+intégrées** — option `--only-oui` pour ne reprendre que la colonne A = « oui » ; colonnes B n°compta, C-E segmentation 1-3, F n° INDUNI, G désignation INDUNI, H-J fournisseur,
 K unité, **L mots clefs de recherche** séparés par « ; ») puis déployer. Numérotation INDUNI : 9 chiffres FF SS NNNNN, séquentielle
 dans chaque sous-famille dans l'ordre de la segmentation ABACUS (catégorie → dimension) ; segmentation 1-3 = Famille / Sous-famille /
 Catégorie de la base ABACUS ; colonne M « Libellé ABACUS » = famille d'achat + dimension.

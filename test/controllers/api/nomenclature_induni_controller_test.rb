@@ -41,6 +41,6 @@ class Api::NomenclatureInduniControllerTest < ActionDispatch::IntegrationTest
     NomenclatureEntry.delete_all
     first = NomenclatureEntry.seed_from_json!
     assert_equal first, NomenclatureEntry.seed_from_json!
-    assert_operator first, :>=, 200
+    assert_operator first, :>=, 900
   end
 end
