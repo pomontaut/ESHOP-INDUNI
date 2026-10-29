@@ -101,6 +101,7 @@ class Api::ProductsControllerTest < ActionDispatch::IntegrationTest
     Product.create!(supplier: supplier, reference: "ART-NOM", name: "Article nomenclature", famille: "Bois")
     Product.create!(supplier: supplier, reference: "ART-LIBRE", name: "Article libre", famille: "Bois")
     NomenclatureEntry.create!(induni_reference: "340200001", induni_designation: "Carrelets 80/120 400cm",
+                              search_keywords: "carrelet ; lambourde bois",
                               supplier_name: "Fournisseur ouvert", supplier_reference: "ART-NOM")
 
     post login_url, params: { email: users(:one).email, password: "password123" }
@@ -109,6 +110,8 @@ class Api::ProductsControllerTest < ActionDispatch::IntegrationTest
     nom = rows.find { |p| p["article"] == "ART-NOM" }
     assert_equal "340200001", nom["induniReference"]
     assert_equal "Carrelets 80/120 400cm", nom["induniDesignation"]
+    assert_equal "carrelet ; lambourde bois", nom["induniKeywords"]
     assert_nil rows.find { |p| p["article"] == "ART-LIBRE" }["induniReference"]
+    assert_nil rows.find { |p| p["article"] == "ART-LIBRE" }["induniKeywords"]
   end
 end

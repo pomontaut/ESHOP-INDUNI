@@ -17,7 +17,8 @@ class Api::ProductsController < ApplicationController
       .where.not("suppliers.name = ? AND products.famille != ?", "Swisspor", "Isolation")
       .order(:id)
     # Nomenclature Induni : n° et désignation INDUNI de l'article (sans prix),
-    # affichés en petit sur les fiches et utilisés par la recherche.
+    # affichés en petit sur les fiches ; ces deux champs et les mots clefs d'aide à la recherche
+    # (induniKeywords) alimentent la recherche.
     induni = NomenclatureEntry.all.index_by { |e| [ e.supplier_name, e.supplier_reference ] }
     render json: products.map { |p|
       confidential = p.supplier&.confidential_pricing?
@@ -46,7 +47,8 @@ class Api::ProductsController < ApplicationController
         prixM2:           p.prix_m2&.to_f,
         prixExterne:      p.prix_externe&.to_f,
         induniReference:  induni[[ p.supplier&.name, p.reference ]]&.induni_reference,
-        induniDesignation: induni[[ p.supplier&.name, p.reference ]]&.induni_designation
+        induniDesignation: induni[[ p.supplier&.name, p.reference ]]&.induni_designation,
+        induniKeywords:   induni[[ p.supplier&.name, p.reference ]]&.search_keywords
       }
     }
   end

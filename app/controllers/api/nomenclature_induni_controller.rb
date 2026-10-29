@@ -19,6 +19,7 @@ class Api::NomenclatureInduniController < ApplicationController
         supplierReference:   e.supplier_reference,
         supplierDesignation: e.supplier_designation,
         priceUnit:           e.price_unit,
+        searchKeywords:      e.search_keywords,
         inCatalog:           keys.include?([ e.supplier_name, e.supplier_reference ])
       }
     }

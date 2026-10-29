@@ -356,12 +356,21 @@ Menu Admin > « 📚 Nomenclature Induni » (`showNomenclatureInduni()`, `state.
 dernier bloc avant `confirmNomenclature` dans `catalogue.html`) : une ligne = un article Induni (n° compta,
 segmentation 1-3, n° de référence INDUNI + désignation) rattaché à l'article d'UN fournisseur (référence,
 désignation, unité de prix) ; plusieurs fournisseurs = plusieurs lignes de même référence INDUNI. Table
-`nomenclature_entries` (`NomenclatureEntry`), alimentée de façon idempotente par `catalog:seed` depuis
-`db/seed_data/nomenclature_induni.json` (clé référence INDUNI + fournisseur ; ne supprime jamais). API
+`nomenclature_entries` (`NomenclatureEntry`), alimentée par `catalog:seed` depuis
+`db/seed_data/nomenclature_induni.json` (clé référence INDUNI + fournisseur + référence fournisseur ; le JSON est la
+source de vérité : le seed crée/met à jour ET supprime les lignes absentes, n° renumérotés compris). API
 `GET /api/nomenclature_induni` (`Api::NomenclatureInduniController`, 403 hors `admin?`, AUCUN prix) ; colonne ✓/⚠
 = la référence fournisseur existe encore au catalogue (`Product`). Filtre multi-mots + export CSV (« ; », UTF-8 BOM).
 À ne pas confondre avec « Gestion nouveaux articles » (`/api/nomenclature`, classement des articles issus d'un
-import de devis, profils achats). Ajouter des articles = compléter le JSON (le déploiement les insère).
+import de devis, profils achats). Ajouter des articles = régénérer le JSON depuis le classeur « Nomenclature INDUNI » :
+`python3 script/build_nomenclature_json.py <classeur.xlsx>` (feuille « Base article », **seules les lignes dont la colonne A
+= « oui » sont intégrées** ; colonnes B n°compta, C-E segmentation 1-3, F n° INDUNI, G désignation INDUNI, H-J fournisseur,
+K unité, **L mots clefs de recherche** séparés par « ; ») puis déployer. Numérotation INDUNI : 9 chiffres FF SS NNNNN, séquentielle
+dans chaque sous-famille dans l'ordre de la segmentation ABACUS (catégorie → dimension) ; segmentation 1-3 = Famille / Sous-famille /
+Catégorie de la base ABACUS ; colonne M « Libellé ABACUS » = famille d'achat + dimension.
+**Mots clefs de recherche (colonne L)** : `NomenclatureEntry#search_keywords`, exposés par `/api/products` en `induniKeywords`
+(et `searchKeywords` côté admin) et indexés dans la recherche du catalogue (`productTextV49`, `searchHaystackInduni`) avec le n° et
+la désignation INDUNI : un utilisateur qui tape un de ces mots (« culotte », « raccord en Y », « clapet anti-retour »…) retrouve l'article.
 Sur les fiches : `/api/products` ajoute `induniReference` / `induniDesignation` (jointure fournisseur + référence, sans prix,
 pour tous les utilisateurs) ; `induniRefHtml()` les affiche en petit sous le n° d'article (`productCard`, `productCardFast`) et
 `productTextV49` / `scoreProductV49` les indexent : le n° INDUNI sert à la recherche.
