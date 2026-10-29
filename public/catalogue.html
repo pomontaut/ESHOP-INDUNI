@@ -983,7 +983,7 @@ function renderFamilyGroupPage(groupName){
   const allItems = PRODUCTS.filter(p=>p.catalog===state.catalog&&groupFams.includes(p.famille));
   const fams = group(allItems,'famille');
   const grid = renderFamilyGrid(fams, HGC_CONFIG, state.catalog);
-  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${esc(state.catalog)}</a> › ${esc(groupName)}</div><div class="banner"><div style="font-size:70px">🔩</div><div><h2>${esc(groupName)}</h2><p>${allItems.length} articles · ${Object.keys(fams).length} familles</p></div></div><div class="sectionTitle">Familles d'articles</div><div class="grid canplastGrid">${grid}</div>`;
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${esc(state.catalog)}</a> › ${esc(groupName)}</div><div class="banner"><div style="font-size:70px">🔩</div><div><h2>${esc(groupName)}</h2><p>${allItems.length} articles · ${Object.keys(fams).length} familles</p></div>${renderFunnelWidget(state.catalog)}</div><div class="sectionTitle">Familles d'articles</div><div class="grid canplastGrid">${grid}</div>`;
 }
 
 // ── Rendu générique d'une grille de famille ──────────────────────────────────
@@ -5643,6 +5643,77 @@ function usgJourneys(u){
   if(!u.journeys.length) return '<p class="muted">Aucun parcours.</p>';
   const via={recherche:'🔎 barre de recherche',liste:'📋 entonnoir / liste',image:'🖼 images'};
   return `<table class="dashTable"><thead><tr><th>Heure</th><th>Parcours</th><th>Durée</th><th>Clics</th><th>Mots tapés (dans l'ordre)</th><th>Article</th><th>Moyen</th></tr></thead><tbody>${u.journeys.map(j=>`<tr><td>${esc(j.at)}</td><td>${j.added?'→ panier':'<span style="color:#b45309">sans ajout</span>'}</td><td>${j.seconds==null?'—':usgFmt(j.seconds)}</td><td>${j.clicks}</td><td>${esc((j.queries||[]).join(' › '))}</td><td>${esc(j.designation||'')} <small class="muted">${esc(j.catalog||'')} ${esc(j.article||'')}</small></td><td>${esc(via[j.via]||'')}</td></tr>`).join('')}</tbody></table>`;
+}
+</script>
+<script>
+/* ---------- Agent « moteur de recherche » : mémoire (tous) + chat (administrateurs seulement) ----------
+   Mémoire : synonymes appris (GET /api/search_memory) injectés dans SEARCH_SYNONYM_MAP_V49 ; mots clefs
+   appris fusionnés par le serveur dans `induniKeywords` de /api/products. Chat : POST /api/search_agent/chat
+   (SearchAgent). « teste … » exécute le vrai moteur du navigateur (scoreProductV49). */
+let _srchInjected=[];
+function srchApplySynonyms(list){
+  try{
+    _srchInjected.forEach(([k,v])=>{const a=SEARCH_SYNONYM_MAP_V49[k]; if(a){const i=a.indexOf(v); if(i>=0)a.splice(i,1)}});
+    _srchInjected=[];
+    const add=(from,to)=>{const k=normV49(from).replace(/\s+/g,''), v=normV49(to).replace(/\s+/g,''); if(!k||!v||k===v)return;
+      (SEARCH_SYNONYM_MAP_V49[k]=SEARCH_SYNONYM_MAP_V49[k]||[]); if(!SEARCH_SYNONYM_MAP_V49[k].includes(v)){SEARCH_SYNONYM_MAP_V49[k].push(v);_srchInjected.push([k,v])}
+      const ks=normV49(from); if(ks!==k){(SEARCH_SYNONYM_MAP_V49[ks]=SEARCH_SYNONYM_MAP_V49[ks]||[]); const vs=normV49(to); if(!SEARCH_SYNONYM_MAP_V49[ks].includes(vs)){SEARCH_SYNONYM_MAP_V49[ks].push(vs);_srchInjected.push([ks,vs])}}};
+    (list||[]).forEach(s=>(s.values||[]).forEach(v=>{add(s.term,v); if(!s.oneWay) add(v,s.term)}));
+    if(typeof _scoreCache!=='undefined'){_scoreCache.clear();_scoreCacheQuery=''}
+  }catch(e){console.warn('synonymes mémoire',e)}
+}
+(function(){
+  let tries=0; const iv=setInterval(()=>{tries++;
+    if(window._userPerms){clearInterval(iv);
+      fetch('/api/search_memory').then(r=>r.ok?r.json():null).then(j=>{if(j)srchApplySynonyms(j.synonyms)}).catch(()=>{});
+      const p=window._userPerms; if(p.admin&&p.real_admin&&!p.test_profile) srchChatInit();
+    } else if(tries>120) clearInterval(iv)},500);
+})();
+function srchEsc(t){return String(t==null?'':t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function srchAdd(role,text,at){
+  const box=document.getElementById('srchMsgs'); if(!box) return;
+  const d=document.createElement('div');
+  d.style.cssText='margin:6px 0;padding:8px 10px;border-radius:10px;white-space:pre-wrap;font-size:13px;line-height:1.4;max-width:92%;'+(role==='user'?'background:#1a56a0;color:#fff;margin-left:auto':'background:#f1f5f9;color:#0f172a');
+  d.innerHTML=srchEsc(text)+(at?'<div style="font-size:10px;opacity:.6;margin-top:3px">'+srchEsc(at)+'</div>':'');
+  box.appendChild(d); box.scrollTop=box.scrollHeight;
+}
+function srchChatInit(){
+  if(document.getElementById('srchBtn')) return;
+  const btn=document.createElement('button'); btn.id='srchBtn'; btn.textContent='🔎 Agent recherche';
+  btn.style.cssText='position:fixed;left:14px;bottom:14px;z-index:9000;background:#0c1d34;color:#fff;border:0;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3)';
+  const panel=document.createElement('div'); panel.id='srchPanel';
+  panel.style.cssText='display:none;position:fixed;left:14px;bottom:62px;z-index:9000;width:380px;max-width:calc(100vw - 28px);height:520px;max-height:calc(100vh - 90px);background:#fff;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.35);flex-direction:column;overflow:hidden';
+  panel.innerHTML='<div style="background:#0c1d34;color:#fff;padding:10px 14px;font-weight:700;display:flex;justify-content:space-between;align-items:center"><span>🔎 Agent moteur de recherche</span><span style="cursor:pointer" onclick="srchToggle()">✕</span></div><div id="srchMsgs" style="flex:1;overflow:auto;padding:8px 10px"></div><form onsubmit="srchSend(event)" style="display:flex;gap:6px;padding:8px;border-top:1px solid #e5e7eb"><input id="srchInput" autocomplete="off" placeholder="Retour, mots clefs, synonymes… (aide)" style="flex:1;border:1px solid #d1d5db;border-radius:8px;padding:8px"><button class="miniBtn" type="submit">Envoyer</button></form>';
+  document.body.appendChild(panel); btn.onclick=srchToggle; document.body.appendChild(btn);
+}
+function srchToggle(){
+  const p=document.getElementById('srchPanel'); if(!p) return;
+  const open=p.style.display!=='flex'; p.style.display=open?'flex':'none';
+  if(open&&!p.dataset.loaded){p.dataset.loaded='1';
+    fetch('/api/search_agent').then(r=>r.json()).then(j=>{
+      (j.messages||[]).forEach(m=>srchAdd(m.role,m.content,m.at));
+      srchAdd('agent',"Bonjour. Mémoire : "+j.memory+" élément(s), "+j.pending+" suggestion(s) en attente. Écrivez « aide » pour voir ce que je sais faire, « bilan » pour la qualité de la recherche, « suggestions » pour mes propositions.");
+    }).catch(()=>srchAdd('agent','Historique indisponible.'));
+  }
+  if(open) setTimeout(()=>{const i=document.getElementById('srchInput'); if(i)i.focus()},50);
+}
+function srchSend(ev){
+  ev.preventDefault(); const i=document.getElementById('srchInput'); const text=i.value.trim(); if(!text) return; i.value='';
+  srchAdd('user',text);
+  const m=text.match(/^(?:teste|test|essaie)\s+(.+)$/i);
+  if(m){ // vrai moteur du navigateur
+    const q=m[1].trim(); const res=PRODUCTS.map(p=>({p,s:scoreProductV49(p,q.toLowerCase())})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,5);
+    srchAdd('agent',res.length?'Recherche « '+q+' » — '+res.length+' premiers résultats du moteur :\n'+res.map((x,k)=>(k+1)+'. '+x.p.designation+' ('+x.p.catalog+' '+x.p.article+(x.p.induniReference?' · INDUNI '+x.p.induniReference:'')+') score '+x.s).join('\n'):'Recherche « '+q+' » : aucun résultat. Donnez-moi un synonyme ou des mots clefs pour l\'article attendu.');
+    return;
+  }
+  fetch('/api/search_agent/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})}).then(r=>r.json()).then(j=>{
+    srchAdd('agent',j.reply||j.error||'…');
+    if(j.synonyms) srchApplySynonyms(j.synonyms);
+    if(j.updates&&j.updates.length){
+      j.updates.forEach(u=>{const p=PRODUCTS.find(x=>x.catalog===u.catalog&&x.article===u.article); if(p) p.induniKeywords=u.induniKeywords});
+      if(typeof _scoreCache!=='undefined'){_scoreCache.clear();_scoreCacheQuery=''}
+    }
+  }).catch(()=>srchAdd('agent','Erreur de communication.'));
 }
 </script>
 </body></html>

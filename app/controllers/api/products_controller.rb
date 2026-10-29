@@ -20,6 +20,7 @@ class Api::ProductsController < ApplicationController
     # affichés en petit sur les fiches ; ces deux champs et les mots clefs d'aide à la recherche
     # (induniKeywords) alimentent la recherche.
     induni = NomenclatureEntry.all.index_by { |e| [ e.supplier_name, e.supplier_reference ] }
+    memory_kw = SearchMemory.keywords_by_product # mots clefs appris par l'agent « moteur de recherche »
     render json: products.map { |p|
       confidential = p.supplier&.confidential_pricing?
       {
@@ -48,7 +49,7 @@ class Api::ProductsController < ApplicationController
         prixExterne:      p.prix_externe&.to_f,
         induniReference:  induni[[ p.supplier&.name, p.reference ]]&.induni_reference,
         induniDesignation: induni[[ p.supplier&.name, p.reference ]]&.induni_designation,
-        induniKeywords:   induni[[ p.supplier&.name, p.reference ]]&.search_keywords
+        induniKeywords:   [ induni[[ p.supplier&.name, p.reference ]]&.search_keywords, memory_kw[[ p.supplier&.name, p.reference ]] ].compact_blank.join(" ; ").presence
       }
     }
   end

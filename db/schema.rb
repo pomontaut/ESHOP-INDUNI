@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_29_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_29_190000) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -299,6 +299,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_29_180000) do
     t.text "strategie_achat"
     t.datetime "updated_at", null: false
     t.index ["projet_id"], name: "index_seance_lancements_on_projet_id", unique: true
+  end
+
+  create_table "search_agent_messages", force: :cascade do |t|
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.string "role", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["created_at"], name: "index_search_agent_messages_on_created_at"
+  end
+
+  create_table "search_memories", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "created_by_id"
+    t.string "induni_reference"
+    t.string "kind", null: false
+    t.string "note"
+    t.boolean "one_way", default: false, null: false
+    t.string "source", default: "chat", null: false
+    t.string "status", default: "active", null: false
+    t.string "supplier_name"
+    t.string "supplier_reference"
+    t.string "target_label"
+    t.string "term"
+    t.datetime "updated_at", null: false
+    t.text "value", null: false
+    t.index ["kind", "status"], name: "index_search_memories_on_kind_and_status"
   end
 
   create_table "suppliers", force: :cascade do |t|

@@ -387,6 +387,17 @@ suivis ; `GET /api/usage/report`, `POST /api/usage/send_report` admin) ; calcul 
 Un nouvel écran de l'e-shop doit passer par `state`/`render()` pour apparaître dans le suivi de navigation. Détail :
 `docs/agents/agent_usage_eshop.md`.
 
+## Agent « moteur de recherche » (chat administrateur) et mémoire de recherche
+
+Bouton « 🔎 Agent recherche » (administrateurs réels hors profils test, dernier `<script>` de `catalogue.html`, préfixe `srch*`) :
+chat (`Api::SearchAgentController`, `SearchAgent`) qui mémorise synonymes et mots clefs supplémentaires par article
+(`SearchMemory`, tables `search_memories` / `search_agent_messages`). Appliqué tout de suite à tous : synonymes via
+`GET /api/search_memory` (injectés dans `SEARCH_SYNONYM_MAP_V49`), mots clefs fusionnés dans `induniKeywords` de `/api/products`.
+Lit les retours de l'agent d'usage (« bilan », « suggestions » = mots clefs d'après les parcours réels). « teste … » lance le
+vrai moteur du navigateur. Détail : `docs/agents/agent_moteur_recherche.md`. La « Recherche guidée » (menu déroulant
+catalogue › famille › sous-famille, `renderFunnelWidget`) est aussi présente sur la page d'un groupe de familles HGC
+(ex. Canalisation).
+
 ## Note de marché PowerPoint (GC / BAT)
 
 Boutons « 📊 Note de marché PowerPoint » en tête de Analyse achat > Indicateurs de marché
