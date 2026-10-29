@@ -66,6 +66,12 @@ class User < ApplicationRecord
     admin? || job_function == "ACHETEUR" || sector == "SERVICE ACHATS"
   end
 
+  # Agent d'usage : ne suit ni les administrateurs ni le service achats (acheteurs, directeur
+  # achats, secteur SERVICE ACHATS).
+  def usage_tracked?
+    !(portail_achat_access? || job_function.to_s.upcase.include?("ACHAT"))
+  end
+
   def effective_can_create_users?  = admin? || can_create_users?
   def effective_can_create_orders? = admin? || can_create_orders?
   def effective_can_modify_orders? = admin? || can_modify_orders?

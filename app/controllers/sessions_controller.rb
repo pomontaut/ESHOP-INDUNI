@@ -8,6 +8,7 @@ class SessionsController < ApplicationController
     user = User.find_by(email: params[:email].to_s.downcase)
     if user&.authenticate(params[:password])
       session[:user_id] = user.id
+      UsageEvent.record_login!(user)
       if user.must_change_password?
         redirect_to change_password_path, notice: "Bienvenue ! Veuillez choisir votre mot de passe personnel."
       else

@@ -375,6 +375,18 @@ Sur les fiches : `/api/products` ajoute `induniReference` / `induniDesignation` 
 pour tous les utilisateurs) ; `induniRefHtml()` les affiche en petit sous le n° d'article (`productCard`, `productCardFast`) et
 `productTextV49` / `scoreProductV49` les indexent : le n° INDUNI sert à la recherche.
 
+## Agent d'usage de l'e-shop (administrateur seulement)
+
+Menu Admin > « 🕵️ Agent d'usage » (`showUsageAgent()`, `state.view === 'usageAgent'`, dernier `<script>` de
+`catalogue.html`, préfixe `usg*`). Mesure, pour les utilisateurs **hors administrateurs et service achats**
+(`User#usage_tracked?`), les ouvertures de l'e-shop, le temps actif, les clics, les mots tapés (premiers mots),
+la navigation et les parcours jusqu'au panier (durée, clics, moyen : barre de recherche / liste-entonnoir / images).
+Tables `usage_sessions`, `usage_events`, `usage_reports` ; `Api::UsageController` (`POST /api/usage/events` utilisateurs
+suivis ; `GET /api/usage/report`, `POST /api/usage/send_report` admin) ; calcul et e-mail du soir dans `UsageReport`
+(`run_due!` : thread Puma, 18h30 Zurich, une fois par jour avec activité, `USAGE_REPORT_AUTO=false` pour couper).
+Un nouvel écran de l'e-shop doit passer par `state`/`render()` pour apparaître dans le suivi de navigation. Détail :
+`docs/agents/agent_usage_eshop.md`.
+
 ## Note de marché PowerPoint (GC / BAT)
 
 Boutons « 📊 Note de marché PowerPoint » en tête de Analyse achat > Indicateurs de marché

@@ -27,6 +27,9 @@ Rails.application.routes.draw do
     get   "nomenclature",     to: "nomenclature#index"
     patch "nomenclature/:id", to: "nomenclature#update"
     get   "nomenclature_induni", to: "nomenclature_induni#index"
+    post  "usage/events",       to: "usage#events"
+    get   "usage/report",       to: "usage#report"
+    post  "usage/send_report",  to: "usage#send_report"
     resources :diesel_prices, only: [ :index, :create ]
     resources :canplast_surcharges, only: [ :index, :create ]
     # Réception de commande / appels de livraison (environnement test uniquement)

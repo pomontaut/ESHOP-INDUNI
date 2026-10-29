@@ -1,0 +1,9 @@
+Compte rendu d'usage de l'e-shop — <%= Date.parse(@report[:date]).strftime("%d.%m.%Y") %>
+
+<%= @report[:totals][:users_connected] %> utilisateur(s) connecté(s) sur <%= @report[:totals][:users_tracked] %> suivis, <%= @report[:totals][:sessions] %> ouverture(s), <%= @report[:totals][:clicks] %> clics, <%= @report[:totals][:searches] %> recherche(s), <%= @report[:totals][:adds] %> article(s) ajouté(s) au panier.
+
+<% @report[:observations].each do |o| %>- <%= o %>
+<% end %>
+<% @report[:users].each do |u| %>
+<%= u[:name] %> : <%= u[:sessions] %> ouverture(s), <%= usage_duration(u[:active_seconds]) %> actives, <%= u[:clicks] %> clics, <%= u[:searches].size %> recherche(s), <%= u[:adds] %> au panier. Premiers mots : <%= u[:first_queries].join(" · ") %>
+<% end %>

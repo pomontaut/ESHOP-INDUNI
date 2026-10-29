@@ -1,0 +1,32 @@
+<% t = @report[:totals] %>
+<h2 style="margin:0 0 6px">Compte rendu d'usage de l'e-shop — <%= Date.parse(@report[:date]).strftime("%d.%m.%Y") %></h2>
+<p style="color:#666;margin:0 0 14px">Utilisateurs suivis : tous sauf administrateurs et service achats. Généré le <%= @report[:generated_at] %>.</p>
+
+<p><b><%= t[:users_connected] %></b> utilisateur(s) connecté(s) sur <%= t[:users_tracked] %> suivis · <b><%= t[:sessions] %></b> ouverture(s) de l'e-shop · temps actif total <b><%= usage_duration(t[:active_seconds]) %></b> · <b><%= t[:clicks] %></b> clics · <b><%= t[:searches] %></b> recherche(s) (<%= t[:zero_results] %> sans résultat) · <b><%= t[:adds] %></b> article(s) ajouté(s) au panier<% if t[:avg_seconds_to_cart] %> · temps moyen jusqu'au panier <b><%= usage_duration(t[:avg_seconds_to_cart]) %></b> pour <b><%= t[:avg_clicks_to_cart] %></b> clics<% end %>.</p>
+<p>Moyen de recherche (clics) : barre de recherche <b><%= t[:vias]["recherche"].to_i %></b> · entonnoir / listes <b><%= t[:vias]["liste"].to_i %></b> · images <b><%= t[:vias]["image"].to_i %></b>.</p>
+
+<% if @report[:observations].any? %>
+  <h3>À retenir</h3>
+  <ul><% @report[:observations].each do |o| %><li><%= o %></li><% end %></ul>
+<% end %>
+
+<% if @report[:users].any? %>
+  <h3>Par utilisateur</h3>
+  <table cellpadding="5" cellspacing="0" style="border-collapse:collapse;font-size:13px" border="1" bordercolor="#ddd">
+    <tr style="background:#f3f4f6"><th align="left">Utilisateur</th><th>Ouvertures</th><th>Temps actif</th><th>Clics</th><th>Recherches</th><th>Panier</th><th>Temps moyen → panier</th><th align="left">Premiers mots tapés</th></tr>
+    <% @report[:users].each do |u| %>
+      <tr><td><%= u[:name] %><br><small><%= u[:sector] %></small></td><td align="center"><%= u[:sessions] %></td><td align="center"><%= usage_duration(u[:active_seconds]) %></td><td align="center"><%= u[:clicks] %></td><td align="center"><%= u[:searches].size %><% if u[:zero_results].positive? %> (<%= u[:zero_results] %> sans résultat)<% end %></td><td align="center"><%= u[:adds] %></td><td align="center"><%= usage_duration(u[:avg_seconds_to_cart]) %></td><td><%= u[:first_queries].join(" · ") %></td></tr>
+    <% end %>
+  </table>
+<% end %>
+
+<% if @report[:top_queries].any? %>
+  <h3>Mots les plus tapés</h3>
+  <p><%= @report[:top_queries].map { |q, n| "#{q} (#{n})" }.join(" · ") %></p>
+<% end %>
+
+<% if @report[:absent].any? %>
+  <h3>Non connectés ce jour</h3>
+  <p><%= @report[:absent].map { |a| "#{a[:name]}#{a[:last_seen] ? " (dernière ouverture #{a[:last_seen]})" : ' (jamais suivi)'}" }.join(" · ") %></p>
+<% end %>
+<p style="color:#888;font-size:12px">Détail par parcours : e-shop › Admin › « Agent d'usage ».</p>

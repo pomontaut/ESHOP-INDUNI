@@ -59,3 +59,21 @@ if ENV["RELANCE_AUTO_ENABLED"] == "true"
     end
   end
 end
+
+# Agent d'usage de l'e-shop (voir UsageReport) : compte rendu envoyé à l'administrateur chaque soir
+# (à partir de 18h30, heure de Zurich), une seule fois par jour et seulement s'il y a eu de l'activité.
+# Désactivable avec USAGE_REPORT_AUTO=false.
+if ENV["USAGE_REPORT_AUTO"] != "false"
+  on_booted do
+    Thread.new do
+      loop do
+        sleep 10 * 60
+        begin
+          Rails.application.executor.wrap { UsageReport.run_due! }
+        rescue => e
+          Rails.logger.error("[usage] #{e.class}: #{e.message}")
+        end
+      end
+    end
+  end
+end

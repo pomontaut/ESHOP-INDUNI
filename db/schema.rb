@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_29_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_29_180000) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -327,6 +327,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_29_170000) do
     t.datetime "updated_at", null: false
     t.text "visible_cantons"
     t.text "visible_sectors"
+  end
+
+  create_table "usage_events", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "data"
+    t.string "kind", null: false
+    t.datetime "occurred_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "usage_session_id"
+    t.integer "user_id", null: false
+    t.index ["occurred_at", "user_id"], name: "index_usage_events_on_occurred_at_and_user_id"
+    t.index ["usage_session_id"], name: "index_usage_events_on_usage_session_id"
+  end
+
+  create_table "usage_reports", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "emailed_at"
+    t.date "report_date", null: false
+    t.text "summary"
+    t.datetime "updated_at", null: false
+    t.index ["report_date"], name: "index_usage_reports_on_report_date", unique: true
+  end
+
+  create_table "usage_sessions", force: :cascade do |t|
+    t.integer "active_seconds", default: 0, null: false
+    t.integer "clicks", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "last_seen_at", null: false
+    t.datetime "started_at", null: false
+    t.string "token", null: false
+    t.datetime "updated_at", null: false
+    t.string "user_agent"
+    t.integer "user_id", null: false
+    t.index ["token"], name: "index_usage_sessions_on_token", unique: true
+    t.index ["user_id", "started_at"], name: "index_usage_sessions_on_user_id_and_started_at"
   end
 
   create_table "users", force: :cascade do |t|
