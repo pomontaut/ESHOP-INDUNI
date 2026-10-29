@@ -101,7 +101,7 @@ function buildSpec(entity,d){
     {kind:'cards',title:'Taux de change et carburant',cards:[cEur,cDiesel],note:'Variations sur 4, 13 et 52 semaines (CHF/EUR) ; 1, 4 et 12 semaines (ASTAG).'},
     {kind:'armature',title:'Prix de l\'acier d\'armature',card:cAcier,
      rows:ac.dates.map(function(x,i){return [dateFr(x),fmt(ac.values[i],0)+' CHF/to + RPLP'];}).reverse(),note:'Prix hors RPLP ; la RPLP s\'ajoute (≈ '+fmt(rplp,1)+' % en moyenne). Source : Aurélien.'}]};
-  if(entity==='GC'){
+  {
     var cp=d.canplast||[], groups={};
     cp.forEach(function(r){ (groups[r.codes]=groups[r.codes]||{codes:r.codes,label:r.label,rows:[]}).rows.push(r); });
     var rows=Object.keys(groups).map(function(k){
@@ -110,6 +110,16 @@ function buildSpec(entity,d){
       return {label:g.label,codes:g.codes,date:last.effectiveDate,pct:last.surchargePct,delta:prev?last.surchargePct-prev.surchargePct:null};
     });
     rows.forEach(function(r){ if(r.delta!=null&&r.delta>0) recos.push({name:'Canplast : '+r.label,trend:'Hausse (+'+fmt(r.delta,1)+' pt)',color:RED,text:'Surrenchérissement en hausse : contrôler le supplément facturé sur les commandes.'}); });
+    // courbes : PVC canalisation/drainage (A1-A3), PE canalisation (D1…), PP canalisation/drainage (F5) ; le reste en tableau
+    var CURVES=[['A1, A2, A3','Tuyaux de drainage PVC'],['D1, D3, D4, D8','Tuyaux de canalisation PE'],['F5','Tuyaux de canalisation PP']];
+    var curveCards=[], curveCodes={};
+    CURVES.forEach(function(cv){ var g=groups[cv[0]]; if(!g) return; curveCodes[cv[0]]=1;
+      var rr=g.rows, l=rr[rr.length-1], p=rr.length>1?rr[rr.length-2]:null;
+      curveCards.push({title:cv[1],source:'Avis Canplast ('+g.codes+')',sub:'au '+dateFr(l.effectiveDate),value:fmt(l.surchargePct,1)+' %',unit:'de surrenchérissement',
+        deltas:[],extra:p?'Écart vs avis précédent : '+(l.surchargePct-p.surchargePct>=0?'+':'')+fmt(l.surchargePct-p.surchargePct,1)+' pt':'',
+        chart:{labels:rr.map(function(x){return x.effectiveDate.slice(8)+'/'+x.effectiveDate.slice(5,7)+'/'+x.effectiveDate.slice(2,4);}),values:rr.map(function(x){return x.surchargePct;}),dec:0,dots:true},trend3:null}); });
+    if(curveCards.length) s2.slides.push({kind:'cards',title:'Évolution de l\'indice Canplast',cards:curveCards,note:'Surrenchérissement Canplast en % du prix, à chaque date d\'effet des avis. Source : avis Canplast saisis dans l\'e-shop.'});
+    rows=rows.filter(function(r){return !curveCodes[r.codes];});
     s2.slides.push({kind:'canplast',title:'Suivi des surrenchérissements Canplast',rows:rows,note:'Dernier surrenchérissement connu par famille d\'articles (en % du prix), avec l\'écart en points par rapport à l\'avis précédent. Source : avis Canplast saisis dans l\'e-shop.'});
   }
   spec.sections.push(s2);

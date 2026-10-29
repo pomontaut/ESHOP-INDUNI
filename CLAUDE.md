@@ -374,7 +374,7 @@ Boutons « 📊 Note de marché PowerPoint » en tête de Analyse achat > Indica
 reprennent le modèle `public/templates/modele_induni.pptx` (diapos d'origine supprimées, couverture / chapitres / pages
 « Vierge Light » du modèle) et les données déjà exposées à l'écran (KBOB, Brent, EUR/CHF, ASTAG, Canplast,
 `acier_armature_prices.json`, captures `market_charts/ferraille_turquie.png` et `zinc.png`). Sections : 1 énergie – matières
-premières (identique GC/BAT), 2 taux de change + ASTAG + acier d'armature (+ Canplast pour GC seulement), 3 produits finis
+premières (identique GC/BAT), 2 taux de change + ASTAG + acier d'armature (+ Canplast, GC et BAT : courbes d'évolution pour tuyaux de drainage PVC `A1, A2, A3`, canalisation PE `D1, D3, D4, D8` et canalisation PP `F5`, les autres familles restent en tableau), 3 produits finis
 KBOB (listes `PRODUCTS` : GC = béton frais, carrelets, tuyaux plastique, non-tissés ; BAT = ciment, béton frais, planches,
 bitume d'étanchéité, tuyaux plastique, isolant), 4 recommandations (règle automatique ±3 % sur 3 mois, pas de prévision
 inventée). Aucun prix fournisseur ni prix confidentiel. Ajouter un indicateur = l'ajouter dans `buildSpec`.
