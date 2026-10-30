@@ -424,6 +424,20 @@ KBOB (listes `PRODUCTS` : GC = béton frais, carrelets, tuyaux plastique, non-ti
 bitume d'étanchéité, tuyaux plastique, isolant), 4 recommandations (règle automatique ±3 % sur 3 mois, pas de prévision
 inventée). Aucun prix fournisseur ni prix confidentiel. Ajouter un indicateur = l'ajouter dans `buildSpec`.
 
+## Langues de l'interface (drapeaux FR / ES / IT / PT / EN)
+
+`public/i18n.js` (moteur) + `public/i18n_dict.js` / `i18n_dict_categories.js` (dictionnaires, colonnes
+`[fr, en, es, it, pt]`), chargés en dernier dans `catalogue.html`. Le français reste le texte source : la page
+n'est PAS réécrite, les nœuds texte et les attributs `placeholder`/`title`/`alt` sont traduits au vol (y compris
+le contenu construit par `innerHTML`, via `MutationObserver`) ; 🇫🇷 restitue l'original. Choix mémorisé
+(`localStorage.eshopLang`), drapeaux SVG `public/flags/*.svg` (les emoji-drapeaux ne s'affichent pas sous Windows),
+posés à droite de la barre de recherche. Trois niveaux : `E` = texte entier, `P` = motifs avec capture `$1`
+(phrases à valeurs variables, ex. « 12 articles · … »), `F` = fragments (à éviter : risque de toucher des noms
+d'articles). Une liste « A · B · C » est traduite élément par élément. **Un nouveau texte d'interface en français =
+une ligne dans le dictionnaire**, sinon il reste en français dans les autres langues (aucune erreur). Restent
+volontairement en français : noms d'articles/descriptifs, bon de commande PDF et e-mails fournisseurs (`textarea`,
+valeurs saisies, `buildOrderHtml`), pages `/admin`, modules admin/analyse de marché. Un `translate="no"` exclut un bloc.
+
 ## Deploy workflow (always follow this exact sequence)
 
 **Déploiement automatique** : une fois les vérifications faites, déployer sur `main` sans attendre de « pousse »/« déploie » du propriétaire — sauf si une validation de sa part est nécessaire (choix ambigu, action risquée ou irréversible, données à confirmer).
