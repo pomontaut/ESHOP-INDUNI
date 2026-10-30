@@ -36,7 +36,7 @@ class SearchAgent
         return Brain.new(self, @user).run(text, engine)
       rescue StandardError => e
         Rails.logger.error("[search_agent] #{e.class}: #{e.message}")
-        note = "⚠️ La compréhension du français libre est indisponible pour le moment (#{e.class}) : j'applique seulement les commandes simples.\n\n"
+        note = "⚠️ La compréhension du français libre est indisponible pour le moment (#{e.class} : #{e.message.to_s.squish[0, 300]}) : j'applique seulement les commandes simples.\n\n"
       end
     else
       note = :no_key

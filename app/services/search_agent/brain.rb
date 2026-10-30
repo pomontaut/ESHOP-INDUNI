@@ -83,7 +83,7 @@ class SearchAgent
     end
 
     def history
-      SearchAgentMessage.order(:id).last(14).map { |m| { role: m.role == "agent" ? "assistant" : "user", content: m.content.to_s[0, 3000] } }
+      SearchAgentMessage.order(:id).last(14).reject { |m| m.content.blank? }.map { |m| { role: m.role == "agent" ? "assistant" : "user", content: m.content.to_s[0, 3000] } }
         .then { |h| h.last&.dig(:role) == "user" ? h[0...-1] : h } # le message courant est ajouté après
         .then { |h| h.drop_while { |m| m[:role] != "user" } }
         .then { |h| merge_roles(h) }
@@ -107,6 +107,10 @@ class SearchAgent
       when "tool_use"
         input = b.respond_to?(:input) ? b.input : b[:input]
         { type: "tool_use", id: b.respond_to?(:id) ? b.id : b[:id], name: (b.respond_to?(:name) ? b.name : b[:name]).to_s, input: input.respond_to?(:to_h) ? input.to_h : input }
+      when "thinking" # à renvoyer tel quel (contenu + signature) avec les appels d'outils, sinon l'API répond 400
+        { type: "thinking", thinking: b.respond_to?(:thinking) ? b.thinking : b[:thinking], signature: b.respond_to?(:signature) ? b.signature : b[:signature] }
+      when "redacted_thinking"
+        { type: "redacted_thinking", data: b.respond_to?(:data) ? b.data : b[:data] }
       else { type: type }
       end
     end
