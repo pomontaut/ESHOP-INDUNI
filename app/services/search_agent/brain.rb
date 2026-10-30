@@ -83,7 +83,7 @@ class SearchAgent
     end
 
     def history
-      SearchAgentMessage.order(:id).last(14).map { |m| { role: m.role == "agent" ? "assistant" : "user", content: m.content.to_s[0, 3000] } }
+      SearchAgentMessage.order(:id).last(14).reject { |m| m.content.blank? }.map { |m| { role: m.role == "agent" ? "assistant" : "user", content: m.content.to_s[0, 3000] } }
         .then { |h| h.last&.dig(:role) == "user" ? h[0...-1] : h } # le message courant est ajouté après
         .then { |h| h.drop_while { |m| m[:role] != "user" } }
         .then { |h| merge_roles(h) }
