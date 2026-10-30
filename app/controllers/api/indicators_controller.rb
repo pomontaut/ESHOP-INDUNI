@@ -35,8 +35,13 @@ class Api::IndicatorsController < ApplicationController
   def usage_series(from, today, zone)
     dates = UsageEvent.where("occurred_at >= ?", zone.local(from.year, from.month, from.day)).pluck(:occurred_at).map { |t| t.in_time_zone(zone).to_date }.uniq.sort.last(90)
     dates.map do |d|
-      t = UsageReport.build(d)[:totals]
-      { date: d.iso8601, users: t[:users_connected], tracked: t[:users_tracked], sessions: t[:sessions], active_seconds: t[:active_seconds],
+      r = UsageReport.build(d)
+      t = r[:totals]
+      people = r[:users].map do |u|
+        { name: u[:name], sector: u[:sector], sessions: u[:sessions], active_seconds: u[:active_seconds], clicks: u[:clicks],
+          searches: u[:searches].size, adds: u[:adds], vias: u[:vias], first_seen: u[:first_seen], last_seen: u[:last_seen] }
+      end
+      { date: d.iso8601, people: people, users: t[:users_connected], tracked: t[:users_tracked], sessions: t[:sessions], active_seconds: t[:active_seconds],
         clicks: t[:clicks], searches: t[:searches], zero_results: t[:zero_results], adds: t[:adds],
         avg_seconds_to_cart: t[:avg_seconds_to_cart], avg_clicks_to_cart: t[:avg_clicks_to_cart], vias: t[:vias] }
     end

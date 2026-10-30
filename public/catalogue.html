@@ -5841,8 +5841,25 @@ function indDraw(){
     h+=indCard('Temps actif et clics','Temps actif total par jour (minutes)',indChart(ud,[{label:'Temps actif (min)',values:U.map(x=>Math.round(x.active_seconds/60)),color:'#7c3aed',type:'bar'},{label:'Clics',values:uc('clicks'),color:'#16a34a',axis:'r'}]));
     h+=indCard('Recherches et articles mis au panier','Recherches dont sans résultat, ajouts au panier',indChart(ud,[{label:'Recherches',values:uc('searches'),color:'#1a56a0',type:'bar'},{label:'Sans résultat',values:uc('zero_results'),color:'#dc2626',type:'bar'},{label:'Ajouts au panier',values:uc('adds'),color:'#16a34a',axis:'r'}]));
     h+=indCard('Temps moyen jusqu\'au panier','Du premier clic ou mot tapé à l\'ajout au panier (secondes)',indChart(ud,[{label:'Secondes jusqu\'au panier',values:uc('avg_seconds_to_cart'),color:'#f26a21'},{label:'Clics jusqu\'au panier',values:uc('avg_clicks_to_cart'),color:'#7c3aed',axis:'r'}]));
+    h+=indUsersHtml(U);
   }
   b.innerHTML=h;
+}
+let _indUserDay=null;
+function indSetUserDay(v){_indUserDay=v; indDraw()}
+function indUsersHtml(U){
+  const days=U.map(x=>x.date), sel=_indUserDay&&_indUserDay!=='all'&&days.includes(_indUserDay)?_indUserDay:(_indUserDay==='all'?'all':days[days.length-1]);
+  const acc={};
+  U.filter(x=>sel==='all'||x.date===sel).forEach(x=>(x.people||[]).forEach(p=>{
+    const a=acc[p.name]||(acc[p.name]={name:p.name,sector:p.sector,days:0,sessions:0,active:0,clicks:0,searches:0,adds:0,rech:0,liste:0,image:0,first:p.first_seen,last:p.last_seen});
+    a.days++; a.sessions+=p.sessions; a.active+=p.active_seconds; a.clicks+=p.clicks; a.searches+=p.searches; a.adds+=p.adds;
+    const v=p.vias||{}; a.rech+=v.recherche||0; a.liste+=v.liste||0; a.image+=v.image||0; a.first=p.first_seen; a.last=p.last_seen;
+  }));
+  const rows=Object.values(acc).sort((a,b)=>b.clicks-a.clicks);
+  const opts=days.slice().reverse().map(d=>`<option value="${d}"${d===sel?' selected':''}>${indFmtDate(d)}</option>`).join('')+`<option value="all"${sel==='all'?' selected':''}>Toute la période</option>`;
+  const fmt=s=>s<60?s+' s':Math.round(s/60)+' min';
+  const body=rows.length?`<div style="overflow:auto"><table class="dashTable"><thead><tr><th>Utilisateur</th>${sel==='all'?'<th>Jours</th>':'<th>1ère / dernière</th>'}<th>Ouvertures</th><th>Temps actif</th><th>Clics</th><th>🔎 Clics par recherche</th><th>📋 par liste</th><th>🖼 par image</th><th>Recherches</th><th>🛒 Ajouts au panier</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.name)}</b><br><small class="muted">${esc(r.sector||'')}</small></td><td>${sel==='all'?r.days:esc(r.first)+' – '+esc(r.last)}</td><td>${r.sessions}</td><td>${fmt(r.active)}</td><td>${r.clicks}</td><td>${r.rech}</td><td>${r.liste}</td><td>${r.image}</td><td>${r.searches}</td><td>${r.adds}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">Aucun utilisateur connecté ce jour.</p>';
+  return indCard('Qui s\'est connecté, et détail par utilisateur',`Clics par moyen : barre de recherche, liste-entonnoir, images · <select onchange="indSetUserDay(this.value)">${opts}</select>`,body);
 }
 </script>
 <script src="/i18n_dict.js"></script><script src="/i18n_dict_categories.js"></script><script src="/i18n.js"></script></body></html>
