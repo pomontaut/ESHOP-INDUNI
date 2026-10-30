@@ -107,6 +107,10 @@ class SearchAgent
       when "tool_use"
         input = b.respond_to?(:input) ? b.input : b[:input]
         { type: "tool_use", id: b.respond_to?(:id) ? b.id : b[:id], name: (b.respond_to?(:name) ? b.name : b[:name]).to_s, input: input.respond_to?(:to_h) ? input.to_h : input }
+      when "thinking" # à renvoyer tel quel (contenu + signature) avec les appels d'outils, sinon l'API répond 400
+        { type: "thinking", thinking: b.respond_to?(:thinking) ? b.thinking : b[:thinking], signature: b.respond_to?(:signature) ? b.signature : b[:signature] }
+      when "redacted_thinking"
+        { type: "redacted_thinking", data: b.respond_to?(:data) ? b.data : b[:data] }
       else { type: type }
       end
     end
