@@ -1,0 +1,45 @@
+class AddHgcTuyauDurHdpeDilPlus < ActiveRecord::Migration[8.1]
+  # Nouvelle rubrique HGC « Protection Câbles › Tubes de protection › Tuyau dur HDPE
+  # DIL-PLUS non recyclé » : tuyaux prot.câble PE100 DIL-PLUS a.manc. Ø100 à Ø195 mm,
+  # L10m (3 articles hgc.ch). 100115545 : « 132/100 » sur hgc.ch = 132/120 (poids 24.8 kg
+  # identique au 132/120 des autres gammes). Aucune équivalence_key posée.
+  REFERENCES = %w[100115544 100115545 100115546].freeze
+
+  def up
+    hgc = Supplier.find_by(name: "HGC")
+    return unless hgc
+
+    path = Rails.root.join("db/seed_data/catalog_products.json")
+    return unless File.exist?(path)
+
+    items = JSON.parse(File.read(path)).select do |it|
+      it["catalog"] == "HG COMMERCIALE" && REFERENCES.include?(it["article"])
+    end
+    now = Time.current
+
+    rows = items.map do |it|
+      {
+        supplier_id:       hgc.id,
+        reference:         it["article"],
+        name:              it["designation"],
+        unit_price:        it["prix"],
+        descriptif:        it["descriptif"],
+        unite:             it["unite"],
+        famille:           it["famille"],
+        sous_famille:      it["sousFamille"],
+        sous_sous_famille: it["sousSousFamille"],
+        icone:             it["icone"],
+        poids_kg:          it["poids"],
+        image:             it["image"],
+        created_at:        now,
+        updated_at:        now
+      }
+    end
+
+    Product.upsert_all(rows, unique_by: :index_products_on_supplier_id_and_reference) if rows.any?
+  end
+
+  def down
+    # Data refresh only — no rollback of catalog contents.
+  end
+end
