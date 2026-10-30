@@ -4,7 +4,7 @@ class AddHgcManchetteExtremite < ActiveRecord::Migration[8.1]
   REFERENCES = %w[100075084 100075085 100075086 100075087 100075088].freeze
 
   def up
-    hgc = Supplier.find_by(name: "HGC")
+    hgc = Supplier.find_by(name: "HG COMMERCIALE")
     return unless hgc
 
     path = Rails.root.join("db/seed_data/catalog_products.json")

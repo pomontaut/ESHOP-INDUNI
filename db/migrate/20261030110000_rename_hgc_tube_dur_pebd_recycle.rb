@@ -3,7 +3,7 @@ class RenameHgcTubeDurPebdRecycle < ActiveRecord::Migration[8.1]
   # devient « Tube dur PEBD (basse densité) recyclé ». Idempotent, limité à HGC
   # (la rubrique « Tube dur » de Canplast ne change pas). Références inchangées.
   def up
-    hgc = Supplier.find_by(name: "HGC")
+    hgc = Supplier.find_by(name: "HG COMMERCIALE")
     return unless hgc
 
     Product.where(supplier_id: hgc.id, famille: "Protection Câbles",

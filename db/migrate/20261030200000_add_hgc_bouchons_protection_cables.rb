@@ -5,7 +5,7 @@ class AddHgcBouchonsProtectionCables < ActiveRecord::Migration[8.1]
   REFERENCES = %w[100032607 100032609 100032651 100032653 100032655].freeze
 
   def up
-    hgc = Supplier.find_by(name: "HGC")
+    hgc = Supplier.find_by(name: "HG COMMERCIALE")
     return unless hgc
 
     path = Rails.root.join("db/seed_data/catalog_products.json")

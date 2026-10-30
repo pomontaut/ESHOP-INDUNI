@@ -5,7 +5,7 @@ class AddHgcTubeAntenne < ActiveRecord::Migration[8.1]
   REFERENCES = %w[100034625 100034627 100034629 100034651 100075428 100075429].freeze
 
   def up
-    hgc = Supplier.find_by(name: "HGC")
+    hgc = Supplier.find_by(name: "HG COMMERCIALE")
     return unless hgc
 
     path = Rails.root.join("db/seed_data/catalog_products.json")
