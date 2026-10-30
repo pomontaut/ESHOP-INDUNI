@@ -383,7 +383,7 @@ Menu Admin > « 🕵️ Agent d'usage » (`showUsageAgent()`, `state.view === 'u
 la navigation et les parcours jusqu'au panier (durée, clics, moyen : barre de recherche / liste-entonnoir / images).
 Tables `usage_sessions`, `usage_events`, `usage_reports` ; `Api::UsageController` (`POST /api/usage/events` utilisateurs
 suivis ; `GET /api/usage/report`, `POST /api/usage/send_report` admin) ; calcul et e-mail du soir dans `UsageReport`
-(`run_due!` : thread Puma, 18h30 Zurich, une fois par jour avec activité, `USAGE_REPORT_AUTO=false` pour couper).
+(`run_due!` : thread Puma, 16h00 Zurich, jours ouvrés hors fériés genevois (`UsageReport.geneva_holidays`), une fois par jour avec activité, `USAGE_REPORT_AUTO=false` pour couper).
 Un nouvel écran de l'e-shop doit passer par `state`/`render()` pour apparaître dans le suivi de navigation. Détail :
 `docs/agents/agent_usage_eshop.md`.
 

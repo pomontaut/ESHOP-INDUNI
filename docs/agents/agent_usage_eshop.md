@@ -24,7 +24,7 @@ moyen utilisé. Difficulté repérée : parcours > 5 min ou > 15 clics [H], rech
 ou synonyme à ajouter), connecté sans aucun ajout au panier, utilisateurs suivis non connectés.
 
 **Compte rendu quotidien.** `UsageReport.run_due!` (thread Puma, `config/puma.rb`, contrôle toutes les 10 min) :
-à partir de 18h30 (Zurich), une fois par jour, seulement s'il y a eu de l'activité, e-mail à
+à partir de 16h00 (Zurich), les jours ouvrés (hors week-end et jours fériés du canton de Genève), une fois par jour, seulement s'il y a eu de l'activité, e-mail à
 `User::PERMANENT_ADMIN_EMAILS` (`UsageMailer#daily_report`) et archivage (`usage_reports`). Désactivable :
 `USAGE_REPORT_AUTO=false`. Écran « 🕵️ Agent d'usage » (Admin, `/api/usage/report?date=`) : même contenu,
 détail des parcours par utilisateur, envoi manuel. Données conservées 90 jours.

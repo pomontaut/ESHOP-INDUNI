@@ -67,15 +67,36 @@ class Api::UsageControllerTest < ActionDispatch::IntegrationTest
     assert_equal true, JSON.parse(response.body)["usage_tracking"]
   end
 
-  test "daily report is emailed once after 18h30 and only with activity" do
-    login(users(:two))
-    post "/api/usage/events", params: batch("tok-2", [ ev("visit") ]), as: :json
-    zone = UsageReport::ZONE
-    early = zone.local(zone.today.year, zone.today.month, zone.today.day, 12, 0)
-    late  = zone.local(zone.today.year, zone.today.month, zone.today.day, 19, 0)
+  test "daily report is emailed once after 16h00 and only with activity" do
+    travel_to UsageReport::ZONE.local(2026, 3, 4, 10, 0) do # mercredi ouvré
+      login(users(:two))
+      post "/api/usage/events", params: batch("tok-2", [ ev("visit") ]), as: :json
+      zone = UsageReport::ZONE
+      early = zone.local(2026, 3, 4, 12, 0)
+      late  = zone.local(2026, 3, 4, 16, 30)
 
-    assert_no_emails { UsageReport.run_due!(early) }
-    assert_emails(User::PERMANENT_ADMIN_EMAILS.size) { UsageReport.run_due!(late) }
-    assert_no_emails { UsageReport.run_due!(late) }
+      assert_no_emails { UsageReport.run_due!(early) }
+      assert_emails(User::PERMANENT_ADMIN_EMAILS.size) { UsageReport.run_due!(late) }
+      assert_no_emails { UsageReport.run_due!(late) }
+    end
+  end
+
+  test "daily report is never sent on weekends or Geneva public holidays" do
+    travel_to UsageReport::ZONE.local(2026, 3, 7, 10, 0) do # samedi
+      login(users(:two))
+      post "/api/usage/events", params: batch("tok-3", [ ev("visit") ]), as: :json
+      assert_no_emails { UsageReport.run_due!(UsageReport::ZONE.local(2026, 3, 7, 17, 0)) }
+    end
+  end
+
+  test "Geneva public holidays" do
+    h2026 = UsageReport.geneva_holidays(2026)
+    [ [ 1, 1 ], [ 4, 3 ], [ 4, 6 ], [ 5, 14 ], [ 5, 25 ], [ 8, 1 ], [ 9, 10 ], [ 12, 25 ], [ 12, 31 ] ].each do |m, d|
+      assert_includes h2026, Date.new(2026, m, d)
+    end
+    assert_includes UsageReport.geneva_holidays(2027), Date.new(2027, 9, 9) # Jeûne genevois
+    assert UsageReport.working_day?(Date.new(2026, 3, 4))
+    assert_not UsageReport.working_day?(Date.new(2026, 3, 8))
+    assert_not UsageReport.working_day?(Date.new(2026, 4, 6))
   end
 end

@@ -61,7 +61,7 @@ if ENV["RELANCE_AUTO_ENABLED"] == "true"
 end
 
 # Agent d'usage de l'e-shop (voir UsageReport) : compte rendu envoyé à l'administrateur chaque soir
-# (à partir de 18h30, heure de Zurich), une seule fois par jour et seulement s'il y a eu de l'activité.
+# (à partir de 16h00, heure de Zurich, hors week-end et jours fériés genevois), une seule fois par jour et seulement s'il y a eu de l'activité.
 # Désactivable avec USAGE_REPORT_AUTO=false.
 if ENV["USAGE_REPORT_AUTO"] != "false"
   on_booted do
