@@ -1,6 +1,6 @@
 class AddHgcMortierRoutier < ActiveRecord::Migration[8.1]
   # HGC « Ciments & Bétons › Mortiers › Mortier Routier » : Sika Emaco T1600 A+B (hgc.ch).
-  # Prix catalogue 5.15 CHF/kg × 23.8 kg/emb. = 122.57 CHF l'emballage. Aucune équivalence_key.
+  # Prix 3.84 CHF/kg (catalogue 5.15 barré) × 23.8 kg/emb. = 91.39 CHF l'emballage. Aucune équivalence_key.
   REFERENCES = %w[100142357].freeze
 
   def up
