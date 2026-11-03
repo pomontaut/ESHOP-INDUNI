@@ -446,7 +446,7 @@ Matériel Induni sans photo : `public/images/products/web-<n° article>.jpg` (�
 Développement** : `Api::ProductsController#visible_image` renvoie `image: nil` pour tout `/images/products/web-*`
 hors dev_mode (les autres photos ne sont pas concernées). Pour ouvrir à tous : retirer ce masquage. Règle : une
 photo fausse est pire que pas de photo (contrôle visuel de chacune ; panneaux routiers, pièces spécifiques et
-articles internes laissés sans photo). 18 articles sur les 40 du pilote ; le reste de l'effort est à valider.
+articles internes laissés sans photo). 53 articles au total (18 du pilote + 35 du 2e lot) ; le reste de l’effort est à valider.
 
 ## Deploy workflow (always follow this exact sequence)
 
