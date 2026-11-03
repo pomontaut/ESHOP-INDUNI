@@ -114,4 +114,25 @@ class Api::ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_nil rows.find { |p| p["article"] == "ART-LIBRE" }["induniReference"]
     assert_nil rows.find { |p| p["article"] == "ART-LIBRE" }["induniKeywords"]
   end
+
+  test "index hides the web photos (web-*.jpg) outside the Développement test mode" do
+    supplier = Supplier.create!(name: "Matériel Induni")
+    Product.create!(supplier: supplier, reference: "ART-WEB", name: "Massette", famille: "Outillage manuel",
+                    image: "/images/products/web-ART-WEB.jpg")
+    Product.create!(supplier: supplier, reference: "ART-PDF", name: "Echelle", famille: "Echelle",
+                    image: "/images/products/induni-15-2.jpg")
+    user = users(:two)
+    user.update!(admin: true, allowed_suppliers: [])
+    post login_url, params: { email: user.email, password: "password123" }
+
+    get api_products_url
+    rows = JSON.parse(response.body).index_by { |p| p["article"] }
+    assert_nil rows["ART-WEB"]["image"]
+    assert_equal "/images/products/induni-15-2.jpg", rows["ART-PDF"]["image"]
+
+    post api_test_profile_url, params: { profile: "Développement" }
+    get api_products_url
+    rows = JSON.parse(response.body).index_by { |p| p["article"] }
+    assert_equal "/images/products/web-ART-WEB.jpg", rows["ART-WEB"]["image"]
+  end
 end

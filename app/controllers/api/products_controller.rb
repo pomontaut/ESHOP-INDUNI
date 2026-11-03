@@ -6,7 +6,8 @@ class Api::ProductsController < ApplicationController
   def index
     visible = current_user.effective_visible_suppliers
     # E-shops en cours de développement : réservés au mode Développement admin.
-    visible -= Supplier::TEST_ONLY_NAMES unless Api::TestProfilesController.dev_mode?(session, current_user)
+    dev_mode = Api::TestProfilesController.dev_mode?(session, current_user)
+    visible -= Supplier::TEST_ONLY_NAMES unless dev_mode
     products = Product.joins(:supplier).includes(:supplier)
       .where.not(famille: nil)
       .where(suppliers: { name: visible })
@@ -39,7 +40,7 @@ class Api::ProductsController < ApplicationController
         sousFamille:      p.sous_famille,
         sousSousFamille:  p.sous_sous_famille,
         icone:            p.icone,
-        image:            p.image,
+        image:            visible_image(p.image, dev_mode),
         ficheUrl:         p.fiche_url,
         equivalenceKey:   p.equivalence_key,
         qtePalette:       p.qte_palette,
@@ -52,5 +53,17 @@ class Api::ProductsController < ApplicationController
         induniKeywords:   [ induni[[ p.supplier&.name, p.reference ]]&.search_keywords, memory_kw[[ p.supplier&.name, p.reference ]] ].compact_blank.join(" ; ").presence
       }
     }
+  end
+
+  private
+
+  # Photos web (« web-<n° article>.jpg », trouvées chez des fabricants/revendeurs,
+  # voir docs/photos_materiel_induni_web.md) : en essai, donc masquées hors du
+  # mode Développement (environnement test).
+  WEB_PHOTO_PREFIX = "/images/products/web-".freeze
+
+  def visible_image(image, dev_mode)
+    return image if dev_mode || image.blank?
+    image.start_with?(WEB_PHOTO_PREFIX) ? nil : image
   end
 end

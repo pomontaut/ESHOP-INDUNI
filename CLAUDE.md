@@ -438,6 +438,16 @@ une ligne dans le dictionnaire**, sinon il reste en français dans les autres la
 volontairement en français : noms d'articles/descriptifs, bon de commande PDF et e-mails fournisseurs (`textarea`,
 valeurs saisies, `buildOrderHtml`), pages `/admin`, modules admin/analyse de marché. Un `translate="no"` exclut un bloc.
 
+## Photos web « Matériel Induni » (lot pilote, environnement test)
+
+Photos de type représentatif (confiance B) trouvées sur des sites de fabricants/revendeurs pour des articles
+Matériel Induni sans photo : `public/images/products/web-<n° article>.jpg` (≤ 600 px), `image` renseigné dans
+`catalog_products.json`, sources dans `docs/photos_materiel_induni_web.md`. **Visibles seulement en mode
+Développement** : `Api::ProductsController#visible_image` renvoie `image: nil` pour tout `/images/products/web-*`
+hors dev_mode (les autres photos ne sont pas concernées). Pour ouvrir à tous : retirer ce masquage. Règle : une
+photo fausse est pire que pas de photo (contrôle visuel de chacune ; panneaux routiers, pièces spécifiques et
+articles internes laissés sans photo). 18 articles sur les 40 du pilote ; le reste de l'effort est à valider.
+
 ## Deploy workflow (always follow this exact sequence)
 
 **Déploiement automatique** : une fois les vérifications faites, déployer sur `main` sans attendre de « pousse »/« déploie » du propriétaire — sauf si une validation de sa part est nécessaire (choix ambigu, action risquée ou irréversible, données à confirmer).
