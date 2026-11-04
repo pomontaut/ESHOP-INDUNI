@@ -17,6 +17,7 @@ E:[
 ['Analyse achat','Purchasing analysis','Análisis de compras','Analisi acquisti','Análise de compras'],
 ['› Analyse achat','› Purchasing analysis','› Análisis de compras','› Analisi acquisti','› Análise de compras'],
 ['Analyse achats','Purchasing analysis','Análisis de compras','Analisi acquisti','Análise de compras'],
+['Photos par catalogue fournisseur','Photos by supplier catalogue','Fotos por catálogo de proveedor','Foto per catalogo fornitore','Fotos por catálogo de fornecedor'],
 ['📈 Indicateurs de marché','📈 Market indicators','📈 Indicadores de mercado','📈 Indicatori di mercato','📈 Indicadores de mercado'],
 ['📥 Importer un devis','📥 Import a quote','📥 Importar un presupuesto','📥 Importa un preventivo','📥 Importar um orçamento'],
 ['📋 Bon de commande générique','📋 Generic purchase order','📋 Pedido genérico','📋 Buono d\'ordine generico','📋 Nota de encomenda genérica'],

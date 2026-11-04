@@ -9,13 +9,22 @@ class Api::IndicatorsController < ApplicationController
     zone = UsageReport::ZONE
     today = zone.today
     render json: { from: from.iso8601, today: today.iso8601,
-                   build: EshopMetric.series(from), orders: orders_series(from, today, zone), usage: usage_series(from, today, zone) }
+                   build: EshopMetric.series(from), photos_by_catalog: photos_by_catalog, orders: orders_series(from, today, zone), usage: usage_series(from, today, zone) }
   end
 
   private
 
   def require_admin
     render json: { error: "Accès réservé aux administrateurs." }, status: :forbidden unless current_user&.admin?
+  end
+
+  # Photos par catalogue fournisseur (état actuel) : articles avec une famille, dont ceux ayant une photo.
+  def photos_by_catalog
+    rows = Product.joins(:supplier).where.not(famille: [ nil, "" ])
+                  .group("suppliers.name")
+                  .pluck("suppliers.name", Arel.sql("COUNT(*)"), Arel.sql("SUM(CASE WHEN products.image IS NOT NULL AND products.image <> '' THEN 1 ELSE 0 END)"))
+    rows.map { |name, total, photos| { name: name, total: total.to_i, photos: photos.to_i, pct: total.to_i.zero? ? 0 : (100.0 * photos.to_i / total.to_i).round(1) } }
+        .sort_by { |r| [ -r[:total], r[:name] ] }
   end
 
   # Commandes réellement créées dans l'outil (hors commandes d'essai « [TEST] »), par jour de création.

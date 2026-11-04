@@ -33,6 +33,9 @@ class Api::IndicatorsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 2, last["catalogs"]
     assert_equal 1, last["photos"]
     assert_equal 66.7, last["equivalent_pct"]
+    pc = j["photos_by_catalog"].to_h { |r| [ r["name"], r ] }
+    assert_equal({ "total" => 1, "photos" => 1, "pct" => 100.0 }, pc["HG COMMERCIALE"].slice("total", "photos", "pct"))
+    assert_equal({ "total" => 2, "photos" => 0, "pct" => 0.0 }, pc["Canplast"].slice("total", "photos", "pct"))
     days = j["orders"]["days"]
     expected_today = Order.where("sent_subject IS NULL OR sent_subject NOT LIKE ?", "[TEST]%").count { |o| o.created_at.in_time_zone(zone).to_date == today }
     assert_equal expected_today, days.last["count"]
