@@ -2142,7 +2142,7 @@ function analyzeDevis(){
     btn.disabled=false;btn.textContent='Analyser le devis';
     if(!res.ok||data.error){results.innerHTML=`<p style="color:#b91c1c">${esc(data.error||'Erreur inconnue')}</p>`;return}
     devisResultItems=data.items||[];
-    devisCurrency=((window._userPerms||{}).test_profile&&['EUR','USD'].includes(data.currency)&&fxRate(data.currency))?data.currency:'CHF';
+    devisCurrency=(['EUR','USD'].includes(data.currency)&&fxRate(data.currency))?data.currency:'CHF';
     renderDevisResults();
   }).catch(err=>{
     btn.disabled=false;btn.textContent='Analyser le devis';

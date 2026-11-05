@@ -513,3 +513,18 @@ drive with a Python Playwright script
 (`executable_path='/opt/pw-browsers/chromium'`); screenshot and read via the
 Read tool; then clean up seeded users/products/orders and
 `pkill -f "puma 8.0.2.*ESHOP-INDUNI"` before finishing.
+
+## Import de devis en EUR/USD (production)
+
+`DevisExtractorService` renvoie aussi `currency` (CHF/EUR/USD, lue sur le PDF : « TOTAL EUR », €, TVA FR…) ; `/api/devis_imports`
+la transmet. Dans `catalogue.html` (`devisCurrency`, `devisRate()`), l'écran d'import affiche et plafonne les prix dans la devise du
+devis, puis `addDevisItemsToCart` stocke en CHF (calcul interne, prix × cours) et passe le panier dans cette devise
+(`setCartCurrency`) : les montants affichés sont ceux du devis. Prix confidentiels : CHF forcé.
+
+## Photos HILTI (hilti.ch, environnement test)
+
+161 articles HILTI ont une photo (`/images/products/hilti-ch-<fichier hilti.ch>.jpg`, 600 px, 56 fichiers : les variantes d'une même
+famille partagent la photo). Source : recherche `https://www.hilti.ch/fr/search?text=<n° article>` ; la photo n'est retenue que si le
+résultat porte exactement `itemCode=<n° article>` (les articles « remplacés par » un autre n° sont laissés sans photo : 4 articles).
+Visibles seulement en mode Développement : `Api::ProductsController#visible_image` masque `/images/products/hilti-ch-*` hors dev_mode
+(les photos HILTI fournies à la main `hilti-<n°>.jpg` restent publiques ; les nouvelles sont nommées `hilti-ch-*`). Pour ouvrir à tous : retirer ce masquage. Photos propriété de Hilti, usage interne.

@@ -60,9 +60,13 @@ class Api::ProductsController < ApplicationController
   # Photos web (« web-<n° article>.jpg », trouvées chez des fabricants/revendeurs,
   # voir docs/photos_materiel_induni_web.md) : en essai, donc masquées hors du
   # mode Développement (environnement test).
-  # Idem pour Canplast (« canplast-*.png », catalogue en ligne de Canplast)
-  # et MBT Bautechnik (« mbt-*.jpg », mbt-bautechnik.com).
-  WEB_PHOTO_PREFIXES = %w[/images/products/web- /images/products/canplast- /images/products/mbt-].freeze
+  # Idem pour les photos Swisspor reprises chez HGC (« swisspor-hgc-<code>.jpg »)
+  # (les images Canplast « canplast-*.png » sont en production pour tous) et pour les
+  # photos HILTI récupérées sur la recherche de hilti.ch par n° d'article exact
+  # (« hilti-ch-<fichier>.jpg »). Les photos HILTI fournies à la main
+  # (« hilti-<n° article>.jpg », « hilti-lame-pNN.jpg ») restent publiques.
+  # Photos MBT Bautechnik (« mbt-<n° article>.jpg », mbt-bautechnik.com) : en essai.
+  WEB_PHOTO_PREFIXES = %w[/images/products/web- /images/products/swisspor-hgc- /images/products/hilti-ch- /images/products/mbt-].freeze
 
   def visible_image(image, dev_mode)
     return image if dev_mode || image.blank?

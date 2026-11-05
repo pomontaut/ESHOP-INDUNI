@@ -130,13 +130,33 @@ class Api::ProductsControllerTest < ActionDispatch::IntegrationTest
     get api_products_url
     rows = JSON.parse(response.body).index_by { |p| p["article"] }
     assert_nil rows["ART-WEB"]["image"]
-    assert_nil rows["ART-CP"]["image"]
+    assert_equal "/images/products/canplast-ldc90.png", rows["ART-CP"]["image"] # visible pour tous (production)
     assert_equal "/images/products/induni-15-2.jpg", rows["ART-PDF"]["image"]
 
     post api_test_profile_url, params: { profile: "Développement" }
     get api_products_url
     rows = JSON.parse(response.body).index_by { |p| p["article"] }
     assert_equal "/images/products/web-ART-WEB.jpg", rows["ART-WEB"]["image"]
-    assert_equal "/images/products/canplast-ldc90.png", rows["ART-CP"]["image"]
+  end
+
+  test "index hides the HILTI photos (hilti-ch-*.jpg) outside Développement, except the hand-provided ones" do
+    supplier = Supplier.create!(name: "HILTI")
+    Product.create!(supplier: supplier, reference: "H-NEW", name: "Mèche", famille: "Perçage",
+                    image: "/images/products/hilti-ch-L080175.jpg")
+    Product.create!(supplier: supplier, reference: "H-OLD", name: "Meule", famille: "Meulage",
+                    image: "/images/products/hilti-2238557.jpg")
+    user = users(:two)
+    user.update!(admin: true, allowed_suppliers: [])
+    post login_url, params: { email: user.email, password: "password123" }
+
+    get api_products_url
+    rows = JSON.parse(response.body).index_by { |p| p["article"] }
+    assert_nil rows["H-NEW"]["image"]
+    assert_equal "/images/products/hilti-2238557.jpg", rows["H-OLD"]["image"]
+
+    post api_test_profile_url, params: { profile: "Développement" }
+    get api_products_url
+    rows = JSON.parse(response.body).index_by { |p| p["article"] }
+    assert_equal "/images/products/hilti-ch-L080175.jpg", rows["H-NEW"]["image"]
   end
 end
