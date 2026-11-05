@@ -31,3 +31,19 @@ détail des parcours par utilisateur, envoi manuel. Données conservées 90 jour
 
 **Limites** : un utilisateur sans l'e-shop ouvert n'est pas mesuré ; le temps réel passé hors onglet n'est pas
 connu ; le moyen « image / liste » est déduit du clic, pas d'une intention déclarée.
+
+**Indicateurs de recherche et de fréquentation** (`UsageReport.indicators(days)`, `GET /api/usage/indicators?days=7|30|90`,
+bloc sous le compte rendu de l'écran « Agent d'usage ») : fréquentation (jours de connexion, ouvertures, temps actif par
+utilisateur / jour / ouverture, présence en % des jours ouvrés, répartition « jamais / 1 / 2-4 / 5-9 / 10+ jours »,
+évolution par jour) ; moyen de recherche (clics et ajouts au panier : barre / entonnoir / images / import de devis /
+commande reprise / article générique) ; type de mots tapés (`keyword_type`, heuristique [H] : référence article ou INDUNI,
+dimension, fournisseur, désignation + dimension, un mot, plusieurs mots) ; temps avant mise au panier (moyenne, médiane,
+requêtes et clics avant l'ajout, répartition par tranche) ; pistes pour l'agent « moteur de recherche » (mots sans résultat,
+3 requêtes ou plus avant l'ajout, abandon sans ajout) reprises par « bilan » dans `SearchAgent#insights` (puis « suggestions »).
+
+**Commandes sans parcours mesuré** : le compte rendu compare les commandes réellement enregistrées (`Order`, source serveur
+indépendante du navigateur, hors `[TEST]`) aux ajouts au panier mesurés le même jour ; une commande sans mesure ou sans
+ajout est signalée (⚠) avec les recherches vues. Les ajouts hors `addCart` (import de devis, article générique, commande
+dupliquée) sont maintenant mesurés (`window.usgNote`, moyens `import` / `libre` / `reprise`), et une recherche tapée puis
+cliquée en moins de 1,2 s est comptée avant le clic (elle était perdue). Le compte rendu e-mail est figé à 16h00 : l'activité
+du soir n'y figure pas (l'écran, lui, recalcule la journée complète).

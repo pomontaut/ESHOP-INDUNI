@@ -161,6 +161,13 @@ class SearchAgent
     lines << "• Moyen (clics) : barre de recherche #{vias['recherche']}, listes #{vias['liste']}, images #{vias['image']}."
     top0 = zero.map { |q| q[:q].downcase }.tally.sort_by { |q, n| [ -n, q ] }.first(8)
     lines << "• Sans résultat : " + top0.map { |q, n| "« #{q} » (#{n}×)" }.join(", ") if top0.any?
+    ind = UsageReport.indicators(days)
+    types = ind[:search][:keyword_types].select { |t| t[:n].positive? }
+    lines << "• Type de mots tapés : " + types.map { |t| "#{t[:label].split(' (').first} #{t[:pct]} %" }.join(", ") if types.any?
+    tz = ind[:search][:time_to_cart]
+    lines << "• Délai de recherche avant panier : moyenne #{tz[:avg_seconds]} s, médiane #{tz[:median_seconds]} s (#{tz[:carts_with_search]} parcours avec recherche)." if tz[:avg_seconds]
+    leads = ind[:keyword_leads].first(6)
+    lines << "• À améliorer (mots clefs / synonymes) : " + leads.map { |l| "« #{l[:q]} » (#{l[:why].join(', ')}#{l[:found_as].any? ? " → #{l[:found_as].first}" : ''})" }.join(" ; ") if leads.any?
     pending = SearchMemory.where(status: "suggested").count
     lines << "• #{SearchMemory.active.count} élément(s) en mémoire, #{pending} suggestion(s) en attente (« suggestions »)."
     result(lines.join("\n"))

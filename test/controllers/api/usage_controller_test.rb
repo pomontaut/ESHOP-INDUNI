@@ -99,4 +99,63 @@ class Api::UsageControllerTest < ActionDispatch::IntegrationTest
     assert_not UsageReport.working_day?(Date.new(2026, 3, 8))
     assert_not UsageReport.working_day?(Date.new(2026, 4, 6))
   end
+
+  test "indicators: search mode, keyword types, time to cart, attendance, search-agent leads" do
+    login(users(:two))
+    t0 = Time.current - 5.minutes
+    post "/api/usage/events", params: batch("tok-i", [
+      ev("visit", {}, t0),
+      ev("search", { q: "tuyau 125", results: 0, via: "recherche" }, t0 + 5.seconds),
+      ev("search", { q: "tuyau", results: 20, via: "recherche" }, t0 + 15.seconds),
+      ev("search", { q: "52100234", results: 1, via: "recherche" }, t0 + 25.seconds),
+      ev("click", { via: "recherche" }, t0 + 30.seconds),
+      ev("add_to_cart", { article: "A1", catalog: "HG COMMERCIALE", designation: "Tuyau PVC", via: "recherche" }, t0 + 40.seconds),
+      ev("click", { via: "liste" }, t0 + 60.seconds),
+      ev("add_to_cart", { article: "B2", catalog: "HG COMMERCIALE", designation: "Coude", via: "liste" }, t0 + 80.seconds),
+      ev("add_to_cart", { article: "C3", catalog: "HG COMMERCIALE", designation: "Reprise", via: "reprise" }, t0 + 90.seconds)
+    ], active: 120, clicks: 2), as: :json
+    login(users(:one))
+    get "/api/usage/indicators", params: { days: 7 }
+    assert_response :success
+    r = JSON.parse(response.body)
+    assert_equal 1, r["attendance"]["users_connected"]
+    assert_equal 120, r["attendance"]["avg_active_per_user_day"]
+    types = r["search"]["keyword_types"].index_by { |t| t["key"] }
+    assert_equal 1, types["mot_dimension"]["n"]
+    assert_equal 1, types["mot_seul"]["n"]
+    assert_equal 1, types["reference"]["n"]
+    assert_equal 1, r["search"]["zero_results"]
+    assert_equal 3, r["search"]["time_to_cart"]["carts"]
+    assert_equal 1, r["search"]["time_to_cart"]["carts_with_search"]
+    assert_equal 35, r["search"]["time_to_cart"]["avg_seconds"]
+    assert_equal 1, r["search"]["adds_via"]["reprise"]["n"]
+    assert_includes r["keyword_leads"].map { |l| l["q"] }, "tuyau 125"
+    login(users(:two))
+    get "/api/usage/indicators"
+    assert_response :forbidden
+  end
+
+  test "keyword_type classification" do
+    refs = Set.new([ "hg-1234" ])
+    sw = Set.new(%w[canplast sika])
+    { "hg-1234" => "reference", "52100234" => "reference", "dn100" => "dimension", "160x80" => "dimension", "110" => "dimension",
+      "sika" => "fournisseur", "tuyau 125" => "mot_dimension", "coude" => "mot_seul", "raccord en y" => "phrase" }.each do |q, t|
+      assert_equal t, UsageReport.keyword_type(q, refs, sw), q
+    end
+  end
+
+  test "an order without any measured cart add is flagged (command not seen by the agent)" do
+    u = users(:two)
+    login(u)
+    post "/api/usage/events", params: batch("tok-o", [ ev("visit"), ev("search", { q: "coude", results: 5, via: "recherche" }) ]), as: :json
+    order = Order.create!(user: u, supplier: suppliers(:one), status: "sent", notes: "Chantier: X")
+    report = UsageReport.build(UsageReport::ZONE.today)
+    assert_equal 1, report[:orders]
+    assert_equal 1, report[:orders_untraced].size
+    assert_includes report[:orders_untraced].first[:reason], "aucun ajout"
+    assert(report[:observations].any? { |o| o.include?(order.number.to_s) })
+    # un utilisateur sans aucune mesure mais avec une commande est aussi signalé
+    Order.create!(user: users(:one), supplier: suppliers(:one), status: "sent")
+    assert_equal 1, UsageReport.build(UsageReport::ZONE.today)[:orders_untraced].size # admin non suivi
+  end
 end

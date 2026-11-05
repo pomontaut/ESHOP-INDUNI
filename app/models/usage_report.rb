@@ -25,6 +25,9 @@ class UsageReport < ApplicationRecord
     per_user = users.values.sort_by { |u| u.full_name.to_s.downcase }.filter_map do |u|
       stats_for(u, events.select { |e| e.user_id == u.id }, from, to)
     end
+    orders = orders_between(from, to)
+    per_user.each { |p| p[:orders] = orders.count { |o| o.user_id == p[:id] } }
+    orders_untraced = untraced_orders(orders, per_user)
 
     tracked = User.all.select(&:usage_tracked?)
     seen_ids = per_user.map { |p| p[:id] }
@@ -54,7 +57,8 @@ class UsageReport < ApplicationRecord
 
     report = { date: date.iso8601, generated_at: Time.current.in_time_zone(ZONE).strftime("%d.%m.%Y %H:%M"),
                totals: totals, users: per_user.map { |p| p.except(:searches_raw) },
-               top_queries: top_queries, zero_result_queries: zero, absent: absent }
+               top_queries: top_queries, zero_result_queries: zero, absent: absent,
+               orders: orders.size, orders_untraced: orders_untraced }
     report[:observations] = observations(report)
     report
   end
@@ -122,6 +126,204 @@ class UsageReport < ApplicationRecord
     }
   end
 
+  # ---------------------------------------------------------------- commandes (côté serveur)
+  # Commandes réellement enregistrées par les utilisateurs suivis : source indépendante du navigateur,
+  # pour repérer une commande que les mesures du navigateur n'ont pas vue (voir observations).
+  def self.orders_between(from, to)
+    tracked_ids = User.all.select(&:usage_tracked?).map(&:id)
+    Order.where(created_at: from...to, user_id: tracked_ids).where.not("notes LIKE ?", "%[TEST]%").order(:created_at).to_a
+  end
+
+  # Commandes d'un utilisateur suivi sans aucun article ajouté au panier ce jour-là (ou sans aucune
+  # mesure) : { name, number, supplier, at, reason }. Raisons possibles : mesure absente, panier préparé un
+  # autre jour, import de devis / commande générique / reprise d'une commande (non vus avant ce correctif).
+  def self.untraced_orders(orders, per_user)
+    users = User.where(id: orders.map(&:user_id).uniq).index_by(&:id)
+    orders.filter_map do |o|
+      day = o.created_at.in_time_zone(ZONE).to_date
+      stat = per_user.find { |p| p[:id] == o.user_id && (p[:date].nil? || p[:date] == day) }
+      reason =
+        if stat.nil? then "aucune mesure ce jour-là (onglet ouvert avant la mise à jour, navigateur bloquant les mesures, ou e-shop non rechargé)"
+        elsif stat[:adds].zero? then "aucun ajout au panier mesuré (panier préparé un autre jour, import de devis, commande générique ou reprise d'une commande)"
+        end
+      next unless reason
+
+      { name: users[o.user_id]&.full_name, number: o.number, supplier: o.supplier&.name,
+        at: o.created_at.in_time_zone(ZONE).strftime("%H:%M"), reason: reason,
+        searches: stat ? stat[:searches].map { |s| s[:q] }.first(8) : [] }
+    end
+  end
+
+  # ---------------------------------------------------------- type de mot clef tapé
+  KEYWORD_TYPES = {
+    "reference"    => "Référence article (n° HGC, INDUNI…)",
+    "dimension"    => "Dimension seule (DN100, 160x80, Ø110…)",
+    "fournisseur"  => "Nom de fournisseur / marque",
+    "mot_dimension" => "Désignation + dimension (ex. « tuyau 125 »)",
+    "mot_seul"     => "Un seul mot (désignation)",
+    "phrase"       => "Plusieurs mots (désignation)"
+  }.freeze
+  DIMENSION_RE = /\A(?:dn|ø|⌀|d)?\s*\d{2,4}(?:[.,]\d+)?(?:\s*(?:x|\*|×)\s*\d{1,4}(?:[.,]\d+)?)*\s*(?:mm|cm|m)?\z/i
+
+  # refs : ensemble de références normalisées (sans espace, minuscules) des articles et n° INDUNI ; supplier_words :
+  # mots des noms de fournisseurs. Heuristique [H] : aucun mot clef n'est inventé, seul le type est déduit de la forme.
+  def self.keyword_type(query, refs = Set.new, supplier_words = Set.new)
+    n = query.to_s.downcase.strip.gsub(/\s+/, " ")
+    return nil if n.blank?
+
+    compact = n.delete(" ")
+    return "reference" if refs.include?(compact)
+    return "dimension" if n.match?(DIMENSION_RE)
+    return "reference" if n !~ /\s/ && n =~ /\d/ && n =~ /\A[a-z0-9][a-z0-9.\-\/_]*\z/ && (n.count("0-9") >= 5 || (n.count("0-9") >= 3 && n =~ /[a-z]/ && n !~ /\A(dn|d)?\d+(mm|cm|m)?\z/))
+
+    words = n.split(" ")
+    return "fournisseur" if words.all? { |w| supplier_words.include?(w) }
+    return "mot_dimension" if words.size >= 2 && words.any? { |w| w.match?(DIMENSION_RE) }
+
+    words.size == 1 ? "mot_seul" : "phrase"
+  end
+
+  def self.reference_set
+    refs = Product.where.not(reference: [ nil, "" ]).pluck(:reference).map { |r| r.to_s.downcase.delete(" ") }
+    refs += NomenclatureEntry.pluck(:induni_reference).map { |r| r.to_s.downcase.delete(" ") }
+    refs.to_set
+  end
+
+  def self.supplier_word_set
+    Supplier.pluck(:name).flat_map { |n| n.to_s.downcase.gsub(/[^a-z0-9àâéèêëîïôöûüç ]/, " ").split }.select { |w| w.size >= 3 }.to_set
+  end
+
+  def self.median(arr)
+    a = arr.compact.sort
+    return nil if a.empty?
+
+    m = a.size / 2
+    a.size.odd? ? a[m] : ((a[m - 1] + a[m]) / 2.0).round
+  end
+
+  # ------------------------------------------------------------ indicateurs sur une période
+  # Indicateurs de recherche et de fréquentation sur `days` jours (jusqu'à `today`), lus sur les seuls
+  # événements mesurés des utilisateurs suivis. Même méthode déterministe que le compte rendu quotidien.
+  def self.indicators(days = 30, today = ZONE.today)
+    days = days.to_i.clamp(1, 90)
+    first = today - (days - 1)
+    from = ZONE.local(first.year, first.month, first.day).beginning_of_day
+    to   = ZONE.local(today.year, today.month, today.day).beginning_of_day + 1.day
+    tracked = User.all.select(&:usage_tracked?).index_by(&:id)
+    events = UsageEvent.where(occurred_at: from...to).order(:occurred_at, :id).to_a.select { |e| tracked.key?(e.user_id) }
+    rows = events.group_by { |e| [ e.user_id, e.occurred_at.in_time_zone(ZONE).to_date ] }.filter_map do |(uid, date), evs|
+      s = stats_for(tracked[uid], evs, from, to)
+      s && s.merge(date: date)
+    end
+    working_days = (first..today).count { |d| working_day?(d) }
+
+    # --- fréquentation par utilisateur
+    per_user = tracked.values.sort_by { |u| u.full_name.to_s.downcase }.map do |u|
+      r = rows.select { |x| x[:id] == u.id }
+      active = r.sum { |x| x[:active_seconds] }
+      sessions = r.sum { |x| x[:sessions] }
+      { id: u.id, name: u.full_name, sector: u.sector, days_connected: r.size, sessions: sessions,
+        active_seconds: active,
+        avg_active_per_day: r.empty? ? nil : (active / r.size.to_f).round,
+        avg_active_per_session: sessions.zero? ? nil : (active / sessions.to_f).round,
+        sessions_per_day: r.empty? ? nil : (sessions / r.size.to_f).round(1),
+        presence_pct: working_days.zero? ? nil : (100.0 * r.size / working_days).round,
+        searches: r.sum { |x| x[:searches].size }, adds: r.sum { |x| x[:adds] },
+        last_seen: r.map { |x| x[:date] }.max&.strftime("%d.%m.%Y") }
+    end
+    connected = per_user.select { |p| p[:days_connected].positive? }
+    freq = { "Jamais" => 0, "1 jour" => 0, "2 à 4 jours" => 0, "5 à 9 jours" => 0, "10 jours et plus" => 0 }
+    per_user.each do |p|
+      k = case p[:days_connected] when 0 then "Jamais" when 1 then "1 jour" when 2..4 then "2 à 4 jours" when 5..9 then "5 à 9 jours" else "10 jours et plus" end
+      freq[k] += 1
+    end
+    attendance = {
+      users_tracked: per_user.size, users_connected: connected.size, working_days: working_days,
+      avg_days_per_user: connected.empty? ? nil : (connected.sum { |p| p[:days_connected] } / connected.size.to_f).round(1),
+      avg_sessions_per_user: connected.empty? ? nil : (connected.sum { |p| p[:sessions] } / connected.size.to_f).round(1),
+      avg_active_per_user: connected.empty? ? nil : (connected.sum { |p| p[:active_seconds] } / connected.size.to_f).round,
+      avg_active_per_user_day: rows.empty? ? nil : (rows.sum { |x| x[:active_seconds] } / rows.size.to_f).round,
+      avg_active_per_session: rows.sum { |x| x[:sessions] }.zero? ? nil : (rows.sum { |x| x[:active_seconds] } / rows.sum { |x| x[:sessions] }.to_f).round,
+      frequency: freq
+    }
+    by_day = (first..today).map do |d|
+      r = rows.select { |x| x[:date] == d }
+      { date: d.iso8601, users: r.size, active_seconds: r.sum { |x| x[:active_seconds] },
+        avg_active: r.empty? ? nil : (r.sum { |x| x[:active_seconds] } / r.size.to_f).round,
+        searches: r.sum { |x| x[:searches].size }, adds: r.sum { |x| x[:adds] }, working: working_day?(d) }
+    end
+
+    # --- recherche : mode, mots, délai avant panier
+    refs = reference_set; sw = supplier_word_set
+    searches = rows.flat_map { |x| x[:searches] }
+    types = KEYWORD_TYPES.keys.index_with { |_| { n: 0, examples: Hash.new(0), zero: 0 } }
+    searches.each do |s|
+      t = keyword_type(s[:q], refs, sw) or next
+      types[t][:n] += 1; types[t][:zero] += 1 if s[:results] == 0
+      types[t][:examples][s[:q].to_s.downcase.strip] += 1
+    end
+    total_typed = types.values.sum { |v| v[:n] }
+    keyword_types = KEYWORD_TYPES.map do |k, label|
+      v = types[k]
+      { key: k, label: label, n: v[:n], pct: total_typed.zero? ? 0 : (100.0 * v[:n] / total_typed).round, zero_results: v[:zero],
+        examples: v[:examples].sort_by { |q, n| [ -n, q ] }.first(5).map { |q, n| [ q, n ] } }
+    end
+    clicks_via = rows.each_with_object(Hash.new(0)) { |x, h| x[:vias].each { |k, v| h[k] += v } }
+    journeys = rows.flat_map { |x| x[:journeys] }
+    carts = journeys.select { |j| j[:added] }
+    adds_via = carts.group_by { |j| j[:via] || "inconnu" }.transform_values do |js|
+      secs = js.filter_map { |j| j[:seconds] }
+      { n: js.size, avg_seconds: secs.empty? ? nil : (secs.sum / secs.size.to_f).round, avg_clicks: (js.sum { |j| j[:clicks] } / js.size.to_f).round(1) }
+    end
+    searched = carts.select { |j| j[:queries].any? }
+    secs = searched.filter_map { |j| j[:seconds] }
+    buckets = { "< 30 s" => 0, "30 s – 1 min" => 0, "1 – 3 min" => 0, "3 – 5 min" => 0, "> 5 min" => 0 }
+    secs.each do |s|
+      k = s < 30 ? "< 30 s" : s < 60 ? "30 s – 1 min" : s < 180 ? "1 – 3 min" : s <= 300 ? "3 – 5 min" : "> 5 min"
+      buckets[k] += 1
+    end
+    refs_to_cart = searched.count { |j| j[:queries].any? { |q| keyword_type(q, refs, sw) == "reference" } }
+    time_to_cart = {
+      carts: carts.size, carts_with_search: searched.size,
+      avg_seconds: secs.empty? ? nil : (secs.sum / secs.size.to_f).round, median_seconds: median(secs),
+      avg_queries: searched.empty? ? nil : (searched.sum { |j| j[:queries].size } / searched.size.to_f).round(1),
+      avg_clicks: carts.empty? ? nil : (carts.sum { |j| j[:clicks] } / carts.size.to_f).round(1),
+      by_reference: refs_to_cart, distribution: buckets,
+      abandoned: journeys.count { |j| !j[:added] && j[:queries].any? }
+    }
+
+    # --- lien avec l'agent « moteur de recherche » : pistes de mots clefs / synonymes
+    leads = Hash.new { |h, k| h[k] = { n: 0, targets: Hash.new(0), why: Set.new } }
+    searches.each do |s|
+      q = s[:q].to_s.downcase.strip
+      next if q.blank? || s[:results] != 0
+
+      leads[q][:n] += 1; leads[q][:why] << "sans résultat"
+    end
+    journeys.each do |j|
+      next if j[:queries].empty?
+
+      if j[:added] && j[:queries].size >= 3
+        j[:queries].each { |q| l = leads[q.downcase.strip]; l[:n] += 1; l[:why] << "recherche difficile (3 requêtes ou plus avant l'ajout)"; l[:targets][j[:designation]] += 1 if j[:designation].present? }
+      elsif !j[:added]
+        j[:queries].last(1).each { |q| l = leads[q.downcase.strip]; l[:n] += 1; l[:why] << "abandon sans ajout" }
+      end
+    end
+    keyword_leads = leads.sort_by { |q, v| [ -v[:n], q ] }.first(20).map do |q, v|
+      { q: q, n: v[:n], why: v[:why].to_a, found_as: v[:targets].sort_by { |_, n| -n }.first(2).map(&:first) }
+    end
+    agent = { active: SearchMemory.active.count, pending: SearchMemory.where(status: "suggested").count }
+
+    orders = orders_between(from, to)
+    { from: first.iso8601, to: today.iso8601, days: days,
+      generated_at: Time.current.in_time_zone(ZONE).strftime("%d.%m.%Y %H:%M"),
+      attendance: attendance, users: per_user, by_day: by_day,
+      search: { total: searches.size, zero_results: searches.count { |s| s[:results] == 0 }, clicks_via: clicks_via,
+                adds_via: adds_via, keyword_types: keyword_types, time_to_cart: time_to_cart },
+      keyword_leads: keyword_leads, search_agent: agent,
+      orders: orders.size, orders_untraced: untraced_orders(orders, rows) }
+  end
+
   # Observations factuelles (règles fixes) ; rien n'est inventé : seules les mesures du jour sont lues.
   def self.observations(r)
     obs = []
@@ -133,6 +335,9 @@ class UsageReport < ApplicationRecord
         obs << "#{u[:name]} : parcours long jusqu'au panier (#{(j[:seconds].to_i / 60.0).round(1)} min, #{j[:clicks]} clics#{j[:queries].any? ? ", recherches : #{j[:queries].first(4).join(' › ')}" : ''}) → « #{j[:designation]} »."
       end
       obs << "#{u[:name]} : #{u[:zero_results]} recherche(s) sans résultat." if u[:zero_results] >= 2
+    end
+    r[:orders_untraced].to_a.each do |o|
+      obs << "⚠ #{o[:name]} : commande #{o[:number]} (#{o[:supplier]}, #{o[:at]}) envoyée sans parcours mesuré : #{o[:reason]}#{o[:searches].any? ? " — recherches vues : #{o[:searches].first(5).join(' › ')}" : ''}."
     end
     r[:zero_result_queries].each { |q, n| obs << "Recherche sans résultat « #{q} » (#{n}×) : mot clef ou synonyme à ajouter." }
     if r[:absent].any? && r[:totals][:users_connected].positive?

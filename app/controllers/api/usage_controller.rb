@@ -2,7 +2,7 @@
 # seulement, voir User#usage_tracked?) ; `report` / `send_report` : administrateurs seulement.
 class Api::UsageController < ApplicationController
   skip_before_action :verify_authenticity_token
-  before_action :require_admin, only: %i[report send_report]
+  before_action :require_admin, only: %i[report send_report indicators]
 
   MAX_EVENTS_PER_BATCH = 200
   MAX_EVENTS_PER_SESSION = 3000
@@ -39,6 +39,11 @@ class Api::UsageController < ApplicationController
     return render(json: { error: "Date invalide." }, status: :unprocessable_entity) unless date
 
     render json: UsageReport.build(date)
+  end
+
+  # Indicateurs de recherche et de fréquentation sur N jours (30 par défaut, 90 au plus).
+  def indicators
+    render json: UsageReport.indicators(params[:days].presence || 30)
   end
 
   # Génère et envoie le compte rendu du jour par e-mail à l'administrateur (propriétaire).

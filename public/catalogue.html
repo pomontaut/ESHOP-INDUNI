@@ -2063,7 +2063,7 @@ function setQty(k,v){
   const remarksEl=document.getElementById('remarks'); if(remarksEl) remarksEl.value='';
   openModal('orderModal')
 }
-function addGeneric(e){e.preventDefault(); const p={catalog:state.catalog||'Libre',article:document.getElementById('genArticle').value||'GEN-'+Date.now(),designation:document.getElementById('genDesc').value,descriptif:'Article générique',prix:parseFloat(document.getElementById('genPrice').value),unite:'PCE',famille:'Article générique',sousFamille:'Libre',icone:'＋',image:'construction material'}; cart.push({...p,qty:1}); closeModal('genericModal'); save(); openCart();}
+function addGeneric(e){e.preventDefault(); const p={catalog:state.catalog||'Libre',article:document.getElementById('genArticle').value||'GEN-'+Date.now(),designation:document.getElementById('genDesc').value,descriptif:'Article générique',prix:parseFloat(document.getElementById('genPrice').value),unite:'PCE',famille:'Article générique',sousFamille:'Libre',icone:'＋',image:'construction material'}; cart.push({...p,qty:1}); try{window.usgNote&&usgNote('libre',[p])}catch(e){} closeModal('genericModal'); save(); openCart();}
 
 let devisResultItems=[];
 // Menu fournisseur de l'import de devis : catalogues e-shop (en tête) puis toute la
@@ -2281,6 +2281,7 @@ function addDevisItemsToCart(){
     }
   });
   if(!added){alert('Aucune ligne sélectionnée.');return}
+  try{window.usgNote&&usgNote('import',cart.slice(-added))}catch(e){}
   if(toAddToCatalog.length){
     fetch('/api/devis_imports/confirm_products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({supplier:catalogSupplier,products:toAddToCatalog})}).catch(()=>{});
   }
@@ -2840,6 +2841,7 @@ function duplicateOrder(id){
       const found=PRODUCTS.find(p=>normalizeSupplierName(p.catalog)===normalizeSupplierName(rec.supplier)&&String(p.article)===String(it.article));
       return found?{...found, qty:Number(it.qty||1)}:{...it, catalog:rec.supplier, qty:Number(it.qty||1)};
     });
+    try{window.usgNote&&usgNote('reprise',cart)}catch(e){}
     save(); state={view:'home',catalog:null,famille:null,sous:null}; render(); openCart();
     alert('Commande dupliquée dans le panier. Vous pouvez ajuster les quantités puis générer un nouveau bon.');
     return true;
@@ -5586,16 +5588,25 @@ window.voiceInputInit=function(){
     ['click','keydown','touchstart','scroll'].forEach(ev=>document.addEventListener(ev,()=>{lastAct=Date.now()},{capture:true,passive:true}));
     let mm=0; document.addEventListener('mousemove',()=>{const n=Date.now(); if(n-mm>2000){mm=n;lastAct=n}},{passive:true});
     document.addEventListener('click',e=>{
+      if(searchTimer) commitSearch();   // mots tapés puis clic < 1,2 s : la recherche doit être comptée avant le clic
       clicks++; const v=viaOf(e.target); if(v) lastVia=v;
       push('click',{via:v||lastVia||undefined,text:label(e.target)});
     },true);
     const sb=document.getElementById('searchBox');
+    function commitSearch(){clearTimeout(searchTimer); searchTimer=null; const q=searchQuery(); if(!q) return; push('search',{q:q,results:document.querySelectorAll('#app .prod').length,via:'recherche'})}
     if(sb) sb.addEventListener('input',()=>{
       lastVia='recherche'; clearTimeout(searchTimer);
-      searchTimer=setTimeout(()=>{const q=searchQuery(); if(!q) return; push('search',{q:q,results:document.querySelectorAll('#app .prod').length,via:'recherche'})},1200);
+      searchTimer=setTimeout(commitSearch,1200);
     });
+    window.usgFlushSearch=()=>{if(searchTimer) commitSearch()};
     const r0=window.render; if(typeof r0==='function') window.render=function(){const r=r0.apply(this,arguments); try{navCheck()}catch(e){} return r};
+    // Ajouts qui ne passent pas par addCart (import de devis, article générique, commande dupliquée) :
+    // sans eux, une commande réelle n'avait aucun parcours mesuré.
+    window.usgNote=function(via,items){
+      try{ if(searchTimer) commitSearch(); (items||[]).slice(0,40).forEach(p=>push('add_to_cart',{article:p&&p.article,catalog:p&&p.catalog,designation:p&&p.designation,via:via})); }catch(e){}
+    };
     const a0=window.addCart; if(typeof a0==='function') window.addCart=function(p){
+      if(searchTimer) commitSearch();
       const r=a0.apply(this,arguments);
       try{push('add_to_cart',{article:p&&p.article,catalog:p&&p.catalog,designation:p&&p.designation,via:searchQuery()?'recherche':(lastVia||'liste'),q:searchQuery()||undefined})}catch(e){}
       return r;
@@ -5615,8 +5626,8 @@ function usgFmt(s){if(s==null)return '—'; s=Math.round(s); return s<60?s+' s':
 function showUsageAgent(){state={view:'usageAgent',catalog:null,famille:null,sous:null};document.getElementById('searchBox').value='';render()}
 function renderUsageAgent(){
   if(!_usageDate){const n=new Date();_usageDate=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')}
-  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › Agent d'usage</div><div class="toolbar"><h2>🕵️ Agent d'usage de l'e-shop</h2><p class="muted">Réservé aux administrateurs. Suit les utilisateurs hors administrateurs et service achats : ouvertures, temps actif, clics, mots tapés, parcours jusqu'au panier et moyen de recherche (barre de recherche, listes / entonnoir, images). Compte rendu envoyé à 16h00 les jours ouvrés (hors week-end et jours fériés genevois) à l'administrateur.</p><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input type="date" id="usgDate" value="${esc(_usageDate)}" onchange="_usageDate=this.value;usgLoad()" style="border:1px solid #ddd;border-radius:8px;padding:8px"><button class="miniBtn" onclick="usgLoad()">↻ Actualiser</button><button class="miniBtn gray" onclick="usgSend()">✉️ Envoyer le compte rendu par e-mail</button></div></div><div id="usgBody"><p class="muted">Chargement…</p></div>`;
-  usgLoad();
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › Agent d'usage</div><div class="toolbar"><h2>🕵️ Agent d'usage de l'e-shop</h2><p class="muted">Réservé aux administrateurs. Suit les utilisateurs hors administrateurs et service achats : ouvertures, temps actif, clics, mots tapés, parcours jusqu'au panier et moyen de recherche (barre de recherche, listes / entonnoir, images). Compte rendu envoyé à 16h00 les jours ouvrés (hors week-end et jours fériés genevois) à l'administrateur.</p><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input type="date" id="usgDate" value="${esc(_usageDate)}" onchange="_usageDate=this.value;usgLoad()" style="border:1px solid #ddd;border-radius:8px;padding:8px"><button class="miniBtn" onclick="usgLoad()">↻ Actualiser</button><button class="miniBtn gray" onclick="usgSend()">✉️ Envoyer le compte rendu par e-mail</button></div></div><div id="usgBody"><p class="muted">Chargement…</p></div><div id="usgInd"></div>`;
+  usgLoad(); usgLoadInd();
 }
 function usgLoad(){
   fetch('/api/usage/report?date='+encodeURIComponent(_usageDate),{headers:{'Accept':'application/json'}}).then(r=>r.ok?r.json():Promise.reject(r.status)).then(r=>{_usageReport=r;usgDraw()}).catch(()=>{const b=document.getElementById('usgBody');if(b)b.innerHTML='<p class="muted">Accès refusé ou erreur de chargement.</p>'});
@@ -5637,6 +5648,35 @@ function usgDraw(){
   if(r.top_queries.length) h+=`<h3>Mots les plus tapés</h3><p>${r.top_queries.map(q=>esc(q[0])+' <small class="muted">('+q[1]+')</small>').join(' · ')}</p>`;
   if(r.zero_result_queries.length) h+=`<h3>Recherches sans résultat</h3><p>${r.zero_result_queries.map(q=>esc(q[0])+' <small class="muted">('+q[1]+'×)</small>').join(' · ')}</p>`;
   if(r.absent.length) h+=`<h3>Non connectés ce jour</h3><p>${r.absent.map(a=>esc(a.name)+(a.last_seen?` <small class="muted">(dernière ouverture ${esc(a.last_seen)})</small>`:' <small class="muted">(jamais suivi)</small>')).join(' · ')}</p>`;
+  b.innerHTML=h;
+}
+let _usageDays=30;
+function usgLoadInd(){
+  const b=document.getElementById('usgInd'); if(!b) return;
+  b.innerHTML='<h2 style="margin-top:28px">📈 Indicateurs de recherche et de fréquentation</h2><p class="muted">Chargement…</p>';
+  fetch('/api/usage/indicators?days='+_usageDays,{headers:{'Accept':'application/json'}}).then(r=>r.ok?r.json():Promise.reject(r.status)).then(usgIndDraw).catch(()=>{b.innerHTML='<p class="muted">Indicateurs indisponibles.</p>'});
+}
+function usgIndDraw(r){
+  const b=document.getElementById('usgInd'); if(!b) return;
+  const a=r.attendance,s=r.search,t=s.time_to_cart,pct=(n,d)=>d?Math.round(100*n/d)+' %':'—';
+  const card=(h,x)=>`<div style="flex:1 1 150px;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;background:#fff"><div class="muted" style="font-size:11.5px">${h}</div><div style="font-size:19px;font-weight:700">${x}</div></div>`;
+  const bar=(label,n,tot)=>`<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="width:230px;font-size:13px">${esc(label)}</div><div style="flex:1;background:#eef2f7;border-radius:6px;height:14px"><div style="width:${tot?Math.round(100*n/tot):0}%;background:#2563eb;height:14px;border-radius:6px"></div></div><div style="width:90px;font-size:13px;text-align:right">${n} · ${pct(n,tot)}</div></div>`;
+  const vl={recherche:'🔎 Barre de recherche',liste:'📋 Entonnoir / listes',image:'🖼 Images / tuiles',import:'📄 Import de devis',reprise:'🔁 Commande reprise',libre:'＋ Article générique',inconnu:'Non déterminé'};
+  const cv=s.clicks_via,cvTot=Object.values(cv).reduce((x,y)=>x+y,0);
+  const av=s.adds_via,avTot=Object.values(av).reduce((x,y)=>x+y.n,0);
+  const dist=t.distribution,dTot=Object.values(dist).reduce((x,y)=>x+y,0);
+  let h=`<h2 style="margin-top:28px">📈 Indicateurs de recherche et de fréquentation</h2>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0"><span class="muted">Période :</span>${[7,30,90].map(d=>`<button class="miniBtn ${d===r.days?'':'gray'}" onclick="_usageDays=${d};usgLoadInd()">${d} jours</button>`).join('')}<span class="muted">du ${esc(r.from)} au ${esc(r.to)} · ${a.working_days} jours ouvrés · utilisateurs suivis uniquement</span></div>
+  <h3>Fréquentation</h3><div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">${card('Utilisateurs connectés',a.users_connected+' / '+a.users_tracked)}${card('Jours de connexion / utilisateur',a.avg_days_per_user==null?'—':a.avg_days_per_user)}${card('Ouvertures / utilisateur',a.avg_sessions_per_user==null?'—':a.avg_sessions_per_user)}${card('Temps actif moyen / utilisateur',usgFmt(a.avg_active_per_user))}${card('Temps actif moyen / jour de connexion',usgFmt(a.avg_active_per_user_day))}${card('Durée moyenne d\'une ouverture',usgFmt(a.avg_active_per_session))}</div>
+  <p class="muted" style="margin:4px 0">Combien d'utilisateurs se sont connectés, sur la période :</p>${Object.entries(a.frequency).map(([k,n])=>bar(k,n,a.users_tracked)).join('')}
+  <div style="overflow:auto;margin-top:10px"><table class="dashTable"><thead><tr><th>Utilisateur</th><th>Jours connecté</th><th>Présence (jours ouvrés)</th><th>Ouvertures</th><th>Temps actif total</th><th>Moy. / jour</th><th>Moy. / ouverture</th><th>Recherches</th><th>Panier</th><th>Dernière</th></tr></thead><tbody>${r.users.map(u=>`<tr><td><b>${esc(u.name)}</b><br><small class="muted">${esc(u.sector||'')}</small></td><td>${u.days_connected}</td><td>${u.presence_pct==null?'—':u.presence_pct+' %'}</td><td>${u.sessions}${u.sessions_per_day?`<br><small class="muted">${u.sessions_per_day}/jour</small>`:''}</td><td>${usgFmt(u.active_seconds)}</td><td>${usgFmt(u.avg_active_per_day)}</td><td>${usgFmt(u.avg_active_per_session)}</td><td>${u.searches}</td><td>${u.adds}</td><td>${esc(u.last_seen||'jamais')}</td></tr>`).join('')}</tbody></table></div>
+  <h3>Comment ils recherchent</h3><p class="muted" style="margin:2px 0">Moyen utilisé pour les clics dans le catalogue (${cvTot} clics) :</p>${['recherche','liste','image'].map(k=>bar(vl[k],cv[k]||0,cvTot)).join('')}
+  <p class="muted" style="margin:10px 0 2px">Moyen par lequel l'article a été mis au panier (${avTot} ajouts) :</p>${Object.keys(av).map(k=>bar(vl[k]||k,av[k].n,avTot)+`<div class="muted" style="margin:-2px 0 4px 238px;font-size:11.5px">moy. ${usgFmt(av[k].avg_seconds)} · ${av[k].avg_clicks} clics</div>`).join('')||'<p class="muted">Aucun ajout mesuré.</p>'}
+  <h3>Type de mots clefs tapés <small class="muted">(${s.total} recherches, ${s.zero_results} sans résultat)</small></h3>${s.keyword_types.map(k=>bar(k.label,k.n,s.total)+(k.examples.length?`<div class="muted" style="margin:-2px 0 4px 238px;font-size:11.5px">${esc(k.examples.map(e=>e[0]+(e[1]>1?' ('+e[1]+'×)':'')).join(' · '))}${k.zero_results?` · <span style="color:#b45309">${k.zero_results} sans résultat</span>`:''}</div>`:'')).join('')}
+  <h3>Temps de recherche avant mise au panier</h3><div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">${card('Articles mis au panier',t.carts)}${card('dont avec une recherche tapée',t.carts_with_search)}${card('Temps moyen',t.avg_seconds==null?'—':usgFmt(t.avg_seconds))}${card('Temps médian',t.median_seconds==null?'—':usgFmt(t.median_seconds))}${card('Requêtes avant l\'ajout',t.avg_queries==null?'—':t.avg_queries)}${card('Clics avant l\'ajout',t.avg_clicks==null?'—':t.avg_clicks)}${card('Recherches abandonnées',t.abandoned)}</div>${Object.entries(dist).map(([k,n])=>bar(k,n,dTot)).join('')}
+  <h3>Évolution par jour</h3><div style="overflow:auto"><table class="dashTable"><thead><tr><th>Jour</th><th>Utilisateurs</th><th>Temps actif moyen</th><th>Recherches</th><th>Au panier</th></tr></thead><tbody>${r.by_day.filter(d=>d.working||d.users).slice().reverse().map(d=>`<tr><td>${esc(d.date)}</td><td>${d.users}</td><td>${usgFmt(d.avg_active)}</td><td>${d.searches}</td><td>${d.adds}</td></tr>`).join('')}</tbody></table></div>
+  <h3>🔗 Pistes pour l'agent « moteur de recherche »</h3><p class="muted">Mots tapés qui ont échoué (sans résultat, 3 requêtes ou plus avant l'ajout, abandon sans ajout). L'agent « 🔎 Agent recherche » les reprend avec « bilan » puis « suggestions » ; ${r.search_agent.active} élément(s) en mémoire, ${r.search_agent.pending} suggestion(s) en attente.</p>${r.keyword_leads.length?`<table class="dashTable"><thead><tr><th>Mot tapé</th><th>Fois</th><th>Pourquoi</th><th>Article finalement choisi</th></tr></thead><tbody>${r.keyword_leads.map(l=>`<tr><td><b>${esc(l.q)}</b></td><td>${l.n}</td><td>${esc(l.why.join(' · '))}</td><td>${esc((l.found_as||[]).join(' · '))}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Aucune piste sur la période.</p>'}
+  ${r.orders_untraced.length?`<h3>⚠ Commandes sans parcours mesuré</h3><p class="muted">${r.orders} commande(s) enregistrée(s) sur la période par les utilisateurs suivis ; celles-ci n'ont aucun ajout au panier mesuré le jour de l'envoi.</p><ul>${r.orders_untraced.map(o=>`<li>${esc(o.name)} · ${esc(o.number)} · ${esc(o.supplier||'')} · ${esc(o.at)} — ${esc(o.reason)}</li>`).join('')}</ul>`:''}`;
   b.innerHTML=h;
 }
 function usgToggle(i){const r=document.getElementById('usgDetail'+i); if(r) r.style.display=r.style.display==='none'?'table-row':'none'}

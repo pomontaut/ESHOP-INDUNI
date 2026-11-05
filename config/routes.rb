@@ -33,6 +33,7 @@ Rails.application.routes.draw do
     post  "search_agent/chat",  to: "search_agent#chat"
     post  "usage/events",       to: "usage#events"
     get   "usage/report",       to: "usage#report"
+    get   "usage/indicators",   to: "usage#indicators"
     post  "usage/send_report",  to: "usage#send_report"
     resources :diesel_prices, only: [ :index, :create ]
     resources :canplast_surcharges, only: [ :index, :create ]

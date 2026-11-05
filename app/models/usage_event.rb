@@ -3,7 +3,9 @@ class UsageEvent < ApplicationRecord
   belongs_to :usage_session, optional: true
 
   KINDS = %w[login visit click nav search add_to_cart].freeze
-  VIAS  = %w[recherche liste image].freeze
+  # recherche = barre de recherche, liste = entonnoir, image = tuiles ; import = import de devis,
+  # reprise = commande dupliquée, libre = article générique (ajouts qui ne passent pas par une recherche)
+  VIAS  = %w[recherche liste image import reprise libre].freeze
 
   validates :kind, inclusion: { in: KINDS }
 
