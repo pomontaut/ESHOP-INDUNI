@@ -130,13 +130,12 @@ class Api::ProductsControllerTest < ActionDispatch::IntegrationTest
     get api_products_url
     rows = JSON.parse(response.body).index_by { |p| p["article"] }
     assert_nil rows["ART-WEB"]["image"]
-    assert_nil rows["ART-CP"]["image"]
+    assert_equal "/images/products/canplast-ldc90.png", rows["ART-CP"]["image"] # visible pour tous (production)
     assert_equal "/images/products/induni-15-2.jpg", rows["ART-PDF"]["image"]
 
     post api_test_profile_url, params: { profile: "Développement" }
     get api_products_url
     rows = JSON.parse(response.body).index_by { |p| p["article"] }
     assert_equal "/images/products/web-ART-WEB.jpg", rows["ART-WEB"]["image"]
-    assert_equal "/images/products/canplast-ldc90.png", rows["ART-CP"]["image"]
   end
 end
