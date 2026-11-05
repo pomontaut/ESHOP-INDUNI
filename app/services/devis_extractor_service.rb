@@ -53,7 +53,7 @@ class DevisExtractorService
     parsed = JSON.parse(text_block.text, symbolize_names: true)
     items = (parsed[:items] || []).reject { |item| item[:is_variant] }
     items.each { |item| item[:suggested_famille], item[:suggested_sous_famille] = split_category(item[:suggested_category]) }
-    { items: items, surcharges: parsed[:surcharges] || [] }
+    { items: items, surcharges: parsed[:surcharges] || [], currency: %w[EUR USD].include?(parsed[:currency]) ? parsed[:currency] : "CHF" }
   rescue Anthropic::Errors::APIError => e
     raise ExtractionError, "Erreur du service d'extraction IA : #{e.message}"
   rescue JSON::ParserError
@@ -94,9 +94,10 @@ class DevisExtractorService
       type: "object",
       properties: {
         items: { type: "array", items: item_schema },
-        surcharges: { type: "array", items: SURCHARGE_SCHEMA }
+        surcharges: { type: "array", items: SURCHARGE_SCHEMA },
+        currency: { type: "string", enum: %w[CHF EUR USD] }
       },
-      required: %w[items surcharges],
+      required: %w[items surcharges currency],
       additionalProperties: false
     }
   end
@@ -111,6 +112,12 @@ class DevisExtractorService
       Extrait TOUTES les lignes d'articles physiques commandables avec leur quantité, dans `items`,
       et les suppléments proportionnels au poids/volume de la commande (carburant, énergie, etc.) dans
       `surcharges`.
+      Indique aussi dans `currency` la devise des prix du devis (CHF, EUR ou USD). Cherche-la partout : symbole
+      (€, $), code (« TOTAL EUR », « EUR », « Fr. », « CHF »), mention de TVA/SIRET/capital en euros d'un
+      fournisseur français/européen (ex. « TVA Intra FR… », « SA au capital de … € », IBAN FR/DE). Une
+      mention explicite comme « TOTAL EUR : » suffit : réponds EUR. CHF seulement si le devis est suisse ou
+      sans aucun indice d'une autre devise.
+      Les prix restent EXACTEMENT ceux imprimés, sans aucune conversion.
 
       Règles pour `items` :
       - Parcours le document EN ENTIER, page par page, et extrait CHAQUE ligne d'article de CHAQUE tableau,
