@@ -60,8 +60,9 @@ class Api::ProductsController < ApplicationController
   # Photos web (« web-<n° article>.jpg », trouvées chez des fabricants/revendeurs,
   # voir docs/photos_materiel_induni_web.md) : en essai, donc masquées hors du
   # mode Développement (environnement test).
-  # Idem pour les photos Swisspor reprises chez HGC (« swisspor-hgc-<code>.jpg »).
-  WEB_PHOTO_PREFIXES = %w[/images/products/web- /images/products/swisspor-hgc-].freeze
+  # Idem pour les photos Swisspor reprises chez HGC (« swisspor-hgc-<code>.jpg »)
+  # et les photos Canplast (« canplast-*.png », catalogue en ligne de Canplast).
+  WEB_PHOTO_PREFIXES = %w[/images/products/web- /images/products/canplast- /images/products/swisspor-hgc-].freeze
 
   def visible_image(image, dev_mode)
     return image if dev_mode || image.blank?
