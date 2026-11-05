@@ -120,7 +120,8 @@ class Api::ProductsControllerTest < ActionDispatch::IntegrationTest
     Product.create!(supplier: supplier, reference: "ART-WEB", name: "Massette", famille: "Outillage manuel",
                     image: "/images/products/web-ART-WEB.jpg")
     Product.create!(supplier: supplier, reference: "ART-CB", name: "Tuyau", famille: "Préfa-béton",
-                    image: "/images/products/creabeton-a2001-h-betonrohre.webp")
+                    image: "/images/products/creabeton-a2001-h-betonrohre.webp",
+                    fiche_url: "https://creabeton.ch/fr/tuyau-109542.html")
     Product.create!(supplier: supplier, reference: "ART-PDF", name: "Echelle", famille: "Echelle",
                     image: "/images/products/induni-15-2.jpg")
     user = users(:two)
@@ -131,6 +132,7 @@ class Api::ProductsControllerTest < ActionDispatch::IntegrationTest
     rows = JSON.parse(response.body).index_by { |p| p["article"] }
     assert_nil rows["ART-WEB"]["image"]
     assert_nil rows["ART-CB"]["image"]
+    assert_nil rows["ART-CB"]["ficheUrl"]
     assert_equal "/images/products/induni-15-2.jpg", rows["ART-PDF"]["image"]
 
     post api_test_profile_url, params: { profile: "Développement" }
@@ -138,5 +140,6 @@ class Api::ProductsControllerTest < ActionDispatch::IntegrationTest
     rows = JSON.parse(response.body).index_by { |p| p["article"] }
     assert_equal "/images/products/web-ART-WEB.jpg", rows["ART-WEB"]["image"]
     assert_equal "/images/products/creabeton-a2001-h-betonrohre.webp", rows["ART-CB"]["image"]
+    assert_equal "https://creabeton.ch/fr/tuyau-109542.html", rows["ART-CB"]["ficheUrl"]
   end
 end

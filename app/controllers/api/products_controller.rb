@@ -41,7 +41,7 @@ class Api::ProductsController < ApplicationController
         sousSousFamille:  p.sous_sous_famille,
         icone:            p.icone,
         image:            visible_image(p.image, dev_mode),
-        ficheUrl:         p.fiche_url,
+        ficheUrl:         visible_fiche(p.fiche_url, dev_mode),
         equivalenceKey:   p.equivalence_key,
         qtePalette:       p.qte_palette,
         stockStatus:      p.stock_status,
@@ -63,6 +63,13 @@ class Api::ProductsController < ApplicationController
   # Photos/schémas CreaBeton (« creabeton-<famille>.webp », copiés de creabeton.ch) :
   # même régime d'essai.
   TEST_ONLY_PHOTO_PREFIXES = ["/images/products/web-", "/images/products/creabeton-"].freeze
+
+  CREABETON_FICHE_HOST = "creabeton.ch".freeze
+
+  def visible_fiche(url, dev_mode)
+    return url if dev_mode || url.blank?
+    url.include?(CREABETON_FICHE_HOST) ? nil : url
+  end
 
   def visible_image(image, dev_mode)
     return image if dev_mode || image.blank?
