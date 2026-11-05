@@ -460,6 +460,14 @@ et reconvertit les prix Matériel Induni reconstitués du catalogue. Prix confid
 côté serveur). PDF serveur et e-mails affichent la devise de la commande + note de cours. Hors périmètre : sélection
 multi-fournisseurs (CHF), seuils de franco du texte des frais (restent en CHF).
 
+## Article générique (profil Conducteur de travaux uniquement)
+
+La tuile « ＋ Article générique » (listes d'articles, `genericModal`/`addGeneric`) n'apparaît que si `/api/me`
+renvoie `can_generic_article` (`User#can_generic_article?` = `job_function` « CONDUCTEUR DE TRAVAUX », ou vue test
+« Conducteur de travaux »). Les lignes sont envoyées avec `generic: true` ; `Api::OrdersController#create` refuse
+(403) hors de ces profils et pour un fournisseur à prix confidentiel, et remplace la référence par `GEN-<hash>`
+(désignation + référence saisie) pour ne jamais retomber sur un vrai article du catalogue.
+
 ## Deploy workflow (always follow this exact sequence)
 
 **Déploiement automatique** : une fois les vérifications faites, déployer sur `main` sans attendre de « pousse »/« déploie » du propriétaire — sauf si une validation de sa part est nécessaire (choix ambigu, action risquée ou irréversible, données à confirmer).
