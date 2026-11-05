@@ -447,6 +447,11 @@ ancienne famille (ex. « Echelle », « Protection des mains »), `sousSousFamil
 ni prix modifié. « Electricité » devient « Equipement Électrique ». Le seed (`upsert_all`) propage le changement au déploiement.
 Script idempotent : `python3 script/reorganize_materiel_induni.py db/seed_data/catalog_products.json` (l'arbre `TREE` y fait foi).
 
+## Accueil : EFCO, Matériel Induni et HILTI en cartes directes
+
+Le dossier intermédiaire « Dépôt INDUNI » (`showDepotInduni`/`renderDepotInduni`) n'est plus affiché : `renderHome()` montre
+directement les cartes EFCO, Matériel Induni et HILTI (chacune selon `canSee`). Les fonctions du dossier restent dans le code, sans lien.
+
 ## Photos web « Matériel Induni » (lot pilote, environnement test)
 
 Photos de type représentatif (confiance B) trouvées sur des sites de fabricants/revendeurs pour des articles
