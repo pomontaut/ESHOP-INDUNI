@@ -513,3 +513,10 @@ drive with a Python Playwright script
 (`executable_path='/opt/pw-browsers/chromium'`); screenshot and read via the
 Read tool; then clean up seeded users/products/orders and
 `pkill -f "puma 8.0.2.*ESHOP-INDUNI"` before finishing.
+
+## Import de devis en EUR/USD (production)
+
+`DevisExtractorService` renvoie aussi `currency` (CHF/EUR/USD, lue sur le PDF : « TOTAL EUR », €, TVA FR…) ; `/api/devis_imports`
+la transmet. Dans `catalogue.html` (`devisCurrency`, `devisRate()`), l'écran d'import affiche et plafonne les prix dans la devise du
+devis, puis `addDevisItemsToCart` stocke en CHF (calcul interne, prix × cours) et passe le panier dans cette devise
+(`setCartCurrency`) : les montants affichés sont ceux du devis. Prix confidentiels : CHF forcé.
