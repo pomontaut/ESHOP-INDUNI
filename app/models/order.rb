@@ -85,6 +85,21 @@ class Order < ApplicationRecord
 
   # Commande dans une autre devise que le CHF (ex. devis en EUR) : `total` reste dans la devise d'origine
   # (colonne `currency`), `total_chf` la convertit au cours `chf_rate` pour les totaux (Dashboard, Analyse).
+  CURRENCIES = %w[CHF EUR USD].freeze
+  RATE_FILES = { "EUR" => "eurchf_rates.json", "USD" => "usdchf_rates.json" }.freeze
+
+  # Cours indicatif (CHF pour 1 unité) = dernier point hebdomadaire du fichier public/*chf_rates.json
+  # (le même que celui lu par le panier). nil si inconnu.
+  def self.chf_rate_for(code)
+    file = RATE_FILES[code.to_s.upcase] or return nil
+    values = JSON.parse(Rails.public_path.join(file).read)["values"]
+    values.compact.last&.to_f
+  rescue StandardError
+    nil
+  end
+
+  def currency_code = currency.presence || "CHF"
+
   def foreign_currency? = currency.present? && currency != "CHF"
 
   def total_chf

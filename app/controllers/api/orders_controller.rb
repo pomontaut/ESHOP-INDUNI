@@ -161,8 +161,29 @@ class Api::OrdersController < ApplicationController
 
     return render json: { error: "Panier vide" }, status: :unprocessable_entity if items.blank?
 
+    # Devise du panier (CHF par défaut) : le navigateur envoie les prix déjà convertis ; le cours CHF est
+    # celui du serveur. Prix confidentiels : toujours CHF.
+    # Article générique (hors catalogue) : profil Conducteur de travaux uniquement, jamais en prix confidentiel.
+    if items.any? { |i| ActiveModel::Type::Boolean.new.cast(i[:generic]) }
+      test_profile_name = Api::TestProfilesController.active_profile(session, current_user)
+      allowed = test_profile_name.present? ? test_profile_name == "Conducteur de travaux" : current_user&.can_generic_article?
+      return render json: { error: "Article générique réservé au profil Conducteur de travaux." }, status: :forbidden unless allowed
+    end
+
+    currency = params[:currency].to_s.upcase
+    currency = "CHF" unless Order::CURRENCIES.include?(currency)
+
     supplier = Supplier.find_or_create_by!(name: supplier_name) do |s|
       s.email = "commandes@#{supplier_name.downcase.gsub(/[^a-z0-9]/, '')}.ch"
+    end
+
+    if supplier.confidential_pricing? && items.any? { |i| ActiveModel::Type::Boolean.new.cast(i[:generic]) }
+      return render json: { error: "Article générique impossible avec un fournisseur à prix confidentiel." }, status: :unprocessable_entity
+    end
+    currency = "CHF" if supplier.confidential_pricing?
+    chf_rate = currency == "CHF" ? nil : Order.chf_rate_for(currency)
+    if currency != "CHF" && !chf_rate&.positive?
+      return render json: { error: "Cours #{currency}/CHF indisponible : repassez le panier en CHF." }, status: :unprocessable_entity
     end
 
     chantier_record = Chantier.find_by(nom: chantier)
@@ -200,7 +221,7 @@ class Api::OrdersController < ApplicationController
         confidential_prices[item[:article].to_s].to_f
       elsif materiel_induni_prices
         prices = materiel_induni_prices[item[:article].to_s]
-        prices ? (materiel_induni_consortium ? (prices[:externe] || prices[:interne]) : prices[:interne]).to_f : item[:prix].to_f
+        prices ? ((materiel_induni_consortium ? (prices[:externe] || prices[:interne]) : prices[:interne]).to_f / (chf_rate || 1)).round(chf_rate ? 2 : 10) : item[:prix].to_f
       else
         item[:prix].to_f
       end
@@ -218,7 +239,7 @@ class Api::OrdersController < ApplicationController
     #     dont le plafond ne peut de toute façon jamais dépasser
     #     SITE_LEAD_ORDER_LIMIT (CHF 3'000), quelle que soit la valeur
     #     configurée en admin.
-    total = items.sum { |item| resolved_price.call(item) * item[:qty].to_i }
+    total = items.sum { |item| resolved_price.call(item) * item[:qty].to_i } * (chf_rate || 1) # seuils en CHF
     limit = current_user&.order_limit
     if SITE_LEAD_JOB_FUNCTIONS.include?(current_user&.job_function)
       limit = [ limit, SITE_LEAD_ORDER_LIMIT ].compact.min
@@ -264,10 +285,15 @@ class Api::OrdersController < ApplicationController
       delivery_address:   delivery_address,
       conducteur_travaux: conducteur_travaux,
       extra_charges:      pickup ? [] : extra_charges,
+      currency:           currency,
+      chf_rate:           chf_rate,
       pickup:             pickup
     )
 
     items.each do |item|
+      if ActiveModel::Type::Boolean.new.cast(item[:generic])
+        item = item.to_unsafe_h.merge("article" => "GEN-#{Digest::SHA1.hexdigest("#{item[:designation]}|#{item[:article]}")[0, 8]}").with_indifferent_access
+      end
       product = Product.find_or_create_by!(supplier: supplier, reference: item[:article].to_s) do |p|
         p.name       = item[:designation].to_s
         p.unit_price = item[:prix].to_f

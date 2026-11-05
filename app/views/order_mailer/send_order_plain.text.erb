@@ -4,10 +4,10 @@ Veuillez trouver ci-joint notre commande N° <%= @order.number %> datée du <%= 
 
 RÉSUMÉ DE LA COMMANDE :
 <% @order.order_lines.includes(:product).each do |line| %>
-- <%= line.product.name %> : <%= line.quantity %> x CHF <%= number_with_precision(line.unit_price, precision: 2) %> = CHF <%= number_with_precision(line.subtotal, precision: 2) %>
+- <%= line.product.name %> : <%= line.quantity %> x <%= @order.currency_code %> <%= number_with_precision(line.unit_price, precision: 2) %> = <%= @order.currency_code %> <%= number_with_precision(line.subtotal, precision: 2) %>
 <% end %>
 
-TOTAL : CHF <%= number_with_precision(@order.total, precision: 2) %>
+TOTAL : <%= @order.currency_code %> <%= number_with_precision(@order.total, precision: 2) %>
 
 Merci de confirmer la réception de cette commande par retour d'email.
 
