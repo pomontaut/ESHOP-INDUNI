@@ -166,7 +166,7 @@ class Api::OrdersController < ApplicationController
     # Article générique (hors catalogue) : profil Conducteur de travaux uniquement, jamais en prix confidentiel.
     if items.any? { |i| ActiveModel::Type::Boolean.new.cast(i[:generic]) }
       test_profile_name = Api::TestProfilesController.active_profile(session, current_user)
-      allowed = test_profile_name.present? ? test_profile_name == "Conducteur de travaux" : current_user&.can_generic_article?
+      allowed = test_profile_name.present? ? [ "Conducteur de travaux", Api::TestProfilesController::DEV_PROFILE ].include?(test_profile_name) : current_user&.can_generic_article?
       return render json: { error: "Article générique réservé au profil Conducteur de travaux." }, status: :forbidden unless allowed
     end
 

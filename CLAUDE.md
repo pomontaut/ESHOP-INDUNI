@@ -462,9 +462,9 @@ multi-fournisseurs (CHF), seuils de franco du texte des frais (restent en CHF).
 
 ## Article générique (profil Conducteur de travaux uniquement)
 
-La tuile « ＋ Article générique » (listes d'articles, `genericModal`/`addGeneric`) n'apparaît que si `/api/me`
+La tuile « ＋ Article générique » (listes d'articles, `genericModal`/`addGeneric`) n'apparaît (aussi sur l'écran d'accueil, `openGenericArticle()` : fournisseur au choix si panier vide) que si `/api/me`
 renvoie `can_generic_article` (`User#can_generic_article?` = `job_function` « CONDUCTEUR DE TRAVAUX », ou vue test
-« Conducteur de travaux »). Les lignes sont envoyées avec `generic: true` ; `Api::OrdersController#create` refuse
+« Conducteur de travaux » ou « Développement » (admin, pour tester)). Les lignes sont envoyées avec `generic: true` ; `Api::OrdersController#create` refuse
 (403) hors de ces profils et pour un fournisseur à prix confidentiel, et remplace la référence par `GEN-<hash>`
 (désignation + référence saisie) pour ne jamais retomber sur un vrai article du catalogue.
 

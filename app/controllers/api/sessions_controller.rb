@@ -27,7 +27,7 @@ class Api::SessionsController < ApplicationController
         can_modify_orders: current_user.effective_can_modify_orders?,
         can_import_quote:  current_user.effective_can_import_quote?,
         can_generic_order: current_user.effective_can_generic_order?,
-        can_generic_article: current_user.can_generic_article?,
+        can_generic_article: current_user.can_generic_article? || dev_mode,
         can_view_dashboard:    current_user.effective_can_view_dashboard?,
         can_validate_orders:   current_user.effective_can_validate_orders?,
         can_enable_alerts:     current_user.effective_can_enable_alerts?,
