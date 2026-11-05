@@ -6,6 +6,7 @@
   delai_match    = notes.match(/Délai[^:]*:\s*(.+)/)
   chantier_val   = chantier_match ? chantier_match[1].strip : '—'
   delai_val      = delai_match    ? delai_match[1].strip    : '—'
+  cur = @order.currency_code
   fmt = ->(n) { i, d = ('%.2f' % n.to_f).split('.'); "#{i.reverse.gsub(/(\d{3})(?=\d)/, '\\1' + "'").reverse}.#{d}" rescue n.to_s }
   chantier_record = Chantier.find_by(nom: chantier_val)
   # Chantier en consortium : gabarit sans notre logo ni nos CGA (pas de
@@ -146,7 +147,7 @@ table.totals tr.grand td{border-top:2px solid #111;border-bottom:0;font-size:13p
   </thead>
   <tbody>
     <% if page_index > 0 && !confidential_pricing %>
-    <tr class="report top"><td colspan="7">Report page précédente : CHF <%= fmt.call(running) %></td></tr>
+    <tr class="report top"><td colspan="7">Report page précédente : <%= cur %> <%= fmt.call(running) %></td></tr>
     <% end %>
     <% page_lines.each do |line| %>
     <% running += line.unit_price.to_f * line.quantity %>
@@ -160,13 +161,13 @@ table.totals tr.grand td{border-top:2px solid #111;border-bottom:0;font-size:13p
       <td>Conformément à nos accords cadre</td>
       <td>—</td>
       <% else %>
-      <td style="white-space:nowrap">CHF <%= fmt.call(line.unit_price) %></td>
-      <td style="white-space:nowrap"><strong>CHF <%= fmt.call(line.unit_price.to_f * line.quantity) %></strong></td>
+      <td style="white-space:nowrap"><%= cur %> <%= fmt.call(line.unit_price) %></td>
+      <td style="white-space:nowrap"><strong><%= cur %> <%= fmt.call(line.unit_price.to_f * line.quantity) %></strong></td>
       <% end %>
     </tr>
     <% end %>
     <% if page_index < pages.size - 1 && !confidential_pricing %>
-    <tr class="report"><td colspan="7">Report page suivante : CHF <%= fmt.call(running) %></td></tr>
+    <tr class="report"><td colspan="7">Report page suivante : <%= cur %> <%= fmt.call(running) %></td></tr>
     <% end %>
   </tbody>
 </table>
@@ -177,15 +178,18 @@ table.totals tr.grand td{border-top:2px solid #111;border-bottom:0;font-size:13p
   <% if confidential_pricing %>
   <tr><td class="lbl">Sous-total marchandises H.T.</td><td class="amt">Conformément à nos accords cadre</td></tr>
   <% else %>
-  <tr><td class="lbl">Sous-total marchandises H.T.</td><td class="amt">CHF <%= fmt.call(@order.total) %></td></tr>
+  <tr><td class="lbl">Sous-total marchandises H.T.</td><td class="amt"><%= cur %> <%= fmt.call(@order.total) %></td></tr>
   <% @order.extra_charges.to_a.each do |charge| %>
-  <tr><td class="lbl"><%= charge["label"] %></td><td class="amt">CHF <%= fmt.call(charge["amount"]) %></td></tr>
+  <tr><td class="lbl"><%= charge["label"] %></td><td class="amt"><%= cur %> <%= fmt.call(charge["amount"]) %></td></tr>
   <% end %>
   <% end %>
   <tr class="grand">
     <td class="lbl">TOTAL<%= confidential_pricing ? "" : " H.T." %></td>
-    <td class="amt"><%= confidential_pricing ? "Conformément à nos accords cadre" : "CHF #{fmt.call(@order.grand_total)}" %></td>
+    <td class="amt"><%= confidential_pricing ? "Conformément à nos accords cadre" : "#{cur} #{fmt.call(@order.grand_total)}" %></td>
   </tr>
+  <% if @order.foreign_currency? && !confidential_pricing %>
+  <tr><td class="lbl" colspan="2" style="font-size:8pt;font-weight:normal">Montants en <%= cur %> — cours indicatif de conversion : 1 <%= cur %> = <%= '%.3f' % @order.chf_rate.to_f %> CHF</td></tr>
+  <% end %>
 </table>
 
 

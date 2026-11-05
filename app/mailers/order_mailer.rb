@@ -72,7 +72,7 @@ class OrderMailer < ApplicationMailer
     @review_url  = Rails.application.routes.url_helpers.approval_url(@order.approval_token, host: default_url_options[:host])
     mail(
       to:      order.approver_email,
-      subject: "Approbation requise — Commande #{order.number} (#{number_with_delimiter(order.total.to_i)} CHF)"
+      subject: "Approbation requise — Commande #{order.number} (#{number_with_delimiter(order.total.to_i)} #{order.currency_code})"
     )
   end
 

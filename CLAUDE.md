@@ -448,6 +448,18 @@ hors dev_mode (les autres photos ne sont pas concernées). Pour ouvrir à tous :
 photo fausse est pire que pas de photo (contrôle visuel de chacune ; panneaux routiers, pièces spécifiques et
 articles internes laissés sans photo). 53 articles au total (18 du pilote + 35 du 2e lot) ; le reste de l’effort est à valider.
 
+## Devise du panier (CHF / EUR / USD)
+
+Liste « Devise » dans le panier (`#cartCurrencySel`, `cartCurrency`, CHF par défaut, remise à CHF à la vidange).
+Tout le calcul reste en CHF : `fmt` ne convertit que pendant `updateCart` / `buildOrderHtml` (`_fmtCurrency`).
+Cours = dernier point de `public/eurchf_rates.json` / `usdchf_rates.json` (CHF pour 1 unité, indicatif, hebdo).
+À l'envoi, le navigateur convertit prix unitaires et `extra_charges` (`fxConvert`) et envoie `currency` ;
+`Api::OrdersController#create` valide la devise, prend SON cours (`Order.chf_rate_for`) → `Order#currency`/`chf_rate`
+(déjà existants : prix stockés dans la devise, `total_chf` pour Dashboard), calcule les seuils d'approbation en CHF
+et reconvertit les prix Matériel Induni reconstitués du catalogue. Prix confidentiels : CHF forcé (liste grisée, et
+côté serveur). PDF serveur et e-mails affichent la devise de la commande + note de cours. Hors périmètre : sélection
+multi-fournisseurs (CHF), seuils de franco du texte des frais (restent en CHF).
+
 ## Deploy workflow (always follow this exact sequence)
 
 **Déploiement automatique** : une fois les vérifications faites, déployer sur `main` sans attendre de « pousse »/« déploie » du propriétaire — sauf si une validation de sa part est nécessaire (choix ambigu, action risquée ou irréversible, données à confirmer).

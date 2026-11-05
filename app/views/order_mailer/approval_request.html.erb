@@ -7,7 +7,7 @@
 <table style="border-collapse:collapse;width:100%;max-width:540px;">
   <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Numéro</td><td style="padding:8px;border:1px solid #ddd;"><%= @order.number %></td></tr>
   <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Fournisseur</td><td style="padding:8px;border:1px solid #ddd;"><%= @order.supplier.name %></td></tr>
-  <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Montant total</td><td style="padding:8px;border:1px solid #ddd;font-weight:bold;color:#c0392b;font-size:18px;"><%= number_with_delimiter(@order.total.to_i) %> CHF</td></tr>
+  <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Montant total</td><td style="padding:8px;border:1px solid #ddd;font-weight:bold;color:#c0392b;font-size:18px;"><%= number_with_delimiter(@order.total.to_i) %> <%= @order.currency_code %></td></tr>
   <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Notes</td><td style="padding:8px;border:1px solid #ddd;"><%= @order.notes %></td></tr>
 </table>
 
@@ -42,13 +42,13 @@
       <tr>
         <td style="padding:8px;border:1px solid #ddd;"><%= line.product.name %></td>
         <td style="padding:8px;border:1px solid #ddd;text-align:right;"><%= line.quantity %></td>
-        <td style="padding:8px;border:1px solid #ddd;text-align:right;"><%= number_with_delimiter(line.unit_price.to_f.round(2)) %> CHF</td>
-        <td style="padding:8px;border:1px solid #ddd;text-align:right;"><%= number_with_delimiter(line.subtotal.to_f.round(2)) %> CHF</td>
+        <td style="padding:8px;border:1px solid #ddd;text-align:right;"><%= number_with_delimiter(line.unit_price.to_f.round(2)) %> <%= @order.currency_code %></td>
+        <td style="padding:8px;border:1px solid #ddd;text-align:right;"><%= number_with_delimiter(line.subtotal.to_f.round(2)) %> <%= @order.currency_code %></td>
       </tr>
     <% end %>
     <tr style="background:#f1642a;color:white;font-weight:bold;">
       <td colspan="3" style="padding:8px;">TOTAL</td>
-      <td style="padding:8px;text-align:right;"><%= number_with_delimiter(@order.total.to_i) %> CHF</td>
+      <td style="padding:8px;text-align:right;"><%= number_with_delimiter(@order.total.to_i) %> <%= @order.currency_code %></td>
     </tr>
   </tbody>
 </table>
