@@ -23,7 +23,7 @@ class Admin::OrdersController < ApplicationController
       out << [ "N°", "Date", "Fournisseur", "Chantier", "Auteur", "Statut", "Marchandise HT", "Frais annexes", "Total HT", "Envoyée à", "Créée le" ]
       Order.includes(:supplier, :user, :order_lines).order(:id).each do |o|
         out << [ o.number, o.order_date, o.supplier&.name, o.chantier_name, o.user&.full_name,
-                 o.approval_status.presence || o.status, o.total.to_f.round(2), o.extra_charges_total.round(2),
+                 o.approval_status.presence || o.status, o.total_chf.to_f.round(2), o.extra_charges_total.round(2),
                  o.grand_total.to_f.round(2), o.sent_to, o.created_at&.strftime("%d.%m.%Y %H:%M") ]
       end
     end

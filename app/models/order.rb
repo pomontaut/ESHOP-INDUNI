@@ -83,6 +83,16 @@ class Order < ApplicationRecord
     order_lines.sum(&:subtotal)
   end
 
+  # Commande dans une autre devise que le CHF (ex. devis en EUR) : `total` reste dans la devise d'origine
+  # (colonne `currency`), `total_chf` la convertit au cours `chf_rate` pour les totaux (Dashboard, Analyse).
+  def foreign_currency? = currency.present? && currency != "CHF"
+
+  def total_chf
+    return total unless foreign_currency? && chf_rate.present?
+
+    (total * chf_rate).round(2)
+  end
+
   # Somme des frais annexes (peut être négative, ex. remise de volume BTest).
   # Ne vaut jamais 0 par confusion avec "aucun frais" : grand_total reste
   # correct même si extra_charges est vide ou absent (commandes antérieures à

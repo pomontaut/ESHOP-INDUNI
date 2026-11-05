@@ -886,4 +886,21 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     get api_orders_url, params: { q: other.number }
     assert_equal [], JSON.parse(response.body)
   end
+
+  test "index exposes a foreign-currency order in its currency with the CHF conversion, and the transmission note" do
+    sup = Supplier.create!(name: "Fonderie test")
+    prod = Product.create!(supplier: sup, reference: "X1", name: "Grille", unit_price: 100)
+    o = Order.create!(supplier: sup, status: "sent", notes: "Chantier: 35606-Test | Délai souhaité: 01.12.2026",
+                      currency: "EUR", chf_rate: 0.944, transmitted_via: "Transmise hors e-shop BC-1")
+    o.order_lines.create!(product: prod, quantity: 10, unit_price: 100)
+    get "/api/orders"
+    row = JSON.parse(response.body).find { |r| r["id"] == o.id }
+    assert_equal "EUR", row["currency"]
+    assert_equal 1000.0, row["totalOriginal"]
+    assert_equal 944.0, row["total"]
+    assert_equal 0.944, row["chfRate"]
+    assert_equal "Transmise hors e-shop BC-1", row["transmittedVia"]
+    assert_equal 1000.0, o.total
+    assert_equal 944.0, o.total_chf
+  end
 end

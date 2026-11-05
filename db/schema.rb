@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_03_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_05_100100) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -165,9 +165,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_140000) do
     t.string "approval_token"
     t.string "approver_email"
     t.datetime "cancelled_at"
+    t.decimal "chf_rate", precision: 10, scale: 5
     t.string "conducteur_travaux"
     t.string "contact"
     t.datetime "created_at", null: false
+    t.string "currency", default: "CHF", null: false
     t.text "delivery_address"
     t.datetime "email_sent_at"
     t.text "extra_charges"
@@ -189,6 +191,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_140000) do
     t.string "sent_to"
     t.string "status"
     t.integer "supplier_id", null: false
+    t.string "transmitted_via"
     t.datetime "updated_at", null: false
     t.integer "user_id"
     t.index ["modifies_order_id"], name: "index_orders_on_modifies_order_id"
