@@ -61,9 +61,11 @@ class Api::ProductsController < ApplicationController
   # voir docs/photos_materiel_induni_web.md) : en essai, donc masquées hors du
   # mode Développement (environnement test).
   WEB_PHOTO_PREFIX = "/images/products/web-".freeze
+  # Images de famille Canplast (canplast.ch/catalogue) : en test, mode Développement seulement.
+  TEST_ONLY_IMAGE_PREFIXES = [WEB_PHOTO_PREFIX, "/images/products/canplast-"].freeze
 
   def visible_image(image, dev_mode)
     return image if dev_mode || image.blank?
-    image.start_with?(WEB_PHOTO_PREFIX) ? nil : image
+    TEST_ONLY_IMAGE_PREFIXES.any? { |pre| image.start_with?(pre) } ? nil : image
   end
 end
