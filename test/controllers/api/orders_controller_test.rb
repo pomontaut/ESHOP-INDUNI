@@ -903,4 +903,43 @@ class Api::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1000.0, o.total
     assert_equal 944.0, o.total_chf
   end
+
+  test "create en EUR enregistre la devise, le cours serveur et rend le PDF dans la devise" do
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture", currency: "EUR",
+      items: [ { article: "ART-EUR", designation: "Article test EUR", qty: 2, prix: 100.0 } ]
+    }
+    assert_response :success
+    order = Order.order(:id).last
+    assert_equal "EUR", order.currency
+    assert_in_delta Order.chf_rate_for("EUR"), order.chf_rate.to_f, 0.0001
+    assert_in_delta 200 * order.chf_rate.to_f, order.total_chf.to_f, 0.01
+    assert_includes ApplicationController.render(template: "orders/bon_de_commande", layout: false, assigns: { order: order }), "EUR 200.00"
+  end
+
+  test "create avec une devise inconnue retombe sur CHF" do
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture", currency: "GBP",
+      items: [ { article: "ART-GBP", designation: "Article test", qty: 1, prix: 10.0 } ]
+    }
+    assert_equal "CHF", Order.order(:id).last.currency
+  end
+
+  test "article générique refusé hors profil Conducteur de travaux" do
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      items: [ { article: "X", designation: "Libre", qty: 1, prix: 10.0, generic: true } ]
+    }
+    assert_response :forbidden
+  end
+
+  test "article générique accepté pour un conducteur de travaux" do
+    users(:one).update!(job_function: "CONDUCTEUR DE TRAVAUX")
+    post api_orders_url, params: {
+      chantier: "12345-Chantier Test", delai: "Urgent", supplier: "HGC Test Fixture",
+      items: [ { article: "X", designation: "Libre", qty: 1, prix: 10.0, generic: true } ]
+    }
+    assert_response :success
+    assert_match(/\AGEN-/, Order.order(:id).last.order_lines.first.product.reference)
+  end
 end
