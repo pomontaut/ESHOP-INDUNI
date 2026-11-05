@@ -60,10 +60,12 @@ class Api::ProductsController < ApplicationController
   # Photos web (« web-<n° article>.jpg », trouvées chez des fabricants/revendeurs,
   # voir docs/photos_materiel_induni_web.md) : en essai, donc masquées hors du
   # mode Développement (environnement test).
-  WEB_PHOTO_PREFIX = "/images/products/web-".freeze
+  # Photos/schémas CreaBeton (« creabeton-<famille>.webp », copiés de creabeton.ch) :
+  # même régime d'essai.
+  TEST_ONLY_PHOTO_PREFIXES = ["/images/products/web-", "/images/products/creabeton-"].freeze
 
   def visible_image(image, dev_mode)
     return image if dev_mode || image.blank?
-    image.start_with?(WEB_PHOTO_PREFIX) ? nil : image
+    image.start_with?(*TEST_ONLY_PHOTO_PREFIXES) ? nil : image
   end
 end
