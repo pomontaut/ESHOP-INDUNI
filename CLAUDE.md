@@ -438,6 +438,15 @@ une ligne dans le dictionnaire**, sinon il reste en français dans les autres la
 volontairement en français : noms d'articles/descriptifs, bon de commande PDF et e-mails fournisseurs (`textarea`,
 valeurs saisies, `buildOrderHtml`), pages `/admin`, modules admin/analyse de marché. Un `translate="no"` exclut un bloc.
 
+## Matériel Induni : arborescence Famille › Sous-famille › Détail
+
+Réorganisé selon la liste d'Achats (12 familles : Lubrifiants et contenants, MATERIEL DU COMMERCE, Coffrage / accessoires,
+MATERIEL DE CHANTIER, GAZ, ELECTRICITE, OUTILLAGE, MANUTENTION/LEVAGE, CONSOMMABLES, SECURITE/PROTECTION,
+SIGNALISATION/CLOTURE/GESTION TRAFIC, Publicité). Dans `catalog_products.json` : `famille` = nouvelle famille, `sousFamille` =
+ancienne famille (ex. « Echelle », « Protection des mains »), `sousSousFamille` = ancienne sous-famille (détail). Aucune référence
+ni prix modifié. « Electricité » devient « Equipement Électrique ». Le seed (`upsert_all`) propage le changement au déploiement.
+Script idempotent : `python3 script/reorganize_materiel_induni.py db/seed_data/catalog_products.json` (l'arbre `TREE` y fait foi).
+
 ## Photos web « Matériel Induni » (lot pilote, environnement test)
 
 Photos de type représentatif (confiance B) trouvées sur des sites de fabricants/revendeurs pour des articles
