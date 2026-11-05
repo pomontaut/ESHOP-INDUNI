@@ -112,7 +112,11 @@ class DevisExtractorService
       Extrait TOUTES les lignes d'articles physiques commandables avec leur quantité, dans `items`,
       et les suppléments proportionnels au poids/volume de la commande (carburant, énergie, etc.) dans
       `surcharges`.
-      Indique aussi dans `currency` la devise des prix du devis (CHF, EUR ou USD) ; en cas de doute, CHF.
+      Indique aussi dans `currency` la devise des prix du devis (CHF, EUR ou USD). Cherche-la partout : symbole
+      (€, $), code (« TOTAL EUR », « EUR », « Fr. », « CHF »), mention de TVA/SIRET/capital en euros d'un
+      fournisseur français/européen (ex. « TVA Intra FR… », « SA au capital de … € », IBAN FR/DE). Une
+      mention explicite comme « TOTAL EUR : » suffit : réponds EUR. CHF seulement si le devis est suisse ou
+      sans aucun indice d'une autre devise.
       Les prix restent EXACTEMENT ceux imprimés, sans aucune conversion.
 
       Règles pour `items` :
