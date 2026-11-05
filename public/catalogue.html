@@ -956,6 +956,22 @@ const MBT_CONFIG = {
   }
 };
 
+// ── Matériel Induni : familles (liste Achats), photo de couverture par famille ──
+const MATERIEL_INDUNI_CONFIG = {
+  "Lubrifiants et contenants": { gradient:'linear-gradient(135deg,#0c1d34,#335c8d)', icone:"🛢️", badge:"Lubrifiants", photo:'/images/categories/materiel-induni-lubrifiants.jpg', desc:"Huiles, bidons, bacs de rétention", subs:[], order:1 },
+  "MATERIEL DU COMMERCE": { gradient:'linear-gradient(135deg,#0c1d34,#335c8d)', icone:"🏠", badge:"Commerce", photo:'/images/categories/materiel-induni-commerce.jpg', desc:"Chauffage, ventilation, mobilier", subs:[], order:2 },
+  "Coffrage / accessoires": { gradient:'linear-gradient(135deg,#0c1d34,#335c8d)', icone:"🧱", badge:"Coffrage", photo:'/images/categories/materiel-induni-coffrage.jpg', desc:"Clavettes, tendeurs, serre-joints", subs:[], order:3 },
+  "MATERIEL DE CHANTIER": { gradient:'linear-gradient(135deg,#0c1d34,#335c8d)', icone:"🪜", badge:"Chantier", photo:'/images/categories/materiel-induni-chantier.jpg', desc:"Échelles, chevalets, garde-corps, pompes", subs:[], order:4 },
+  "MATERIEL/ACCESSOIRES GAZ": { gradient:'linear-gradient(135deg,#0c1d34,#335c8d)', icone:"🔥", badge:"Gaz", photo:'/images/categories/materiel-induni-gaz.jpg', desc:"Équipement gaz", subs:[], order:5 },
+  "MATERIEL / ACCESSOIRES ELECTRICITE": { gradient:'linear-gradient(135deg,#0c1d34,#335c8d)', icone:"🔌", badge:"Électricité", photo:'/images/categories/materiel-induni-electricite.jpg', desc:"Rallonges, éclairage, équipement électrique", subs:[], order:6 },
+  "OUTILLAGE": { gradient:'linear-gradient(135deg,#0c1d34,#335c8d)', icone:"🔧", badge:"Outillage", photo:'/images/categories/materiel-induni-outillage.jpg', desc:"Outillage manuel, électroportatif, forage", subs:[], order:7 },
+  "MANUTENTION/LEVAGE": { gradient:'linear-gradient(135deg,#0c1d34,#335c8d)', icone:"⛓️", badge:"Levage", photo:'/images/categories/materiel-induni-manutention.jpg', desc:"Élingues, manilles, colisage, mesure", subs:[], order:8 },
+  "CONSOMMABLES": { gradient:'linear-gradient(135deg,#0c1d34,#335c8d)', icone:"🧴", badge:"Consommables", photo:'/images/categories/materiel-induni-consommables.jpg', desc:"Fixation, soudure, nettoyage, peinture", subs:[], order:9 },
+  "SECURITE/PROTECTION": { gradient:'linear-gradient(135deg,#0c1d34,#335c8d)', icone:"🦺", badge:"Sécurité", photo:'/images/categories/materiel-induni-securite.jpg', desc:"EPI, protections, pharmacie", subs:[], order:10 },
+  "SIGNALISATION/CLOTURE DE CHANTIER/GESTION TRAFIC": { gradient:'linear-gradient(135deg,#0c1d34,#335c8d)', icone:"🚧", badge:"Signalisation", photo:'/images/categories/materiel-induni-signalisation.jpg', desc:"Clôtures, panneaux, radio", subs:[], order:11 },
+  "Publicité / objet de communication": { gradient:'linear-gradient(135deg,#0c1d34,#335c8d)', icone:"🎁", badge:"Publicité", photo:'/images/categories/materiel-induni-publicite.jpg', desc:"Objets de communication", subs:[], order:12 }
+};
+
 
 // ── HGC : familles regroupées sous un dossier commun ──────────────────────────
 const HGC_GROUP_FAMILIES = { 'Canalisation': [ 'Canalisations PVC', 'Protection Câbles' ] };
@@ -1052,6 +1068,7 @@ function renderCatalog(){
     'Leuba HIAG':  HIAG_CONFIG,
     'CreaBeton':   CREABETON_CONFIG,
     'MBT':         MBT_CONFIG,
+    'Matériel Induni': MATERIEL_INDUNI_CONFIG,
   };
   const cfg = configMap[cat];
   const famCount = Object.keys(fams).length + (groups?Object.keys(groups).length:0);
@@ -1083,7 +1100,7 @@ function renderCatalog(){
 function renderFamily(){
   if(state.catalog==='HG COMMERCIALE'&&HGC_GROUP_FAMILIES[state.famille]) return renderFamilyGroupPage(state.famille);
   const items=PRODUCTS.filter(p=>p.catalog===state.catalog&&p.famille===state.famille), subs=group(items,'sousFamille');
-  const famCfg=(CANPLAST_CONFIG[state.famille]||HGC_CONFIG[state.famille]||CREABETON_CONFIG[state.famille]||MBT_CONFIG[state.famille]||{});
+  const famCfg=(CANPLAST_CONFIG[state.famille]||HGC_CONFIG[state.famille]||CREABETON_CONFIG[state.famille]||MBT_CONFIG[state.famille]||MATERIEL_INDUNI_CONFIG[state.famille]||{});
   // Swisspor n'a pas de config dédiée comme les autres catalogues ci-dessus
   // : photo générique de secours pour les sous-familles Isolation qui n'ont
   // pas encore leur propre photo dans SUBFAMILY_PHOTOS.
@@ -1369,7 +1386,7 @@ function renderSubFamily(){
   }
   const groups=group(base,'sousSousFamille');
   delete groups['__DIRECT__'];
-  const parentPhoto=SUBFAMILY_PHOTOS[state.famille+'|'+state.sous]||(CANPLAST_CONFIG[state.famille]||HGC_CONFIG[state.famille]||CREABETON_CONFIG[state.famille]||MBT_CONFIG[state.famille]||{}).photo||null;
+  const parentPhoto=SUBFAMILY_PHOTOS[state.famille+'|'+state.sous]||(CANPLAST_CONFIG[state.famille]||HGC_CONFIG[state.famille]||CREABETON_CONFIG[state.famille]||MBT_CONFIG[state.famille]||MATERIEL_INDUNI_CONFIG[state.famille]||{}).photo||null;
   app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a> › <a onclick='state.view="family";render()'>${esc(state.famille)}</a> › <b>${esc(state.sous)}</b></div><div class="banner"><div style="font-size:70px">${esc(base[0]?.icone||'📦')}</div><div><h2>${esc(state.sous)}</h2><p>${base.length} articles · ${Object.keys(groups).length} sous-familles détaillées</p></div>${renderFunnelWidget(state.catalog,state.famille)}</div><div class="sectionTitle">Choisissez une sous-famille détaillée</div><p class="sub2Note">Ce niveau apparaît uniquement quand il y a assez d’articles pour que le classement soit utile.</p><div class="subgrid">${Object.entries(groups).sort((a,b)=>level2SortInduni(a[0],b[0])).map(([s,it])=>{const kind=level4KindInduni(state.sous,s,it);const onclick=kind?`state.view="level4";state.sous2=${jsAttr(s)};state.sous3=null;render()`:`state.view="products";state.sous2=${jsAttr(s)};state.sous3=null;render()`;const photo=LEVEL2_PHOTOS[state.famille+'|'+state.sous+'|'+s]||parentPhoto;return `<div class="sub" onclick='${onclick}'>${photo?`<div class="subPhoto" style="background-image:url(${photo})"></div>`:''}<b>${esc(s)}</b><p class="muted">${it.length} articles</p></div>`;}).join('')}</div>`;
 }
 
