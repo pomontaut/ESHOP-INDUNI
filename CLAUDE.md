@@ -513,3 +513,11 @@ drive with a Python Playwright script
 (`executable_path='/opt/pw-browsers/chromium'`); screenshot and read via the
 Read tool; then clean up seeded users/products/orders and
 `pkill -f "puma 8.0.2.*ESHOP-INDUNI"` before finishing.
+
+## Photos HILTI (hilti.ch, environnement test)
+
+172 articles HILTI ont une photo (`/images/products/hilti-<fichier hilti.ch>.jpg`, 600 px, 56 fichiers : les variantes d'une même
+famille partagent la photo). Source : recherche `https://www.hilti.ch/fr/search?text=<n° article>` ; la photo n'est retenue que si le
+résultat porte exactement `itemCode=<n° article>` (les articles « remplacés par » un autre n° sont laissés sans photo : 4 articles).
+Visibles seulement en mode Développement : `Api::ProductsController#visible_image` masque `/images/products/hilti-*` hors dev_mode
+(sauf `hilti-2238557.jpg`, déjà publique). Pour ouvrir à tous : retirer ce masquage. Photos propriété de Hilti, usage interne.

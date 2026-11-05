@@ -61,9 +61,16 @@ class Api::ProductsController < ApplicationController
   # voir docs/photos_materiel_induni_web.md) : en essai, donc masquées hors du
   # mode Développement (environnement test).
   WEB_PHOTO_PREFIX = "/images/products/web-".freeze
+  # Photos HILTI (« hilti-<fichier hilti.ch>.jpg », récupérées sur la recherche de
+  # hilti.ch par n° d'article exact) : également en essai, masquées hors mode
+  # Développement. L'ancienne photo 2238557 (hilti-2238557.jpg) reste visible.
+  HILTI_PHOTO_PREFIX = "/images/products/hilti-".freeze
+  HILTI_PHOTO_PUBLIC = ["/images/products/hilti-2238557.jpg"].freeze
 
   def visible_image(image, dev_mode)
     return image if dev_mode || image.blank?
-    image.start_with?(WEB_PHOTO_PREFIX) ? nil : image
+    return nil if image.start_with?(WEB_PHOTO_PREFIX)
+    return nil if image.start_with?(HILTI_PHOTO_PREFIX) && !HILTI_PHOTO_PUBLIC.include?(image)
+    image
   end
 end
