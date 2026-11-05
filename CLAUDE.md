@@ -205,7 +205,7 @@ photo pour les 168 articles Saturn S ; **EFCO** `script/fetch_efco_media.py` (bo
 par n° d'article, retenu seulement si le n° figure dans le bloc produit : 345/347 pages + photos 300x300, les
 51 photos déjà présentes sont conservées ; les liens de variantes portent leurs paramètres `?…=`) ;
 **HILTI** simple lien de recherche `hilti.ch/fr/search?text=<n° article>` (site protégé par un script anti-robot,
-API interne inaccessible : ni page exacte ni photo ; recherche non vérifiée côté navigateur). Nouveaux articles : relancer le script puis fusionner
+API interne inaccessible : ni page exacte ni photo ; recherche non vérifiée côté navigateur). Photos HILTI fournies à la main (captures du site hilti.ch dans un classeur Excel, rattachées par le titre visible) : 12 articles (5 meules DG-CW, 6 lames de scie sabre P — une photo par longueur —, mèche TE-CD 14/37), `hilti-<n° article>.jpg` ou `hilti-lame-pNN.jpg`. Nouveaux articles : relancer le script puis fusionner
 `ficheUrl`/`image` dans le JSON.
 
 ## Photos « Matériel Induni » (catalogue dépôt logistique, PDF 25.02)
