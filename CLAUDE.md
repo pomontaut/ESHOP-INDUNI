@@ -205,7 +205,7 @@ photo pour les 168 articles Saturn S ; **EFCO** `script/fetch_efco_media.py` (bo
 par n° d'article, retenu seulement si le n° figure dans le bloc produit : 345/347 pages + photos 300x300, les
 51 photos déjà présentes sont conservées ; les liens de variantes portent leurs paramètres `?…=`) ;
 **HILTI** simple lien de recherche `hilti.ch/fr/search?text=<n° article>` (site protégé par un script anti-robot,
-API interne inaccessible : ni page exacte ni photo ; recherche non vérifiée côté navigateur). Nouveaux articles : relancer le script puis fusionner
+API interne inaccessible : ni page exacte ni photo ; recherche non vérifiée côté navigateur). Photos HILTI fournies à la main (captures du site hilti.ch dans un classeur Excel, rattachées par le titre visible) : 12 articles (5 meules DG-CW, 6 lames de scie sabre P — une photo par longueur —, mèche TE-CD 14/37), `hilti-<n° article>.jpg` ou `hilti-lame-pNN.jpg`. Nouveaux articles : relancer le script puis fusionner
 `ficheUrl`/`image` dans le JSON.
 
 ## Photos « Matériel Induni » (catalogue dépôt logistique, PDF 25.02)
@@ -514,10 +514,17 @@ drive with a Python Playwright script
 Read tool; then clean up seeded users/products/orders and
 `pkill -f "puma 8.0.2.*ESHOP-INDUNI"` before finishing.
 
+## Import de devis en EUR/USD (production)
+
+`DevisExtractorService` renvoie aussi `currency` (CHF/EUR/USD, lue sur le PDF : « TOTAL EUR », €, TVA FR…) ; `/api/devis_imports`
+la transmet. Dans `catalogue.html` (`devisCurrency`, `devisRate()`), l'écran d'import affiche et plafonne les prix dans la devise du
+devis, puis `addDevisItemsToCart` stocke en CHF (calcul interne, prix × cours) et passe le panier dans cette devise
+(`setCartCurrency`) : les montants affichés sont ceux du devis. Prix confidentiels : CHF forcé.
+
 ## Photos HILTI (hilti.ch, environnement test)
 
-172 articles HILTI ont une photo (`/images/products/hilti-<fichier hilti.ch>.jpg`, 600 px, 56 fichiers : les variantes d'une même
+161 articles HILTI ont une photo (`/images/products/hilti-ch-<fichier hilti.ch>.jpg`, 600 px, 56 fichiers : les variantes d'une même
 famille partagent la photo). Source : recherche `https://www.hilti.ch/fr/search?text=<n° article>` ; la photo n'est retenue que si le
 résultat porte exactement `itemCode=<n° article>` (les articles « remplacés par » un autre n° sont laissés sans photo : 4 articles).
-Visibles seulement en mode Développement : `Api::ProductsController#visible_image` masque `/images/products/hilti-*` hors dev_mode
-(sauf `hilti-2238557.jpg`, déjà publique). Pour ouvrir à tous : retirer ce masquage. Photos propriété de Hilti, usage interne.
+Visibles seulement en mode Développement : `Api::ProductsController#visible_image` masque `/images/products/hilti-ch-*` hors dev_mode
+(les photos HILTI fournies à la main `hilti-<n°>.jpg` restent publiques ; les nouvelles sont nommées `hilti-ch-*`). Pour ouvrir à tous : retirer ce masquage. Photos propriété de Hilti, usage interne.

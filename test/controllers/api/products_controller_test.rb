@@ -119,6 +119,8 @@ class Api::ProductsControllerTest < ActionDispatch::IntegrationTest
     supplier = Supplier.create!(name: "Matériel Induni")
     Product.create!(supplier: supplier, reference: "ART-WEB", name: "Massette", famille: "Outillage manuel",
                     image: "/images/products/web-ART-WEB.jpg")
+    Product.create!(supplier: supplier, reference: "ART-CP", name: "Coude", famille: "Canalisations PVC",
+                    image: "/images/products/canplast-ldc90.png")
     Product.create!(supplier: supplier, reference: "ART-PDF", name: "Echelle", famille: "Echelle",
                     image: "/images/products/induni-15-2.jpg")
     user = users(:two)
@@ -128,6 +130,7 @@ class Api::ProductsControllerTest < ActionDispatch::IntegrationTest
     get api_products_url
     rows = JSON.parse(response.body).index_by { |p| p["article"] }
     assert_nil rows["ART-WEB"]["image"]
+    assert_equal "/images/products/canplast-ldc90.png", rows["ART-CP"]["image"] # visible pour tous (production)
     assert_equal "/images/products/induni-15-2.jpg", rows["ART-PDF"]["image"]
 
     post api_test_profile_url, params: { profile: "Développement" }
@@ -136,10 +139,10 @@ class Api::ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "/images/products/web-ART-WEB.jpg", rows["ART-WEB"]["image"]
   end
 
-  test "index hides the HILTI photos (hilti-*.jpg) outside Développement, except the already public one" do
+  test "index hides the HILTI photos (hilti-ch-*.jpg) outside Développement, except the hand-provided ones" do
     supplier = Supplier.create!(name: "HILTI")
     Product.create!(supplier: supplier, reference: "H-NEW", name: "Mèche", famille: "Perçage",
-                    image: "/images/products/hilti-L080175.jpg")
+                    image: "/images/products/hilti-ch-L080175.jpg")
     Product.create!(supplier: supplier, reference: "H-OLD", name: "Meule", famille: "Meulage",
                     image: "/images/products/hilti-2238557.jpg")
     user = users(:two)
@@ -154,6 +157,6 @@ class Api::ProductsControllerTest < ActionDispatch::IntegrationTest
     post api_test_profile_url, params: { profile: "Développement" }
     get api_products_url
     rows = JSON.parse(response.body).index_by { |p| p["article"] }
-    assert_equal "/images/products/hilti-L080175.jpg", rows["H-NEW"]["image"]
+    assert_equal "/images/products/hilti-ch-L080175.jpg", rows["H-NEW"]["image"]
   end
 end

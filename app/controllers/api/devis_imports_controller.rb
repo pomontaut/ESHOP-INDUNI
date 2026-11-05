@@ -25,7 +25,7 @@ class Api::DevisImportsController < ApplicationController
     extracted = DevisExtractorService.new(file.read, supplier_name, taxonomy).extract
     item_lines = extracted[:items].map { |line| build_cart_line(supplier, line) }
     surcharge_lines = extracted[:surcharges].map { |surcharge| build_surcharge_line(supplier, surcharge) }
-    render json: { items: item_lines + surcharge_lines }
+    render json: { items: item_lines + surcharge_lines, currency: extracted[:currency] || "CHF" }
   rescue DevisExtractorService::ExtractionError => e
     render json: { error: e.message }, status: :unprocessable_entity
   end

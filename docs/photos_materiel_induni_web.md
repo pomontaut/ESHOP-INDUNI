@@ -57,3 +57,10 @@ Photos de type représentatif (confiance B) trouvées sur les sites de fabricant
 | 2540100010 | Masque à poussière FFP2 + valve | bricozor.com | https://www.bricozor.com/p-83428-masques-respiratoires-coques-avec-valve-ffp2-bls-102-v-nr-d-x20-bls.html |
 | 2540110032 | Masque protection complet série 6000 L | ferrariscolor.com | https://ferrariscolor.com/en/products/3m-6900-maschera-pieno-facciale-misura-grande |
 | 1510220007 | Manille lyre axe vissé 1t | hellopro.fr | https://hellopro.fr/manille-lyre-forgee-2015536-3767574-produit.html |
+
+## Sika (photos représentatives, mode Développement)
+
+Photos issues de che.sika.com (images produit officielles), préfixe `web-` donc masquées hors dev_mode :
+- `web-sika-antigel-ibc.png` : conteneur 1200 kg « Sika Frostschutz flüssig » = Sika Antigel liquide (même produit, nom allemand) — articles 54077, 534239.
+- `web-sika-viscocrete-ibc.png` : conteneur 1000 kg générique ViscoCrete (étiquette « ViscoCrete-2037 », photo représentative, PAS le 3047 RB) — articles 876832, 876830, 886770.
+- Sika Antisol E-20 : aucune image sur le site Sika ; Sikament MFD-1 A : introuvable. Laissés sans photo.

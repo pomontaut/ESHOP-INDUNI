@@ -60,17 +60,15 @@ class Api::ProductsController < ApplicationController
   # Photos web (« web-<n° article>.jpg », trouvées chez des fabricants/revendeurs,
   # voir docs/photos_materiel_induni_web.md) : en essai, donc masquées hors du
   # mode Développement (environnement test).
-  WEB_PHOTO_PREFIX = "/images/products/web-".freeze
-  # Photos HILTI (« hilti-<fichier hilti.ch>.jpg », récupérées sur la recherche de
-  # hilti.ch par n° d'article exact) : également en essai, masquées hors mode
-  # Développement. L'ancienne photo 2238557 (hilti-2238557.jpg) reste visible.
-  HILTI_PHOTO_PREFIX = "/images/products/hilti-".freeze
-  HILTI_PHOTO_PUBLIC = ["/images/products/hilti-2238557.jpg"].freeze
+  # Idem pour les photos Swisspor reprises chez HGC (« swisspor-hgc-<code>.jpg »)
+  # (les images Canplast « canplast-*.png » sont en production pour tous) et pour les
+  # photos HILTI récupérées sur la recherche de hilti.ch par n° d'article exact
+  # (« hilti-ch-<fichier>.jpg »). Les photos HILTI fournies à la main
+  # (« hilti-<n° article>.jpg », « hilti-lame-pNN.jpg ») restent publiques.
+  WEB_PHOTO_PREFIXES = %w[/images/products/web- /images/products/swisspor-hgc- /images/products/hilti-ch-].freeze
 
   def visible_image(image, dev_mode)
     return image if dev_mode || image.blank?
-    return nil if image.start_with?(WEB_PHOTO_PREFIX)
-    return nil if image.start_with?(HILTI_PHOTO_PREFIX) && !HILTI_PHOTO_PUBLIC.include?(image)
-    image
+    image.start_with?(*WEB_PHOTO_PREFIXES) ? nil : image
   end
 end
