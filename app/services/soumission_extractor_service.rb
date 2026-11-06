@@ -56,10 +56,10 @@ class SoumissionExtractorService
 
   def schema
     item = { type: "object", additionalProperties: false,
-             properties: { pos: { type: "string" }, designation: { type: "string" }, quantity: { type: [ "number", "null" ] },
+             properties: { pos: { type: "string" }, page: { type: "integer" }, designation: { type: "string" }, quantity: { type: [ "number", "null" ] },
                            unit: { type: "string" }, cfc: { type: "string" }, chapter: { type: "string" },
                            highlight: { type: "string", enum: %w[jaune autre] } },
-             required: %w[pos designation quantity unit cfc chapter highlight] }
+             required: %w[pos page designation quantity unit cfc chapter highlight] }
     { type: "object", properties: { items: { type: "array", items: item } }, required: [ "items" ], additionalProperties: false }
   end
 
@@ -67,6 +67,7 @@ class SoumissionExtractorService
     <<~PROMPT
       Ce document est une soumission de construction (format CAN, descriptif avec positions, quantités et unités).
       Extrait UNIQUEMENT les positions dont le texte est SURLIGNÉ (marqueur fluo), page par page, sans en omettre.
+      - page = numéro de la page du PDF (la première page = 1) où figure la position.
       - highlight = "jaune" si le surlignage est jaune (fourniture seule), "autre" pour toute autre couleur (fourniture et pose).
       - pos = numéro de position tel qu'imprimé ; designation = texte de la position (matériau, dimensions, qualité) sans les prix, 200 caractères maximum ;
         quantity / unit = quantité et unité de la position (null si absente) ; cfc = code CFC si visible, sinon "" ;

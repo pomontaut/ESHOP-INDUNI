@@ -21,7 +21,7 @@ class Api::SoumissionImportsController < ApplicationController
 
   # Re-chiffre des lignes déjà extraites (après correction d'une désignation, par exemple).
   def price
-    lines = Array(params[:lines]).map { |l| l.permit(:pos, :designation, :quantity, :unit, :cfc, :chapter, :highlight).to_h.symbolize_keys }
+    lines = Array(params[:lines]).map { |l| l.permit(:pos, :page, :designation, :quantity, :unit, :cfc, :chapter, :highlight).to_h.symbolize_keys }
     render json: { items: price_items(lines) }
   end
 

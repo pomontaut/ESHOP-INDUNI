@@ -5955,11 +5955,16 @@ function indDraw(){
    Import soumission (ENVIRONNEMENT TEST « Développement » uniquement) — préfixe soum*
    PDF de soumission (positions surlignées) → /api/soumission_imports → articles et prix proposés par
    l'agent chiffreur ; ✓ / ✗ alimentent sa mémoire (/api/soumission_imports/learn). Prix confidentiels : jamais affichés.
+   Aperçu de la position détectée : le PDF reste dans le navigateur (pdf.js, copie locale /pdf.min.mjs), la page est
+   rendue et recadrée sur le texte retrouvé. Recherche dans la ligne : moteur de l'e-shop (PRODUCTS / scoreProductV49).
    Activé par soumInit() (appelé avec recInit()).
    ============================================================ */
 (function(){
-  let soumItems=[], soumPick={}, soumBusy=false, soumErr='', soumFilter='all';
+  let soumItems=[], soumPick={}, soumCustom={}, soumOpen={}, soumBusy=false, soumErr='', soumFilter='all';
+  let soumPdfBytes=null, soumPdfDoc=null, soumLib=null, soumPrev={}, soumPageCanvas=new Map(), soumTextCache=new Map(), soumObs=null, soumQ=Promise.resolve();
   const money=n=>(Math.round(n*100)/100).toLocaleString('fr-CH',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const UA={'m²':'m2','m³':'m3','m':'ml','m1':'ml','p':'pce','pc':'pce','pcs':'pce','u':'pce','pièce':'pce','piece':'pce','pieces':'pce','pqt':'paquet','rlx':'rouleau'};
+  const nu=u=>{u=String(u||'').trim().toLowerCase().replace(/\./g,'');return UA[u]||u;};
   async function soumApi(path,opts){
     const r=await fetch('/api/soumission_imports'+path,opts); let j={}; try{j=await r.json();}catch(e){}
     if(!r.ok) throw new Error(j.error||('Erreur '+r.status)); return j;
@@ -5977,7 +5982,7 @@ function indDraw(){
   };
   window.renderSoumission=function(){
     app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › Import soumission</div><div class="toolbar"><h2>📑 Import soumission 🧪</h2></div>
-    <p class="muted">Environnement test. Importez le PDF de la soumission : les positions <b>surlignées</b> (jaune = fourniture, autre couleur = fourniture et pose) sont lues, puis l'agent propose pour chacune l'article du catalogue et son prix. Validez (✓) ou refusez (✗) : l'agent s'en souvient pour les prochaines soumissions. Prix confidentiels jamais affichés.</p>
+    <p class="muted">Environnement test. Importez le PDF de la soumission : les positions <b>surlignées</b> (jaune = fourniture, autre couleur = fourniture et pose) sont lues, puis l'agent propose pour chacune l'article du catalogue et son prix. Contrôlez l'aperçu de la position (PDF) en face de l'aperçu de l'article ; si ce n'est pas le bon, <b>🔍 Autre article</b> cherche dans l'e-shop. Validez (✓) ou refusez (✗) : l'agent s'en souvient pour les prochaines soumissions. Prix confidentiels jamais affichés.</p>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0"><input type="file" id="soumFile" accept="application/pdf"><button class="miniBtn" onclick="soumAnalyse()" ${soumBusy?'disabled':''}>${soumBusy?'Analyse en cours…':'Analyser la soumission'}</button>${soumItems.length?'<button class="miniBtn gray" onclick="soumCsv()">Export CSV</button>':''}</div>
     <div id="soumMsg">${soumErr?'<p style="color:#b42318">'+esc(soumErr)+'</p>':''}</div><div id="soumBody"></div>`;
     soumDraw();
@@ -5985,29 +5990,134 @@ function indDraw(){
   window.soumAnalyse=async function(){
     const f=document.getElementById('soumFile').files[0]; if(!f){soumErr='Choisissez un PDF.';return renderSoumission();}
     soumBusy=true; soumErr=''; renderSoumission();
-    try{ const fd=new FormData(); fd.append('file',f); const j=await soumApi('',{method:'POST',body:fd}); soumItems=j.items||[]; soumPick={}; if(j.truncated) soumErr='⚠️ Soumission très longue : la lecture a été coupée, seules les premières positions sont reprises. Relancez avec la suite du PDF (extrait de pages).'; }
-    catch(e){ soumErr=e.message; }
+    try{
+      soumPdfBytes=new Uint8Array(await f.arrayBuffer()); soumPdfDoc=null; soumPrev={}; soumPageCanvas=new Map(); soumTextCache=new Map();
+      const fd=new FormData(); fd.append('file',f); const j=await soumApi('',{method:'POST',body:fd}); soumItems=j.items||[]; soumPick={}; soumCustom={}; soumOpen={};
+      if(j.truncated) soumErr='⚠️ Soumission très longue : la lecture a été coupée, seules les premières positions sont reprises. Relancez avec la suite du PDF (extrait de pages).';
+    }catch(e){ soumErr=e.message; }
     soumBusy=false; renderSoumission();
   };
-  const cur=i=>{const it=soumItems[i]; const k=soumPick[i]; return k===-1?null:(it.candidates||[])[k||0]||null;};
+  const cur=i=>{const it=soumItems[i]; const k=soumPick[i]; if(k===-1) return null; if(soumCustom[i]) return soumCustom[i]; return (it.candidates||[])[k||0]||null;};
   const ST={chiffre:['✅ Chiffré','#1a7f37'],a_valider:['⚠️ À valider','#b26a00'],a_demander:['❓ À demander','#697386']};
+
+  /* ---------- Aperçu de la position détectée (PDF) ---------- */
+  async function soumLoadPdf(){
+    if(soumPdfDoc) return soumPdfDoc;
+    if(!soumPdfBytes) throw new Error('PDF non chargé');
+    if(!soumLib){ soumLib=await import('/pdf.min.mjs'); soumLib.GlobalWorkerOptions.workerSrc='/pdf.worker.min.mjs'; }
+    soumPdfDoc=await soumLib.getDocument({data:soumPdfBytes.slice(0)}).promise; return soumPdfDoc;
+  }
+  const nrm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  async function pageText(n){
+    if(soumTextCache.has(n)) return soumTextCache.get(n);
+    const doc=await soumLoadPdf(), pg=await doc.getPage(n), tc=await pg.getTextContent();
+    const items=tc.items.filter(t=>t.str&&t.str.trim()).map(t=>({s:nrm(t.str),x:t.transform[4],y:t.transform[5],w:t.width,h:t.height||10}));
+    const r={pg,items}; soumTextCache.set(n,r); return r;
+  }
+  // Retrouve le bloc de texte de la désignation sur une page : premiers mots de la désignation dans une fenêtre d'éléments voisins.
+  function findOnPage(items,designation){
+    const words=nrm(designation).split(' ').filter(w=>w.length>1); if(!words.length) return null;
+    for(const k of [Math.min(5,words.length),Math.min(3,words.length),Math.min(2,words.length)]){
+      const needle=words.slice(0,k).join(' ');
+      for(let s=0;s<items.length;s++){
+        let acc='';
+        for(let e=s;e<Math.min(items.length,s+8);e++){ acc=(acc+' '+items[e].s).trim(); if(acc.includes(needle)){ let a=s; while(a<e && items.slice(a+1,e+1).map(t=>t.s).join(' ').includes(needle)) a++; return items.slice(a,e+1); } }
+      }
+    }
+    return null;
+  }
+  async function pageCanvas(n,scale){
+    const key=n+'@'+scale; if(soumPageCanvas.has(key)) return soumPageCanvas.get(key);
+    const {pg}=await pageText(n), vp=pg.getViewport({scale}), cv=document.createElement('canvas'); cv.width=vp.width; cv.height=vp.height;
+    await pg.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+    if(soumPageCanvas.size>6) soumPageCanvas.delete(soumPageCanvas.keys().next().value);
+    soumPageCanvas.set(key,cv); return cv;
+  }
+  // Localise la position (page annoncée par l'IA, sinon recherche sur les autres pages) → {page, hit:[items]|null}
+  async function locate(it){
+    const doc=await soumLoadPdf(), first=Math.min(Math.max(parseInt(it.page,10)||1,1),doc.numPages);
+    const order=[first]; for(let d=1;d<doc.numPages;d++){ if(first+d<=doc.numPages) order.push(first+d); if(first-d>=1) order.push(first-d); }
+    for(const n of order.slice(0,60)){ const {items}=await pageText(n); const hit=findOnPage(items,it.designation); if(hit) return {page:n,hit}; }
+    return {page:first,hit:null};
+  }
+  // Découpe de la page autour de la position (hauteur de contexte), repère rouge sur le texte retrouvé.
+  async function renderCrop(it,scale,ctxAbove,ctxBelow,mark){
+    const loc=await locate(it), cv=await pageCanvas(loc.page,scale), {pg}=await pageText(loc.page), vp=pg.getViewport({scale});
+    let y0=0,y1=cv.height, box=null;
+    if(loc.hit){
+      const xs=loc.hit.map(h=>h.x), ys=loc.hit.map(h=>h.y), hs=loc.hit.map(h=>h.h);
+      const top=vp.height-(Math.max(...ys)+Math.max(...hs))*scale, bot=vp.height-Math.min(...ys)*scale;
+      box={x:Math.min(...xs)*scale-4,y:top-3,w:Math.max(...loc.hit.map(h=>h.x+h.w))*scale-Math.min(...xs)*scale+8,h:bot-top+8};
+      y0=Math.max(0,top-ctxAbove*scale); y1=Math.min(cv.height,bot+ctxBelow*scale);
+    } else { y1=Math.min(cv.height,cv.height*0.45); }
+    const out=document.createElement('canvas'); out.width=cv.width; out.height=Math.max(10,y1-y0); const c=out.getContext('2d');
+    c.drawImage(cv,0,y0,cv.width,y1-y0,0,0,cv.width,y1-y0);
+    if(box&&mark){ c.strokeStyle='#e11d48'; c.lineWidth=2.5*(scale/1.2); c.strokeRect(box.x,box.y-y0,box.w,box.h); }
+    return {url:out.toDataURL('image/jpeg',0.82),page:loc.page,found:!!loc.hit};
+  }
+  function soumQueuePreview(i){
+    if(soumPrev[i]!==undefined) return;
+    soumPrev[i]=null;
+    soumQ=soumQ.then(async()=>{
+      const el=document.getElementById('soumPdf'+i); if(!el) {delete soumPrev[i]; return;}
+      try{ const r=await renderCrop(soumItems[i],1.2,22,36,true); soumPrev[i]=r; }
+      catch(e){ soumPrev[i]={err:e.message||'aperçu indisponible'}; }
+      const el2=document.getElementById('soumPdf'+i); if(el2) el2.innerHTML=prevHtml(i);
+    });
+  }
+  function prevHtml(i){
+    const r=soumPrev[i];
+    if(!soumPdfBytes) return '<div class="muted" style="font-size:11px">PDF non disponible</div>';
+    if(r===undefined||r===null) return '<div class="muted" style="font-size:11px">⏳ aperçu…</div>';
+    if(r.err) return '<div class="muted" style="font-size:11px">Aperçu indisponible</div>';
+    return `<img src="${r.url}" alt="" onclick="soumZoomPdf(${i})" title="Agrandir (page ${r.page})" style="width:100%;max-width:520px;border:1px solid var(--line);border-radius:8px;cursor:zoom-in;background:#fff"><div class="muted" style="font-size:11px">📄 page ${r.page}${r.found?'':' · position non retrouvée dans le texte (début de page)'}</div>`;
+  }
+  function soumObserve(){
+    if(soumObs) soumObs.disconnect();
+    if(!('IntersectionObserver' in window)||!soumPdfBytes) return;
+    soumObs=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ soumObs.unobserve(e.target); soumQueuePreview(parseInt(e.target.dataset.i,10)); } }),{rootMargin:'300px'});
+    document.querySelectorAll('.soumPdfBox').forEach(b=>soumObs.observe(b));
+  }
+  window.soumZoomPdf=async function(i){
+    const it=soumItems[i];
+    const o=document.createElement('div'); o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+    o.onclick=()=>o.remove(); o.innerHTML='<div style="background:#fff;border-radius:14px;padding:16px;color:#333">⏳ Rendu de la page…</div>'; document.body.appendChild(o);
+    try{
+      const r=await renderCrop(it,2,120,260,true);
+      o.innerHTML=`<div style="background:#fff;border-radius:14px;padding:16px;max-width:900px;width:100%;max-height:92vh;overflow:auto"><img src="${r.url}" alt="" style="width:100%;display:block;border:1px solid var(--line)"><p style="margin:10px 0 0"><b>Position ${esc(it.pos||'')}</b> · page ${r.page} — ${esc(it.designation||'')}</p><p class="muted" style="margin:6px 0 0;text-align:right">Cliquer pour fermer</p></div>`;
+    }catch(e){ o.innerHTML='<div style="background:#fff;border-radius:14px;padding:16px">Aperçu indisponible : '+esc(e.message)+'</div>'; }
+  };
+
+  /* ---------- Tableau ---------- */
+  function previewArticle(i,c){
+    if(!c) return '';
+    return `<div style="display:flex;gap:10px;margin-top:6px;align-items:flex-start">${c.image?`<img src="${esc(c.image)}" alt="" loading="lazy" onclick="soumZoom(${i})" title="Agrandir" style="width:72px;height:72px;object-fit:contain;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:zoom-in;flex:none" onerror="this.style.display='none'">`:'<div style="width:72px;height:72px;border:1px dashed var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#697386;flex:none;text-align:center">pas de photo</div>'}<div style="font-size:12px;line-height:1.35;max-width:300px"><b>${esc(c.name||'')}</b><div class="muted">${esc([c.famille,c.sousFamille].filter(Boolean).join(' › '))}</div>${c.descriptif?`<div class="muted">${esc(c.descriptif.length>140?c.descriptif.slice(0,140)+'…':c.descriptif)}</div>`:''}${c.ficheUrl?`<a href="${esc(c.ficheUrl)}" target="_blank" rel="noopener">🔗 Fiche article</a>`:''}</div></div>`;
+  }
+  function searchPanel(i){
+    if(!soumOpen[i]) return '';
+    return `<div style="margin-top:8px;padding:8px;border:1px solid var(--line);border-radius:10px;background:#f8fafc"><div style="display:flex;gap:6px"><input id="soumQ${i}" value="${esc(soumOpen[i].q)}" oninput="soumSearchInput(${i},this.value)" placeholder="Chercher dans l'e-shop…" style="flex:1;min-width:180px;border:1px solid var(--line);border-radius:8px;padding:6px 10px"><button class="miniBtn gray" onclick="soumSearchClose(${i})">Fermer</button></div><div id="soumRes${i}" style="margin-top:8px"></div></div>`;
+  }
   function soumDraw(){
     const el=document.getElementById('soumBody'); if(!el||!soumItems.length) return;
     const rows=soumItems.map((it,i)=>({it,i})).filter(({it})=>soumFilter==='all'||it.status===soumFilter);
     let total=0, nb=0; soumItems.forEach((it,i)=>{const c=cur(i); if(c&&c.total!=null){total+=c.total;nb++;}});
     const flt=[['all','Toutes'],['chiffre','Chiffrées'],['a_valider','À valider'],['a_demander','À demander']].map(([k,l])=>`<button class="miniBtn ${soumFilter===k?'':'gray'}" onclick="soumFilter_('${k}')">${l} (${soumItems.filter(x=>k==='all'||x.status===k).length})</button>`).join(' ');
     el.innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">${flt}</div>
-    <div style="overflow-x:auto"><table class="dashTable"><thead><tr><th>Pos.</th><th>Désignation (soumission)</th><th>Qté</th><th>Type</th><th>Article proposé</th><th>PU</th><th>Total</th><th>Statut</th><th></th></tr></thead><tbody>`+
+    <div style="overflow-x:auto"><table class="dashTable"><thead><tr><th>Pos.</th><th>Position détectée (soumission)</th><th>Qté</th><th>Type</th><th>Article proposé</th><th>PU</th><th>Total</th><th>Statut</th><th></th></tr></thead><tbody>`+
     rows.map(({it,i})=>{
-      const c=cur(i), cands=it.candidates||[];
-      const sel=cands.length?`<select onchange="soumSelect(${i},this.value)" style="max-width:340px">${cands.map((x,k)=>`<option value="${k}" ${(soumPick[i]||0)===k&&soumPick[i]!==-1?'selected':''}>${esc(x.supplier)} · ${esc(x.reference)} · ${esc(x.name)}${x.learned?' ★':''} (${Math.round(x.score*100)}%)</option>`).join('')}<option value="-1" ${soumPick[i]===-1?'selected':''}>— aucun —</option></select>`:'<span class="muted">Aucun article trouvé</span>';
-      const prev=c?`<div style="display:flex;gap:10px;margin-top:6px;align-items:flex-start">${c.image?`<img src="${esc(c.image)}" alt="" loading="lazy" onclick="soumZoom(${i})" title="Agrandir" style="width:72px;height:72px;object-fit:contain;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:zoom-in;flex:none" onerror="this.style.display='none'">`:'<div style="width:72px;height:72px;border:1px dashed var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#697386;flex:none;text-align:center">pas de photo</div>'}<div style="font-size:12px;line-height:1.35;max-width:300px"><b>${esc(c.name||'')}</b><div class="muted">${esc([c.famille,c.sousFamille].filter(Boolean).join(' › '))}</div>${c.descriptif?`<div class="muted">${esc(c.descriptif.length>140?c.descriptif.slice(0,140)+'…':c.descriptif)}</div>`:''}${c.ficheUrl?`<a href="${esc(c.ficheUrl)}" target="_blank" rel="noopener">🔗 Fiche article</a>`:''}</div></div>`:'';
+      const c=cur(i), cands=it.candidates||[], custom=soumCustom[i];
+      const opts=(custom?`<option value="custom" selected>★ Choix manuel : ${esc(custom.supplier)} · ${esc(custom.reference)} · ${esc(custom.name)}</option>`:'')+cands.map((x,k)=>`<option value="${k}" ${!custom&&(soumPick[i]||0)===k&&soumPick[i]!==-1?'selected':''}>${esc(x.supplier)} · ${esc(x.reference)} · ${esc(x.name)}${x.learned?' ★':''} (${Math.round(x.score*100)}%)</option>`).join('')+`<option value="-1" ${soumPick[i]===-1?'selected':''}>— aucun —</option>`;
+      const sel=(cands.length||custom)?`<select onchange="soumSelect(${i},this.value)" style="max-width:340px">${opts}</select>`:'<span class="muted">Aucun article trouvé</span>';
       const pu=!c?'':c.confidential?'🔒 accords cadre':(c.prix!=null?money(c.prix)+' / '+esc(c.unite||''):'');
       const tot=!c?'':c.confidential?'🔒':(c.total!=null?money(c.total):(c.prix!=null?'<span title="Unité différente de la soumission" style="color:#b26a00">unité ?</span>':''));
       const st=ST[it.status]||ST.a_demander;
-      return `<tr><td>${esc(it.pos||'')}</td><td>${esc(it.designation||'')}<div class="muted" style="font-size:11px">${esc(it.chapter||'')}${it.cfc?' · CFC '+esc(it.cfc):''}</div></td><td>${it.quantity!=null?esc(String(it.quantity)):''} ${esc(it.unit||'')}</td><td>${it.highlight==='jaune'?'🟨 fourniture':'🟦 fourn. + pose'}</td><td>${sel}${prev}</td><td>${pu}</td><td>${tot}</td><td><span style="color:${st[1]};font-weight:800;white-space:nowrap">${st[0]}</span></td><td style="white-space:nowrap">${c?`<button class="miniBtn" title="Valider ce rapprochement" onclick="soumLearn(${i},'confirmed')">✓</button> <button class="miniBtn gray" title="Refuser : ne plus proposer" onclick="soumLearn(${i},'rejected')">✗</button>`:''}</td></tr>`;
+      return `<tr><td>${esc(it.pos||'')}</td><td style="min-width:360px">${esc(it.designation||'')}<div class="muted" style="font-size:11px">${esc(it.chapter||'')}${it.cfc?' · CFC '+esc(it.cfc):''}</div><div class="soumPdfBox" data-i="${i}" id="soumPdf${i}" style="margin-top:6px">${prevHtml(i)}</div></td><td>${it.quantity!=null?esc(String(it.quantity)):''} ${esc(it.unit||'')}</td><td>${it.highlight==='jaune'?'🟨 fourniture':'🟦 fourn. + pose'}</td><td style="min-width:300px">${sel}${previewArticle(i,c)}<div style="margin-top:6px"><button class="miniBtn gray" onclick="soumSearchOpen(${i})">🔍 Autre article</button></div>${searchPanel(i)}</td><td>${pu}</td><td>${tot}</td><td><span style="color:${st[1]};font-weight:800;white-space:nowrap">${st[0]}</span></td><td style="white-space:nowrap">${c?`<button class="miniBtn" title="Valider ce rapprochement" onclick="soumLearn(${i},'confirmed')">✓</button> <button class="miniBtn gray" title="Refuser : ne plus proposer" onclick="soumLearn(${i},'rejected')">✗</button>`:''}</td></tr>`;
     }).join('')+`</tbody></table></div><p style="margin-top:10px"><b>Total chiffré (articles retenus) : CHF ${money(total)}</b> <span class="muted">· ${nb} ligne(s) sur ${soumItems.length} — hors transport, hors lignes à demander, hors prix confidentiels</span></p>`;
+    soumOpenRefresh(); soumObserve();
   }
+  function soumOpenRefresh(){ Object.keys(soumOpen).forEach(i=>soumDrawResults(parseInt(i,10))); }
+  window.soumFilter_=function(k){soumFilter=k;soumDraw();};
+  window.soumSelect=function(i,v){ if(v==='custom') return; delete soumCustom[i]; soumPick[i]=parseInt(v,10); soumDraw(); };
   window.soumZoom=function(i){
     const c=cur(i), it=soumItems[i]; if(!c||!c.image) return;
     const o=document.createElement('div'); o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
@@ -6015,13 +6125,40 @@ function indDraw(){
     o.innerHTML=`<div style="background:#fff;border-radius:14px;padding:16px;max-width:760px;width:100%;max-height:92vh;overflow:auto"><img src="${esc(c.image)}" alt="" style="max-width:100%;max-height:60vh;display:block;margin:0 auto;object-fit:contain"><p style="margin:12px 0 4px"><b>Soumission :</b> ${esc(it.designation||'')}</p><p style="margin:0"><b>Article proposé :</b> ${esc(c.supplier)} · ${esc(c.reference)} · ${esc(c.name||'')}</p>${c.descriptif?`<p class="muted" style="margin:6px 0 0">${esc(c.descriptif)}</p>`:''}<p class="muted" style="margin:10px 0 0;text-align:right">Cliquer pour fermer</p></div>`;
     document.body.appendChild(o);
   };
-  window.soumFilter_=function(k){soumFilter=k;soumDraw();};
-  window.soumSelect=function(i,v){soumPick[i]=parseInt(v,10);soumDraw();};
+
+  /* ---------- Recherche dans la ligne (moteur de l'e-shop) ---------- */
+  let soumTimer=null;
+  window.soumSearchOpen=function(i){
+    if(soumOpen[i]){ delete soumOpen[i]; soumDraw(); return; }
+    soumOpen[i]={q:soumItems[i].designation||''}; soumDraw();
+    const inp=document.getElementById('soumQ'+i); if(inp){ inp.focus(); inp.setSelectionRange(inp.value.length,inp.value.length); }
+  };
+  window.soumSearchClose=function(i){ delete soumOpen[i]; soumDraw(); };
+  window.soumSearchInput=function(i,v){ soumOpen[i].q=v; clearTimeout(soumTimer); soumTimer=setTimeout(()=>soumDrawResults(i),250); };
+  function soumSearch(q){
+    q=String(q||'').trim(); if(q.length<2||typeof PRODUCTS==='undefined'||typeof scoreProductV49!=='function') return [];
+    const all=PRODUCTS.map(p=>({p,s:scoreProductV49(p,q)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s);
+    return all.slice(0,8).map(x=>x.p);
+  }
+  function soumDrawResults(i){
+    const box=document.getElementById('soumRes'+i); if(!box||!soumOpen[i]) return;
+    const res=soumSearch(soumOpen[i].q);
+    box.innerHTML=res.length?res.map((p,k)=>`<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-top:${k?'1px solid var(--line)':'0'}">${p.image&&/^(\/|http)/.test(p.image)?`<img src="${esc(p.image)}" alt="" loading="lazy" style="width:48px;height:48px;object-fit:contain;border:1px solid var(--line);border-radius:6px;background:#fff;flex:none" onerror="this.style.display='none'">`:'<div style="width:48px;height:48px;flex:none"></div>'}<div style="flex:1;font-size:12px;line-height:1.3"><b>${esc(p.designation||'')}</b><div class="muted">${esc(p.catalog||'')} · ${esc(p.article||'')} · ${p.confidential?'🔒 accords cadre':money(p.prix||0)+' / '+esc(p.unite||'')}</div></div><button class="miniBtn" onclick="soumChoose(${i},${p._idx})">Choisir</button></div>`).join(''):'<span class="muted">Aucun résultat (essayez d\'autres mots).</span>';
+  }
+  window.soumChoose=function(i,idx){
+    const p=PRODUCTS.find(x=>x._idx===idx); if(!p) return;
+    const it=soumItems[i], qty=it.quantity!=null?Number(it.quantity):null, ok=nu(it.unit)===nu(p.unite), conf=!!p.confidential;
+    soumCustom[i]={supplier:p.catalog,reference:p.article,name:p.designation,unite:p.unite,famille:p.famille,sousFamille:p.sousFamille,descriptif:(p.descriptif||'').slice(0,400),
+      image:(p.image&&/^(\/|http)/.test(p.image))?p.image:null,ficheUrl:p.ficheUrl||null,prix:conf?null:Number(p.prix||0),confidential:conf,score:1,learned:false,unitMatch:ok,
+      total:(!conf&&qty!=null&&ok)?Math.round(Number(p.prix||0)*qty*100)/100:null};
+    soumPick[i]=0; it.status='a_valider'; delete soumOpen[i]; soumDraw();
+  };
+
   window.soumLearn=async function(i,status){
     const it=soumItems[i], c=cur(i); if(!c) return;
     try{
       await soumApi('/learn',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({designation:it.designation,supplier:c.supplier,reference:c.reference,status})});
-      if(status==='rejected'){ const j=await soumApi('/price',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lines:[{pos:it.pos,designation:it.designation,quantity:it.quantity,unit:it.unit,cfc:it.cfc,chapter:it.chapter,highlight:it.highlight}]})}); soumItems[i]=j.items[0]; delete soumPick[i]; }
+      if(status==='rejected'){ const j=await soumApi('/price',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lines:[{pos:it.pos,page:it.page,designation:it.designation,quantity:it.quantity,unit:it.unit,cfc:it.cfc,chapter:it.chapter,highlight:it.highlight}]})}); soumItems[i]=j.items[0]; delete soumPick[i]; delete soumCustom[i]; }
       else { it.status='chiffre'; c.learned=true; }
       soumDraw();
     }catch(e){ soumErr=e.message; document.getElementById('soumMsg').innerHTML='<p style="color:#b42318">'+esc(e.message)+'</p>'; }

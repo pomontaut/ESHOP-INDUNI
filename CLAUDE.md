@@ -493,7 +493,11 @@ double poids), nourri par `SearchMemory` (synonymes, mots clefs), `NomenclatureE
 `SoumissionMatch` (✓ validé = proposé en tête, ✗ refusé = plus jamais proposé pour cette désignation). Total = prix × quantité
 seulement si l'unité est la même (sinon « unité ? »), hors transport. Statuts : Chiffré (≥ 85 % ou appris) / À valider / À demander.
 **Prix confidentiels (Sika…) : prix et total toujours nil, mention « accords cadre »**. Pour sortir du test : retirer `require_dev_mode`
-et rendre le bouton visible. Pas encore fait : lien direct avec l'outil `GESTION-SOUMISSION` (React, local) et transport rendu chantier.
+et rendre le bouton visible. **Aperçu de la position détectée** : le PDF reste dans le navigateur ; `pdf.js` en copie locale (`public/pdf.min.mjs` + `pdf.worker.min.mjs`, v4.7.76,
+Apache-2.0, chargé à la demande), page annoncée par l'IA (`page`), texte de la désignation retrouvé via `getTextContent` (sinon recherche sur les autres pages),
+page recadrée avec cadre rouge (vignette + agrandissement au clic). **Recherche dans la ligne** (« 🔍 Autre article ») : moteur de l'e-shop côté navigateur
+(`PRODUCTS` + `scoreProductV49`, 8 résultats) ; « Choisir » = choix manuel (statut À valider, `★`), puis ✓ l'enseigne à l'agent (`/learn`). Prix
+confidentiels : `PRODUCTS.confidential` → 🔒, jamais de prix. Pas encore fait : lien direct avec l'outil `GESTION-SOUMISSION` (React, local) et transport rendu chantier.
 
 ## Deploy workflow (always follow this exact sequence)
 
