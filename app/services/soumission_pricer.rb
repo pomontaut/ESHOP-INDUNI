@@ -71,7 +71,8 @@ class SoumissionPricer
     qty = line[:quantity].presence&.to_f
     unit_ok = self.class.normalize_unit(line[:unit]) == self.class.normalize_unit(product.unite)
     { supplier: product.supplier.name, reference: product.reference, name: product.name, unite: product.unite,
-      famille: product.famille, prix: price, confidential: confidential, score: score.round(2), learned: learned,
+      famille: product.famille, sousFamille: product.sous_famille, descriptif: product.descriptif.to_s.truncate(400),
+      image: (product.image.to_s.start_with?("/", "http") ? product.image : nil), ficheUrl: product.fiche_url.presence, prix: price, confidential: confidential, score: score.round(2), learned: learned,
       unitMatch: unit_ok, total: (price && qty && unit_ok ? (price * qty).round(2) : nil) }
   end
 
