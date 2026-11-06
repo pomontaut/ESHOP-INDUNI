@@ -728,10 +728,12 @@ const CANPLAST_CONFIG = {
   },
 };
 
-// Tinguely (aspiratrice) uniquement (SGTT a les mêmes noms de famille : pas de photo Tinguely chez lui) ; les sous-familles reprennent la photo de la famille (famPhoto).
+// Tinguely (aspiratrice) uniquement (SGTT a les mêmes noms de famille : pas de photo Tinguely chez lui) ; photo sur la carte famille et sur la sous-famille « Prestations à l'heure » (pompage) seulement.
 const TINGUELY_CONFIG = {
   'Aspiratrice & pompage': { photo:'/images/categories/tinguely-aspiratrice.jpg', badge:'ASPIRATRICE', icone:'🚛', desc:'Pompage, transport de déchets et forfaits aspiratrice', order:1, subs:["Prestations à l'heure",'Forfaits aspiratrice'] }
 };
+// Sous-familles Tinguely avec photo : le pompage seulement (pas les forfaits aspiratrice).
+const TINGUELY_SUB_PHOTOS = {"Prestations à l'heure":'/images/categories/tinguely-aspiratrice.jpg'};
 const SWISSPOR_FAMILY_PHOTOS = {
   'Isolation': '/images/categories/swisspor-isolation-generale.png'
 };
@@ -1108,13 +1110,14 @@ function renderFamily(){
   if(state.catalog==='HG COMMERCIALE'&&HGC_GROUP_FAMILIES[state.famille]) return renderFamilyGroupPage(state.famille);
   const items=PRODUCTS.filter(p=>p.catalog===state.catalog&&p.famille===state.famille), subs=group(items,'sousFamille');
   const famCfg=(CANPLAST_CONFIG[state.famille]||HGC_CONFIG[state.famille]||CREABETON_CONFIG[state.famille]||MBT_CONFIG[state.famille]||MATERIEL_INDUNI_CONFIG[state.famille]||(state.catalog==='Tinguely'?TINGUELY_CONFIG[state.famille]:null)||{});
+  const famPhotoSubs=state.catalog==='Tinguely'?null:famPhoto;
   // Swisspor n'a pas de config dédiée comme les autres catalogues ci-dessus
   // : photo générique de secours pour les sous-familles Isolation qui n'ont
   // pas encore leur propre photo dans SUBFAMILY_PHOTOS.
   const famPhoto=famCfg.photo||(state.catalog==='Swisspor'?SWISSPOR_FAMILY_PHOTOS[state.famille]:null)||null;
   const parentGroup=state.catalog==='HG COMMERCIALE'?hgcParentGroupOf(state.famille):null;
   const groupCrumb=parentGroup?` › <a onclick='state.view="family";state.famille=${jsAttr(parentGroup)};state.sous=null;render()'>${esc(parentGroup)}</a>`:'';
-  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a>${groupCrumb} › ${esc(state.famille)}</div><div class="banner"><div style="font-size:70px">${esc(items[0]?.icone||'📦')}</div><div><h2>${esc(state.famille)}</h2><p>${items.length} articles · ${Object.keys(subs).length} sous-familles</p></div>${renderFunnelWidget(state.catalog,state.famille)}</div><div class="sectionTitle">Sommaire intermédiaire des sous-familles</div><div class="subgrid">${Object.entries(subs).sort((a,b)=>subFamilySortInduni(a[0],b[0])).map(([s,it])=>{const photo=SUBFAMILY_PHOTOS[state.famille+'|'+s]||famPhoto;return `<div class="sub" onclick='state.view="subfamily";state.sous=${jsAttr(s)};state.sous2=null;render()'>${photo?`<div class="subPhoto" style="background-image:url(${photo})"></div>`:''}<b>${esc(s)}</b><p class="muted">${it.length} articles<span class="sub2Badge">${hasLevel2Induni(it)?'détaillé':''}</span></p></div>`;}).join('')}</div>`}
+  app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › <a onclick="chooseCatalog('${state.catalog}')">${state.catalog}</a>${groupCrumb} › ${esc(state.famille)}</div><div class="banner"><div style="font-size:70px">${esc(items[0]?.icone||'📦')}</div><div><h2>${esc(state.famille)}</h2><p>${items.length} articles · ${Object.keys(subs).length} sous-familles</p></div>${renderFunnelWidget(state.catalog,state.famille)}</div><div class="sectionTitle">Sommaire intermédiaire des sous-familles</div><div class="subgrid">${Object.entries(subs).sort((a,b)=>subFamilySortInduni(a[0],b[0])).map(([s,it])=>{const photo=(state.catalog==='Tinguely'?TINGUELY_SUB_PHOTOS[s]:SUBFAMILY_PHOTOS[state.famille+'|'+s])||famPhotoSubs;return `<div class="sub" onclick='state.view="subfamily";state.sous=${jsAttr(s)};state.sous2=null;render()'>${photo?`<div class="subPhoto" style="background-image:url(${photo})"></div>`:''}<b>${esc(s)}</b><p class="muted">${it.length} articles<span class="sub2Badge">${hasLevel2Induni(it)?'détaillé':''}</span></p></div>`;}).join('')}</div>`}
 
 /* ============================================================
    NIVEAU 4 — angle (Coudes/Embranchements) ou plage de diamètre
