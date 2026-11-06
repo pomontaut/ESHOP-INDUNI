@@ -2,6 +2,7 @@ require "test_helper"
 
 class Api::SoumissionImportsControllerTest < ActionDispatch::IntegrationTest
   FakeExtractor = Struct.new(:bytes) do
+    def truncated = false
     def extract
       [ { pos: "211.101", designation: "Tuyau drainage PVC DN 100 perforé", quantity: 120, unit: "ml", cfc: "211", chapter: "Drainage", highlight: "jaune" },
         { pos: "211.102", designation: "Pièce introuvable xyzzy", quantity: 3, unit: "pce", cfc: "211", chapter: "Drainage", highlight: "autre" } ]

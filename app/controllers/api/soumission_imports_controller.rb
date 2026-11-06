@@ -12,8 +12,9 @@ class Api::SoumissionImportsController < ApplicationController
     return render json: { error: "Aucun fichier reçu." }, status: :unprocessable_entity if file.blank?
     return render json: { error: "Le fichier dépasse 30 Mo." }, status: :unprocessable_entity if file.size > MAX_FILE_SIZE
 
-    items = extractor.new(file.read).extract
-    render json: { items: price_items(items) }
+    service = extractor.new(file.read)
+    items = service.extract
+    render json: { items: price_items(items), truncated: service.truncated ? true : false }
   rescue SoumissionExtractorService::ExtractionError => e
     render json: { error: e.message }, status: :unprocessable_entity
   end

@@ -5985,7 +5985,7 @@ function indDraw(){
   window.soumAnalyse=async function(){
     const f=document.getElementById('soumFile').files[0]; if(!f){soumErr='Choisissez un PDF.';return renderSoumission();}
     soumBusy=true; soumErr=''; renderSoumission();
-    try{ const fd=new FormData(); fd.append('file',f); const j=await soumApi('',{method:'POST',body:fd}); soumItems=j.items||[]; soumPick={}; }
+    try{ const fd=new FormData(); fd.append('file',f); const j=await soumApi('',{method:'POST',body:fd}); soumItems=j.items||[]; soumPick={}; if(j.truncated) soumErr='⚠️ Soumission très longue : la lecture a été coupée, seules les premières positions sont reprises. Relancez avec la suite du PDF (extrait de pages).'; }
     catch(e){ soumErr=e.message; }
     soumBusy=false; renderSoumission();
   };
