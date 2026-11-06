@@ -728,10 +728,16 @@ const CANPLAST_CONFIG = {
   },
 };
 
+// Tinguely (aspiratrice) : même photo pour la famille et ses deux sous-familles.
+const TINGUELY_CONFIG = {
+  'Aspiratrice & pompage': { photo:'/images/categories/tinguely-aspiratrice.jpg', badge:'ASPIRATRICE', icone:'🚛', desc:'Pompage, transport de déchets et forfaits aspiratrice', order:1, subs:["Prestations à l'heure",'Forfaits aspiratrice'] }
+};
 const SWISSPOR_FAMILY_PHOTOS = {
   'Isolation': '/images/categories/swisspor-isolation-generale.png'
 };
 const SUBFAMILY_PHOTOS = {
+  'Aspiratrice & pompage|Prestations à l\'heure': '/images/categories/tinguely-aspiratrice.jpg',
+  'Aspiratrice & pompage|Forfaits aspiratrice': '/images/categories/tinguely-aspiratrice.jpg',
   'Isolation|Accessoires pour chapes flottantes': '/images/categories/swisspor-accessoires-chapes-flottantes.png',
   'Isolation|AIROFOM': '/images/categories/swisspor-airofom.png',
   'Ciments & Bétons|Accessoires béton/mortiers': '/images/products/hgc-caisse-mortier-plastique-200l.png',
@@ -1071,6 +1077,7 @@ function renderCatalog(){
     'CreaBeton':   CREABETON_CONFIG,
     'MBT':         MBT_CONFIG,
     'Matériel Induni': MATERIEL_INDUNI_CONFIG,
+    'Tinguely': TINGUELY_CONFIG,
   };
   const cfg = configMap[cat];
   const famCount = Object.keys(fams).length + (groups?Object.keys(groups).length:0);
@@ -1102,7 +1109,7 @@ function renderCatalog(){
 function renderFamily(){
   if(state.catalog==='HG COMMERCIALE'&&HGC_GROUP_FAMILIES[state.famille]) return renderFamilyGroupPage(state.famille);
   const items=PRODUCTS.filter(p=>p.catalog===state.catalog&&p.famille===state.famille), subs=group(items,'sousFamille');
-  const famCfg=(CANPLAST_CONFIG[state.famille]||HGC_CONFIG[state.famille]||CREABETON_CONFIG[state.famille]||MBT_CONFIG[state.famille]||MATERIEL_INDUNI_CONFIG[state.famille]||{});
+  const famCfg=(CANPLAST_CONFIG[state.famille]||HGC_CONFIG[state.famille]||CREABETON_CONFIG[state.famille]||MBT_CONFIG[state.famille]||MATERIEL_INDUNI_CONFIG[state.famille]||(state.catalog==='Tinguely'?TINGUELY_CONFIG[state.famille]:null)||{});
   // Swisspor n'a pas de config dédiée comme les autres catalogues ci-dessus
   // : photo générique de secours pour les sous-familles Isolation qui n'ont
   // pas encore leur propre photo dans SUBFAMILY_PHOTOS.
