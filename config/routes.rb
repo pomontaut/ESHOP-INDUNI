@@ -24,6 +24,9 @@ Rails.application.routes.draw do
     resources :devis_imports, only: [ :create ] do
       collection { post :confirm_products; post :equivalent; get :fournisseurs }
     end
+    post  "soumission_imports",       to: "soumission_imports#create"
+    post  "soumission_imports/price", to: "soumission_imports#price"
+    post  "soumission_imports/learn", to: "soumission_imports#learn"
     get   "nomenclature",     to: "nomenclature#index"
     patch "nomenclature/:id", to: "nomenclature#update"
     get   "nomenclature_induni", to: "nomenclature_induni#index"

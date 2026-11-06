@@ -482,6 +482,19 @@ renvoie `can_generic_article` (`User#can_generic_article?` = `job_function` « C
 (403) hors de ces profils et pour un fournisseur à prix confidentiel, et remplace la référence par `GEN-<hash>`
 (désignation + référence saisie) pour ne jamais retomber sur un vrai article du catalogue.
 
+## Import soumission (environnement test « Développement » uniquement)
+
+Bouton « 📑 Import soumission 🧪 » (`soumInit()`, dernier `<script>` de `catalogue.html`, préfixe `soum*`, vue `state.view === 'soumission'`
+branchée dans `render()`), visible seulement si `perms.dev_mode`. `Api::SoumissionImportsController` (`POST /api/soumission_imports`,
+`/price`, `/learn`) refuse (403) hors dev_mode. Un PDF de soumission (format CAN, outil « gestion soumission ») est lu par
+`SoumissionExtractorService` (API Claude, positions SURLIGNÉES : jaune = fourniture, autre = fourniture et pose), puis
+`SoumissionPricer` (« agent chiffreur », déterministe) propose ≤ 3 articles par position : score pondéré des mots (nombres/dimensions
+double poids), nourri par `SearchMemory` (synonymes, mots clefs), `NomenclatureEntry#search_keywords` et la mémoire propre
+`SoumissionMatch` (✓ validé = proposé en tête, ✗ refusé = plus jamais proposé pour cette désignation). Total = prix × quantité
+seulement si l'unité est la même (sinon « unité ? »), hors transport. Statuts : Chiffré (≥ 85 % ou appris) / À valider / À demander.
+**Prix confidentiels (Sika…) : prix et total toujours nil, mention « accords cadre »**. Pour sortir du test : retirer `require_dev_mode`
+et rendre le bouton visible. Pas encore fait : lien direct avec l'outil `GESTION-SOUMISSION` (React, local) et transport rendu chantier.
+
 ## Deploy workflow (always follow this exact sequence)
 
 **Déploiement automatique** : une fois les vérifications faites, déployer sur `main` sans attendre de « pousse »/« déploie » du propriétaire — sauf si une validation de sa part est nécessaire (choix ambigu, action risquée ou irréversible, données à confirmer).

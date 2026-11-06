@@ -642,7 +642,7 @@ function goFunnel(cat,fam){
   funnelSel={catalog:null,famille:null,sous:null,sous2:null,diam:null,long:null};
   render();
 }
-function render(){const q=document.getElementById('searchBox').value.trim().toLowerCase(); if(q){return renderSearch(q)} if(state.view==='home')return renderHome(); if(state.view==='catalog')return renderCatalog(); if(state.view==='family')return renderFamily(); if(state.view==='subfamily')return renderSubFamily(); if(state.view==='level4')return renderLevel4(); if(state.view==='products')return renderProducts(); if(state.view==='dashboard')return renderDashboard(); if(state.view==='analysis')return renderAnalysis(); if(state.view==='marketIndices')return renderMarketIndices(); if(state.view==='intelligenceBuying')return renderIntelligenceBuying(); if(state.view==='depotInduni')return renderDepotInduni(); if(state.view==='receptions'&&window.renderReceptions)return window.renderReceptions(); if(state.view==='nomenclatureInduni')return renderNomenclatureInduni(); if(state.view==='usageAgent')return renderUsageAgent(); if(state.view==='indicators')return renderIndicators();}
+function render(){const q=document.getElementById('searchBox').value.trim().toLowerCase(); if(q){return renderSearch(q)} if(state.view==='home')return renderHome(); if(state.view==='catalog')return renderCatalog(); if(state.view==='family')return renderFamily(); if(state.view==='subfamily')return renderSubFamily(); if(state.view==='level4')return renderLevel4(); if(state.view==='products')return renderProducts(); if(state.view==='dashboard')return renderDashboard(); if(state.view==='analysis')return renderAnalysis(); if(state.view==='marketIndices')return renderMarketIndices(); if(state.view==='intelligenceBuying')return renderIntelligenceBuying(); if(state.view==='depotInduni')return renderDepotInduni(); if(state.view==='receptions'&&window.renderReceptions)return window.renderReceptions(); if(state.view==='soumission'&&window.renderSoumission)return window.renderSoumission(); if(state.view==='nomenclatureInduni')return renderNomenclatureInduni(); if(state.view==='usageAgent')return renderUsageAgent(); if(state.view==='indicators')return renderIndicators();}
 function renderHome(){const h=PRODUCTS.filter(p=>p.catalog==='HG COMMERCIALE').length, c=PRODUCTS.filter(p=>p.catalog==='Canplast').length, l=PRODUCTS.filter(p=>p.catalog==='Leuba HIAG').length, cb=PRODUCTS.filter(p=>p.catalog==='CreaBeton').length, mbt=PRODUCTS.filter(p=>p.catalog==='MBT').length, alz=PRODUCTS.filter(p=>p.catalog==='ALZO AG').length, srv=PRODUCTS.filter(p=>p.catalog==='Soreval').length, bt=PRODUCTS.filter(p=>p.catalog==='BTest').length, lcbe=PRODUCTS.filter(p=>p.catalog==='LCBE').length, sika=PRODUCTS.filter(p=>p.catalog==='Sika').length, gan=PRODUCTS.filter(p=>p.catalog==='GANAMAT SA').length, swi=PRODUCTS.filter(p=>p.catalog==='Swisspor').length, ting=PRODUCTS.filter(p=>p.catalog==='Tinguely').length, sgtt=PRODUCTS.filter(p=>p.catalog==='SGTT').length, efco=PRODUCTS.filter(p=>p.catalog==='EFCO').length, hilti=PRODUCTS.filter(p=>p.catalog==='HILTI').length;
 const allowed=window._userPerms&&window._userPerms.allowed_suppliers;
 function canSee(key){return !allowed||allowed.length===0||allowed.includes(key);}
@@ -4504,7 +4504,7 @@ Promise.all([
     if(typeof smartBuyInit==='function') smartBuyInit();
     if(typeof voiceInputInit==='function') voiceInputInit();
     }
-    if(perms.dev_mode&&typeof recInit==='function') recInit();
+    if(perms.dev_mode&&typeof recInit==='function') recInit(); if(perms.dev_mode&&typeof soumInit==='function') soumInit();
   }
   if(perms.admin||perms.can_create_users) document.getElementById('adminNavLink').style.display='inline-flex';
   if(perms.admin) document.getElementById('adminChantiersNavLink').style.display='inline-flex';
@@ -5949,5 +5949,81 @@ function indDraw(){
   }
   b.innerHTML=h;
 }
+</script>
+<script>
+/* ============================================================
+   Import soumission (ENVIRONNEMENT TEST « Développement » uniquement) — préfixe soum*
+   PDF de soumission (positions surlignées) → /api/soumission_imports → articles et prix proposés par
+   l'agent chiffreur ; ✓ / ✗ alimentent sa mémoire (/api/soumission_imports/learn). Prix confidentiels : jamais affichés.
+   Activé par soumInit() (appelé avec recInit()).
+   ============================================================ */
+(function(){
+  let soumItems=[], soumPick={}, soumBusy=false, soumErr='', soumFilter='all';
+  const money=n=>(Math.round(n*100)/100).toLocaleString('fr-CH',{minimumFractionDigits:2,maximumFractionDigits:2});
+  async function soumApi(path,opts){
+    const r=await fetch('/api/soumission_imports'+path,opts); let j={}; try{j=await r.json();}catch(e){}
+    if(!r.ok) throw new Error(j.error||('Erreur '+r.status)); return j;
+  }
+  window.soumInit=function(){
+    if(document.getElementById('soumissionNavLink')) return;
+    const anchor=document.getElementById('receptionNavLink')||document.getElementById('dashboardNavLink')||document.querySelector('.topbar .home');
+    if(!anchor) return;
+    const b=document.createElement('button'); b.id='soumissionNavLink'; b.className='home'; b.innerHTML='📑 Import soumission 🧪';
+    b.onclick=function(){window.showSoumission();}; anchor.parentNode.insertBefore(b,anchor.nextSibling);
+  };
+  window.showSoumission=function(){
+    if(typeof closeNavDropdowns==='function') closeNavDropdowns();
+    state={view:'soumission',catalog:null,famille:null,sous:null}; document.getElementById('searchBox').value=''; render();
+  };
+  window.renderSoumission=function(){
+    app.innerHTML=`<div class="crumbs"><a onclick="goHome()">🏠 Accueil</a> › Import soumission</div><div class="toolbar"><h2>📑 Import soumission 🧪</h2></div>
+    <p class="muted">Environnement test. Importez le PDF de la soumission : les positions <b>surlignées</b> (jaune = fourniture, autre couleur = fourniture et pose) sont lues, puis l'agent propose pour chacune l'article du catalogue et son prix. Validez (✓) ou refusez (✗) : l'agent s'en souvient pour les prochaines soumissions. Prix confidentiels jamais affichés.</p>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0"><input type="file" id="soumFile" accept="application/pdf"><button class="miniBtn" onclick="soumAnalyse()" ${soumBusy?'disabled':''}>${soumBusy?'Analyse en cours…':'Analyser la soumission'}</button>${soumItems.length?'<button class="miniBtn gray" onclick="soumCsv()">Export CSV</button>':''}</div>
+    <div id="soumMsg">${soumErr?'<p style="color:#b42318">'+esc(soumErr)+'</p>':''}</div><div id="soumBody"></div>`;
+    soumDraw();
+  };
+  window.soumAnalyse=async function(){
+    const f=document.getElementById('soumFile').files[0]; if(!f){soumErr='Choisissez un PDF.';return renderSoumission();}
+    soumBusy=true; soumErr=''; renderSoumission();
+    try{ const fd=new FormData(); fd.append('file',f); const j=await soumApi('',{method:'POST',body:fd}); soumItems=j.items||[]; soumPick={}; }
+    catch(e){ soumErr=e.message; }
+    soumBusy=false; renderSoumission();
+  };
+  const cur=i=>{const it=soumItems[i]; const k=soumPick[i]; return k===-1?null:(it.candidates||[])[k||0]||null;};
+  const ST={chiffre:['✅ Chiffré','#1a7f37'],a_valider:['⚠️ À valider','#b26a00'],a_demander:['❓ À demander','#697386']};
+  function soumDraw(){
+    const el=document.getElementById('soumBody'); if(!el||!soumItems.length) return;
+    const rows=soumItems.map((it,i)=>({it,i})).filter(({it})=>soumFilter==='all'||it.status===soumFilter);
+    let total=0, nb=0; soumItems.forEach((it,i)=>{const c=cur(i); if(c&&c.total!=null){total+=c.total;nb++;}});
+    const flt=[['all','Toutes'],['chiffre','Chiffrées'],['a_valider','À valider'],['a_demander','À demander']].map(([k,l])=>`<button class="miniBtn ${soumFilter===k?'':'gray'}" onclick="soumFilter_('${k}')">${l} (${soumItems.filter(x=>k==='all'||x.status===k).length})</button>`).join(' ');
+    el.innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">${flt}</div>
+    <div style="overflow-x:auto"><table class="dashTable"><thead><tr><th>Pos.</th><th>Désignation (soumission)</th><th>Qté</th><th>Type</th><th>Article proposé</th><th>PU</th><th>Total</th><th>Statut</th><th></th></tr></thead><tbody>`+
+    rows.map(({it,i})=>{
+      const c=cur(i), cands=it.candidates||[];
+      const sel=cands.length?`<select onchange="soumSelect(${i},this.value)" style="max-width:340px">${cands.map((x,k)=>`<option value="${k}" ${(soumPick[i]||0)===k&&soumPick[i]!==-1?'selected':''}>${esc(x.supplier)} · ${esc(x.reference)} · ${esc(x.name)}${x.learned?' ★':''} (${Math.round(x.score*100)}%)</option>`).join('')}<option value="-1" ${soumPick[i]===-1?'selected':''}>— aucun —</option></select>`:'<span class="muted">Aucun article trouvé</span>';
+      const pu=!c?'':c.confidential?'🔒 accords cadre':(c.prix!=null?money(c.prix)+' / '+esc(c.unite||''):'');
+      const tot=!c?'':c.confidential?'🔒':(c.total!=null?money(c.total):(c.prix!=null?'<span title="Unité différente de la soumission" style="color:#b26a00">unité ?</span>':''));
+      const st=ST[it.status]||ST.a_demander;
+      return `<tr><td>${esc(it.pos||'')}</td><td>${esc(it.designation||'')}<div class="muted" style="font-size:11px">${esc(it.chapter||'')}${it.cfc?' · CFC '+esc(it.cfc):''}</div></td><td>${it.quantity!=null?esc(String(it.quantity)):''} ${esc(it.unit||'')}</td><td>${it.highlight==='jaune'?'🟨 fourniture':'🟦 fourn. + pose'}</td><td>${sel}</td><td>${pu}</td><td>${tot}</td><td><span style="color:${st[1]};font-weight:800;white-space:nowrap">${st[0]}</span></td><td style="white-space:nowrap">${c?`<button class="miniBtn" title="Valider ce rapprochement" onclick="soumLearn(${i},'confirmed')">✓</button> <button class="miniBtn gray" title="Refuser : ne plus proposer" onclick="soumLearn(${i},'rejected')">✗</button>`:''}</td></tr>`;
+    }).join('')+`</tbody></table></div><p style="margin-top:10px"><b>Total chiffré (articles retenus) : CHF ${money(total)}</b> <span class="muted">· ${nb} ligne(s) sur ${soumItems.length} — hors transport, hors lignes à demander, hors prix confidentiels</span></p>`;
+  }
+  window.soumFilter_=function(k){soumFilter=k;soumDraw();};
+  window.soumSelect=function(i,v){soumPick[i]=parseInt(v,10);soumDraw();};
+  window.soumLearn=async function(i,status){
+    const it=soumItems[i], c=cur(i); if(!c) return;
+    try{
+      await soumApi('/learn',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({designation:it.designation,supplier:c.supplier,reference:c.reference,status})});
+      if(status==='rejected'){ const j=await soumApi('/price',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lines:[{pos:it.pos,designation:it.designation,quantity:it.quantity,unit:it.unit,cfc:it.cfc,chapter:it.chapter,highlight:it.highlight}]})}); soumItems[i]=j.items[0]; delete soumPick[i]; }
+      else { it.status='chiffre'; c.learned=true; }
+      soumDraw();
+    }catch(e){ soumErr=e.message; document.getElementById('soumMsg').innerHTML='<p style="color:#b42318">'+esc(e.message)+'</p>'; }
+  };
+  window.soumCsv=function(){
+    const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
+    const lines=[['Pos','Désignation','Qté','Unité','Type','Fournisseur','Référence','Article','PU','Total','Statut'].map(q).join(';')];
+    soumItems.forEach((it,i)=>{const c=cur(i); lines.push([it.pos,it.designation,it.quantity,it.unit,it.highlight,c?c.supplier:'',c?c.reference:'',c?c.name:'',c?(c.confidential?'accords cadre':c.prix):'',c&&!c.confidential?c.total:'',it.status].map(q).join(';'));});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'})); a.download='soumission_chiffrage.csv'; a.click();
+  };
+})();
 </script>
 <script src="/i18n_dict.js"></script><script src="/i18n_dict_categories.js"></script><script src="/i18n.js"></script></body></html>
