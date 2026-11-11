@@ -144,7 +144,7 @@ supplémentaire donne accès au chantier (`Chantier.visible_to`) et est repris p
 `Chantier.matching_person` (affectations) ; `/api/me` expose `techniciens`,
 `emailsTechnicien` (tous en copie de commande) et `contactsLivraison` (liste
 proposée dans le champ « contact » du bon de commande, téléphone auto) via
-`Chantier#team_json`. Le contact de réception supplémentaire ne donne PAS accès au
+`Chantier#team_json`. Le champ « contact » du bon de commande propose (liste + pastilles cliquables, saisie libre toujours possible) le contact réception, tous les contremaîtres et chefs d'équipe du chantier (`Chantier#delivery_contacts`), téléphone auto. Le contact de réception supplémentaire ne donne PAS accès au
 chantier. Le conducteur de travaux reste unique (approbateur N+1).
 
 ## Visibilité des commandes par chantier / remise à zéro

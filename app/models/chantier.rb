@@ -12,10 +12,19 @@ class Chantier < ApplicationRecord
   # Personne principale + personnes supplémentaires, dédoublonnées.
   def technicien_names  = ([ technicien ] + contacts_for("technicien").map(&:nom)).map { |n| n.to_s.strip }.reject(&:blank?).uniq
   def technicien_emails = ([ email_technicien ] + contacts_for("technicien").map(&:email)).map { |n| n.to_s.strip }.reject(&:blank?).uniq
+  # Personnes susceptibles de réceptionner la livraison : contact réception
+  # (principal puis supplémentaires), puis tous les contremaîtres et chefs
+  # d'équipe (principal + supplémentaires), dédoublonnés par nom. Le champ
+  # « contact » du bon de commande reste librement modifiable.
   def delivery_contacts
-    primary = { nom: contact_livraison.presence || contremaitre, telephone: natel_livraison.presence || natel_contremaitre }
-    ([ primary ] + contacts_for("contact_livraison").map { |c| { nom: c.nom, telephone: c.natel } })
-      .select { |c| c[:nom].present? }.uniq { |c| c[:nom] }
+    list = [ { nom: contact_livraison, telephone: natel_livraison } ]
+    list += contacts_for("contact_livraison").map { |c| { nom: c.nom, telephone: c.natel } }
+    list << { nom: contremaitre, telephone: natel_contremaitre }
+    list += contacts_for("contremaitre").map { |c| { nom: c.nom, telephone: c.natel } }
+    list << { nom: chef_equipe, telephone: natel_chef_equipe }
+    list += contacts_for("chef_equipe").map { |c| { nom: c.nom, telephone: c.natel } }
+    list.each { |c| c[:nom] = c[:nom].to_s.strip; c[:telephone] = c[:telephone].presence }
+    list.select { |c| c[:nom].present? }.uniq { |c| c[:nom].downcase }
   end
 
   # Clés ajoutées au JSON du SPA (/api/me), en plus des champs historiques.

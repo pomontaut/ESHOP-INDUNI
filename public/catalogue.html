@@ -4590,10 +4590,17 @@ function fillChantierContact(){
     contactEl.setAttribute('list','contactLivraisonList');
     const contacts=c.contactsLivraison||[];
     dl.innerHTML=contacts.map(function(x){ return '<option value="'+esc(x.nom)+'"></option>'; }).join('');
-    contactEl.onchange=function(){
-      const m=contacts.find(function(x){ return x.nom===contactEl.value; });
+    const pick=function(nom){
+      const m=contacts.find(function(x){ return x.nom===nom; });
       if(m&&m.telephone&&phoneEl) phoneEl.value=m.telephone;
     };
+    contactEl.onchange=function(){ pick(contactEl.value); };
+    // Pastilles cliquables : la liste déroulante (datalist) ne montre que les noms
+    // proches de ce qui est déjà saisi ; la saisie manuelle reste toujours possible.
+    let chips=document.getElementById('contactLivraisonChips');
+    if(!chips){ chips=document.createElement('div'); chips.id='contactLivraisonChips'; chips.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 8px'; contactEl.insertAdjacentElement('afterend',chips); }
+    chips.innerHTML=contacts.length>1||(contacts.length===1&&contacts[0].nom!==contactEl.value)?contacts.map(function(x,i){ return '<button type="button" data-i="'+i+'" style="border:1px solid #0b4f9c;background:#eef5ff;color:#0b4f9c;border-radius:14px;padding:3px 10px;font-size:12px;cursor:pointer">'+esc(x.nom)+'</button>'; }).join(''):'';
+    chips.onclick=function(e){ const b=e.target.closest('button[data-i]'); if(!b) return; const x=contacts[+b.dataset.i]; contactEl.value=x.nom; pick(x.nom); };
   }
   applyChantierVilleToCanplast(c.ville);
   applyChantierVilleToSoreval(c.ville);

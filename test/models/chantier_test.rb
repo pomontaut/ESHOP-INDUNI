@@ -97,4 +97,13 @@ class ChantierTest < ActiveSupport::TestCase
     assert_equal [ "a@induni.ch", "b@induni.ch" ], json[:emailsTechnicien]
     assert_equal [ "Réception Un", "Réception Deux" ], json[:contactsLivraison].map { |x| x[:nom] }
   end
+
+  test "delivery_contacts also lists contremaîtres and chefs d'équipe (principal + supplémentaires)" do
+    c = Chantier.create!(nom: "Réception", contremaitre: "RABASSA Michael", natel_contremaitre: "+413", chef_equipe: "DUPONT Jean")
+    c.contacts.create!(role: "chef_equipe", nom: "MARTIN Luc", natel: "+414")
+    c.contacts.create!(role: "contremaitre", nom: "rabassa michael")
+    noms = c.reload.delivery_contacts.map { |x| x[:nom] }
+    assert_equal [ "RABASSA Michael", "DUPONT Jean", "MARTIN Luc" ], noms
+    assert_equal "+413", c.delivery_contacts.first[:telephone]
+  end
 end
