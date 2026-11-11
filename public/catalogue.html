@@ -571,7 +571,7 @@ function sortBarInduni(){
 }
 
 const CANPLAST_SUB_ORDERS={"Chambres & Regards":["Chambres","Regards","Rehausses","Couvercles & tampons","Cadres & grilles","Fonds","Accessoires"],"Fournitures & Divers":["Colliers & fixations","Adaptateurs","Accessoires de montage","Joints & étanchéité","Outillage & divers"]};
-const HGC_SUB_ORDERS={"Armatures & Distanceurs":["Armatures","Distanceurs","Ligatures","Armatures treillis","Treillis & accessoires","Divers"],"Ciments & Bétons":["Ciments en sac","Béton","Mortiers","Accessoires béton/mortiers","Crépi","Liants & additifs","Divers"],"Coffrage & Étaiement":["Coffrage","Étaiement","Panneaux & accessoires","Divers"],"Granulats & Agrégats":["Gravier","Sable","Gravillons","Concassés","Divers"],"Isolation & Étanchéité":["Isolation","Corde et bande d'étanchéité","Divers"],"Mastics & Colles":["Mastics","Colles","Silicones","Mortiers-colles","Accessoires","Divers"],"Maçonnerie & Briques":["Briques","Plots","Linteaux","Accessoires pour maçon"],"Mortiers & Produits Spéciaux":["Mortiers","Enduits","Réparations","Adjuvants","Produits spéciaux","Divers"],"Outils à Main & Plâtrerie":["Outils à main","Plâtrerie","Taloche & truelles","Spatules & couteaux","Divers"],"Bois":["Plaques","Panneaux","Coffrage","Divers"],"Voirie & Aménagement":["Fonte / Regard de voirie","Bordures","Bordures granit","Pavés & dalles","Caniveaux","Aménagement extérieur","Divers"],"GEOTEXTILE":["Géotextile HGC Premium","Géotextile Sytec"]};
+const HGC_SUB_ORDERS={"Armatures & Distanceurs":["Armatures","Cales","Distanceurs","Ligatures","Armatures treillis","Treillis & accessoires","Divers"],"Ciments & Bétons":["Ciments en sac","Béton","Mortiers","Accessoires béton/mortiers","Crépi","Liants & additifs","Divers"],"Coffrage & Étaiement":["Coffrage","Étaiement","Panneaux & accessoires","Divers"],"Granulats & Agrégats":["Gravier","Sable","Gravillons","Concassés","Divers"],"Isolation & Étanchéité":["Isolation","Corde et bande d'étanchéité","Divers"],"Mastics & Colles":["Mastics","Colles","Silicones","Mortiers-colles","Accessoires","Divers"],"Maçonnerie & Briques":["Briques","Plots","Linteaux","Accessoires pour maçon"],"Mortiers & Produits Spéciaux":["Mortiers","Enduits","Réparations","Adjuvants","Produits spéciaux","Divers"],"Outils à Main & Plâtrerie":["Outils à main","Plâtrerie","Taloche & truelles","Spatules & couteaux","Divers"],"Bois":["Plaques","Panneaux","Coffrage","Divers"],"Voirie & Aménagement":["Fonte / Regard de voirie","Bordures","Bordures granit","Pavés & dalles","Caniveaux","Aménagement extérieur","Divers"],"GEOTEXTILE":["Géotextile HGC Premium","Géotextile Sytec"]};
 function isAutresSousInduni(s){return s==='Autres articles'||s.startsWith('Autres produits')}
 function subFamilySortInduni(a,b){const aAutres=isAutresSousInduni(a),bAutres=isAutresSousInduni(b);if(aAutres||bAutres)return aAutres&&bAutres?0:(aAutres?1:-1);if(state.catalog==='ALZO AG'){const na=parseInt(String(a).replace(/\D/g,''),10)||0,nb=parseInt(String(b).replace(/\D/g,''),10)||0;return na-nb;}const orders=(state.catalog==='Canplast'?CANPLAST_SUB_ORDERS:HGC_SUB_ORDERS);if(orders&&orders[state.famille]){const order=orders[state.famille];const ia=order.indexOf(a),ib=order.indexOf(b);return (ia===-1?999:ia)-(ib===-1?999:ib)}return String(a).localeCompare(String(b),'fr')}
 let funnelSel={catalog:null,famille:null,sous:null,sous2:null,diam:null,long:null};
@@ -866,8 +866,8 @@ const HGC_CONFIG = {
   'Armatures & Distanceurs': {
     gradient:'linear-gradient(135deg,#475569,#94a3b8)', icone:'🏗️', badge:'Armatures',
     photo:'/images/categories/hgc-famille-armatures-distanceurs.png',
-    desc:'Distanceurs · Ligatures · Armatures · Métal déployé',
-    subs:['Distanceurs','Ligatures','Armatures','Métal déployé','Divers'],
+    desc:'Distanceurs · Cales · Ligatures · Armatures · Métal déployé',
+    subs:['Distanceurs','Cales','Ligatures','Armatures','Métal déployé','Divers'],
     order:2
   },
   'Coffrage & Étaiement': {
