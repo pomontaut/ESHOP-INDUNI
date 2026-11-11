@@ -307,6 +307,8 @@ class Api::OrdersController < ApplicationController
       )
     end
 
+    save_attachments(order, params[:attachments])
+
     if modifies_order
       # Best-effort: a notification failure must never break the order itself.
       diff = build_order_diff(modifies_order, items)
@@ -513,6 +515,25 @@ class Api::OrdersController < ApplicationController
   end
 
   private
+
+  # Pièces jointes (base64 envoyées par le navigateur) : max 10 fichiers, 8 Mo
+  # chacun, 15 Mo au total, extensions exécutables refusées.
+  def save_attachments(order, raw)
+    list = Array(raw).first(OrderAttachment::MAX_FILES)
+    total = 0
+    list.each do |a|
+      data = Base64.decode64(a[:data].to_s)
+      next if data.empty?
+      total += data.bytesize
+      raise "Pièces jointes trop volumineuses (15 Mo maximum au total)" if total > OrderAttachment::MAX_TOTAL_BYTES
+      order.attachments.create!(
+        filename:     OrderAttachment.safe_filename(a[:name]),
+        content_type: a[:type].to_s.presence || "application/octet-stream",
+        byte_size:    data.bytesize,
+        data:         data
+      )
+    end
+  end
 
   def find_own_order
     current_user&.admin? ? Order.find(params[:id]) : Order.find_by!(id: params[:id], user: current_user)

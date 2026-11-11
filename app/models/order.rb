@@ -17,6 +17,7 @@ class Order < ApplicationRecord
   has_many :order_lines, dependent: :destroy
   has_many :products, through: :order_lines
   has_many :delivery_calls, dependent: :destroy
+  has_many :attachments, class_name: "OrderAttachment", dependent: :destroy
   has_many :receptions, dependent: :destroy
 
   before_create :generate_approval_token

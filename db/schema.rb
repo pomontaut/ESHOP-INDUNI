@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_06_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_11_090000) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -139,6 +139,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_120000) do
     t.string "supplier_reference", null: false
     t.datetime "updated_at", null: false
     t.index ["induni_reference", "supplier_name", "supplier_reference"], name: "index_nomenclature_entries_on_induni_and_supplier", unique: true
+  end
+
+  create_table "order_attachments", force: :cascade do |t|
+    t.integer "byte_size", default: 0, null: false
+    t.string "content_type", default: "application/octet-stream", null: false
+    t.datetime "created_at", null: false
+    t.binary "data", null: false
+    t.string "filename", null: false
+    t.integer "order_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_id"], name: "index_order_attachments_on_order_id"
   end
 
   create_table "order_lines", force: :cascade do |t|

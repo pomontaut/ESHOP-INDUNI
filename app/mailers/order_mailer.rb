@@ -12,6 +12,12 @@ class OrderMailer < ApplicationMailer
     if pdf_content
       attachments["commande_#{@order.number}.pdf"] = { mime_type: "application/pdf", content: pdf_content }
     end
+    # Pièces jointes saisies à la validation du panier (annexées à la commande).
+    @order.attachments.each_with_index do |a, i|
+      name = a.filename
+      name = "#{i + 1}_#{name}" if attachments[name]
+      attachments[name] = { mime_type: a.content_type, content: a.data }
+    end
     # Requests a read receipt from whichever mail client honors it (Outlook
     # prompts the reader; Gmail and others silently ignore it) — the reply
     # goes back to the order's author, so they know it was actually opened.

@@ -49,6 +49,7 @@ class Admin::OrdersController < ApplicationController
       last = Order.where("number LIKE 'ESHOP_INDUNI_%'").pluck(:number).filter_map { |n| n[/\AESHOP_INDUNI_(\d+)/, 1]&.to_i }.max.to_i
       reset ? OrderNumberFloor.reset! : OrderNumberFloor.raise_to!(last)
       OrderLine.where(order_id: doomed.select(:id)).delete_all
+      OrderAttachment.where(order_id: doomed.select(:id)).delete_all
       # Module Réception (sans clé étrangère SQL) : appels, réceptions, scans.
       rec_ids = Reception.where(order_id: doomed.select(:id)).select(:id)
       ReceptionScan.where(reception_id: rec_ids).delete_all
