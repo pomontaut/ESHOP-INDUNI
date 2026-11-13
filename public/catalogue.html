@@ -2253,7 +2253,12 @@ function _renderDevisResultsCore(){
       ?`<div style="margin-top:4px;font-size:12px;color:#555">Article référencé e-shop — prix e-shop (référence) : <b>${fmt(it.prix)}</b>. Le prix du devis ne peut pas dépasser ce montant.</div><div data-devis-pricewarn="${k}" style="display:none;margin-top:2px;font-size:12px;color:#b91c1c;font-weight:bold">⚠ Prix plafonné au prix e-shop (${fmt(it.prix)}).</div>`
       :'';
     let equivNote='';
-    if(it.equivalent){
+    // Article 100 % identique à la référence e-shop : on ne le compare pas à un
+    // « équivalent » d'un autre catalogue ; seul « prix identique » est signalé.
+    if(hasRefPrice){
+      const dp=it.devisPrix!=null?Number(it.devisPrix)*dr:null;
+      if(dp!=null&&Math.abs(dp-Number(it.prix))<0.005) equivNote='<div style="margin-top:4px;font-size:12px;color:#15803d">✓ Prix identique à notre référence e-shop</div>';
+    } else if(it.equivalent){
       const ev=it.equivalent;
       if(it.devisPrix!=null){
         equivNote=(devisCurrency==='CHF'?it.equivalentCheaper:(Number(it.devisPrix)*dr>Number(ev.prix)))
