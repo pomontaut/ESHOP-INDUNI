@@ -143,11 +143,20 @@ class Api::OrdersController < ApplicationController
     phone              = params[:phone].to_s.strip.presence
     delivery_address   = params[:adresse].to_s.strip.presence
     conducteur_travaux = ConducteurTravaux.sanitize(params[:conducteur])
-    # « Enlèvement dépôt » : uniquement pour HG COMMERCIALE (Induni récupère la
+    # « Enlèvement dépôt » : HG COMMERCIALE et Matériel Induni (Induni récupère la
     # commande au dépôt, aucun frais de livraison).
     # Environnement test (admin) : voir Api::TestProfilesController::TEST_RECIPIENT.
     test_mode          = Api::TestProfilesController.active_profile(session, current_user).present?
-    pickup             = supplier_name == "HG COMMERCIALE" && ActiveModel::Type::Boolean.new.cast(params[:pickup]) == true
+    pickup             = %w[HG\ COMMERCIALE Matériel\ Induni].include?(supplier_name) && ActiveModel::Type::Boolean.new.cast(params[:pickup]) == true
+    # Matériel Induni : pas de livraison le jour même de la commande (ni date passée),
+    # sauf en enlèvement au dépôt.
+    if supplier_name == "Matériel Induni" && !pickup && (m = delai.match(/(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})/))
+      y = m[3].to_i; y += 2000 if y < 100
+      wanted = (Date.new(y, m[2].to_i, m[1].to_i) rescue nil)
+      if wanted && wanted <= Time.zone.today
+        return render json: { error: "Matériel Induni : livraison impossible à la date du jour (ou passée). Choisissez une date ultérieure ou l'enlèvement au dépôt." }, status: :unprocessable_entity
+      end
+    end
     # Frais annexes (transport, RPLP, grue, remise de volume...) déjà calculés
     # et affichés côté client (transportLineItemsInduni dans catalogue.html) :
     # repris tels quels, pas recalculés ici, pour éviter de dupliquer cette
