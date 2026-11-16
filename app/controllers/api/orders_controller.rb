@@ -89,6 +89,7 @@ class Api::OrdersController < ApplicationController
         date:            o.order_date&.strftime("%d.%m.%Y") || o.created_at.strftime("%d.%m.%Y"),
         supplier:        o.supplier&.name,
         chantier:        chantier,
+        deliveryDate:    o.notes.to_s[/Délai souhaité:\s*([^|]+)/, 1]&.strip.presence,
         total:           masked ? 0 : o.total_chf.to_f.round(2),
         currency:        o.currency.presence || "CHF",
         totalOriginal:   masked ? 0 : o.total.to_f.round(2),
