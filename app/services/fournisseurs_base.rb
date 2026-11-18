@@ -31,7 +31,7 @@ module FournisseursBase
   # existe, sinon créée à partir de la fiche de la base fournisseurs.
   def find_or_create_supplier(name)
     name = name.to_s.strip
-    supplier = Supplier.where("lower(name) = ?", name.downcase).first
+    supplier = Supplier.find_existing(name)
     return supplier if supplier
 
     entry = find(name) or return nil

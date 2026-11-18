@@ -183,9 +183,9 @@ class Api::OrdersController < ApplicationController
     currency = params[:currency].to_s.upcase
     currency = "CHF" unless Order::CURRENCIES.include?(currency)
 
-    supplier = Supplier.find_or_create_by!(name: supplier_name) do |s|
-      s.email = "commandes@#{supplier_name.downcase.gsub(/[^a-z0-9]/, '')}.ch"
-    end
+    supplier = Supplier.find_existing(supplier_name) || Supplier.create!(
+      name: supplier_name, email: "commandes@#{supplier_name.downcase.gsub(/[^a-z0-9]/, '')}.ch"
+    )
 
     if supplier.confidential_pricing? && items.any? { |i| ActiveModel::Type::Boolean.new.cast(i[:generic]) }
       return render json: { error: "Article générique impossible avec un fournisseur à prix confidentiel." }, status: :unprocessable_entity

@@ -23,6 +23,26 @@ class Supplier < ApplicationRecord
   # An empty list means "no restriction configured" — visible everywhere /
   # to everyone, same convention as User#allowed_suppliers, so a supplier
   # nobody has configured yet keeps behaving exactly as before.
+  # Forme juridique en fin de nom (« Canplast SA » = « Canplast »).
+  LEGAL_SUFFIX = /\s+(?:S\.?\s?A\.?|A\.?\s?G\.?|S[àa]rl|GmbH|S\.?\s?A\.?\s?R\.?\s?L\.?|&\s*Cie(?:\s+S\.?A\.?)?)\.?\z/i
+
+  def self.base_name(name)
+    name.to_s.strip.sub(LEGAL_SUFFIX, "").strip.downcase
+  end
+
+  # Fiche existante pour ce nom : même nom, ou même nom à la forme juridique près
+  # (la base fournisseurs comptable écrit « Canplast SA », le catalogue « Canplast »).
+  # Évite de créer un doublon sans adresse e-mail (envoi de commande impossible).
+  def self.find_existing(name)
+    name = name.to_s.strip
+    return nil if name.empty?
+    exact = where("lower(name) = ?", name.downcase).first
+    return exact if exact
+    base = base_name(name)
+    return nil if base.empty?
+    all.find { |s| base_name(s.name) == base }
+  end
+
   def visible_for_canton?(canton)
     return true if canton.blank?
     list = visible_cantons || []

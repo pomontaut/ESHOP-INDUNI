@@ -69,4 +69,11 @@ class SupplierTest < ActiveSupport::TestCase
     assert_not supplier.valid?
     assert_match(/pas-une-adresse/, supplier.errors[:email].join)
   end
+
+  test "find_existing rattache « Canplast SA » à la fiche « Canplast » (forme juridique ignorée)" do
+    canplast = Supplier.create!(name: "Canplast", email: "commandes@canplast.ch")
+    assert_equal canplast, Supplier.find_existing("Canplast SA")
+    assert_equal canplast, Supplier.find_existing("canplast")
+    assert_nil Supplier.find_existing("Autre fournisseur SA")
+  end
 end
