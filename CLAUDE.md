@@ -499,6 +499,14 @@ page recadrée avec cadre rouge (vignette + agrandissement au clic). **Recherche
 (`PRODUCTS` + `scoreProductV49`, 8 résultats) ; « Choisir » = choix manuel (statut À valider, `★`), puis ✓ l'enseigne à l'agent (`/learn`). Prix
 confidentiels : `PRODUCTS.confidential` → 🔒, jamais de prix. Pas encore fait : lien direct avec l'outil `GESTION-SOUMISSION` (React, local) et transport rendu chantier.
 
+## Vue « Amazon » (environnement test « Développement » uniquement)
+
+Bouton « 🛒 Vue Amazon 🧪 » (`amzInit()`, dernier bloc `<script>` de `catalogue.html`, préfixe `amz*`, `state.view === 'amz'` branché dans
+`render()` seulement si `perms.dev_mode`). Rayons (`RAYONS`, regroupement par regex des `famille`), filtres fournisseur à gauche, tri par prix,
+fiches en liste avec quantité + « Ajouter au panier » (`addCart` existant : un panier = un seul fournisseur, confirmation avant de le vider),
+équivalents d'autres fournisseurs (`equivalenceKey` + même unité, jamais pour un prix confidentiel). La barre de recherche du haut sert de
+recherche (`scoreProductV49`). Aucun prix confidentiel affiché (`priceHtml`). Pour ouvrir à tous : retirer le garde `dev_mode`.
+
 ## Deploy workflow (always follow this exact sequence)
 
 **Déploiement automatique** : une fois les vérifications faites, déployer sur `main` sans attendre de « pousse »/« déploie » du propriétaire — sauf si une validation de sa part est nécessaire (choix ambigu, action risquée ou irréversible, données à confirmer).
