@@ -6335,4 +6335,26 @@ function indDraw(){
   };
 })();
 </script>
+<script>
+/* ===== Article générique à tous les niveaux (catalogue › famille › sous-famille › détail) =====
+   La tuile « ＋ Article générique » n'existait qu'au dernier niveau (liste d'articles, renderProducts). Elle est
+   maintenant ajoutée sous chaque écran de navigation d'un catalogue, pour les mêmes profils (can_generic_article,
+   contrôlé aussi côté serveur). Un catalogue doit être choisi : sinon la ligne n'aurait pas de fournisseur. */
+(function(){
+  const VIEWS={catalog:1,family:1,subfamily:1,level4:1};
+  function addTile(){
+    try{
+      const p=window._userPerms; if(!p||!p.can_generic_article) return;
+      if(!VIEWS[state.view]||!state.catalog) return;
+      if(document.getElementById('searchBox').value.trim()) return;
+      const app=document.getElementById('app'); if(!app||app.querySelector('.generic')) return;
+      const w=document.createElement('div'); w.className='products'; w.style.marginTop='18px';
+      w.innerHTML='<div class="generic" onclick="openModal(\'genericModal\')"><div style="text-align:center"><div style="font-size:48px">＋</div><h3>Article générique</h3><p>Créer un article personnalisé<br>avec descriptif et prix libre</p></div></div>';
+      app.appendChild(w);
+    }catch(e){}
+  }
+  const base=window.render||render;
+  window.render=render=function(){ const r=base.apply(this,arguments); addTile(); return r; };
+})();
+</script>
 <script src="/i18n_dict.js"></script><script src="/i18n_dict_categories.js"></script><script src="/i18n.js"></script></body></html>
