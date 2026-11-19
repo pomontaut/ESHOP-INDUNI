@@ -474,11 +474,12 @@ et reconvertit les prix Matériel Induni reconstitués du catalogue. Prix confid
 côté serveur). PDF serveur et e-mails affichent la devise de la commande + note de cours. Hors périmètre : sélection
 multi-fournisseurs (CHF), seuils de franco du texte des frais (restent en CHF).
 
-## Article générique (profil Conducteur de travaux uniquement)
+## Article générique (Conducteur de travaux + administrateurs)
 
 La tuile « ＋ Article générique » (listes d'articles, `genericModal`/`addGeneric`) n'apparaît que si `/api/me`
-renvoie `can_generic_article` (`User#can_generic_article?` = `job_function` « CONDUCTEUR DE TRAVAUX », ou vue test
-« Conducteur de travaux »). Les lignes sont envoyées avec `generic: true` ; `Api::OrdersController#create` refuse
+renvoie `can_generic_article` (`User#can_generic_article?` = administrateur, ou `job_function` « CONDUCTEUR DE TRAVAUX » ; en
+environnement test : vues « Conducteur de travaux » et « Développement »). La tuile est aussi ajoutée à chaque niveau catalogue › famille ›
+sous-famille (dernier `<script>`, enveloppe de `render`). Les lignes sont envoyées avec `generic: true` ; `Api::OrdersController#create` refuse
 (403) hors de ces profils et pour un fournisseur à prix confidentiel, et remplace la référence par `GEN-<hash>`
 (désignation + référence saisie) pour ne jamais retomber sur un vrai article du catalogue.
 
@@ -512,8 +513,10 @@ recherche (`scoreProductV49`). Aucun prix confidentiel affiché (`priceHtml`). P
 `addCart` appelle `suggestFittingForPipe` (coude proposé avec un tuyau de canalisation) puis, si rien n'est affiché,
 `suggestCompanionsInduni(p)` (dernier bloc `<script>` de `catalogue.html`, tableau `RULES`) : même fournisseur uniquement, jamais d'ajout sans
 clic, pas de suggestion si le panier contient déjà un article du lot. Règles : Protection Câbles tube → coudes de MÊME diamètre exact ;
-HGC treillis → distanceurs/cales/ligatures ; Swisspor étanchéité liquide → outillage ; Swisspor BIKUTOP → accessoires toitures plates
-(4 articles + « Voir tous »). Nouvelle règle = une entrée dans `RULES` (n'associer que des familles vérifiées dans le catalogue).
+HGC treillis → distanceurs/cales/ligatures ; Swisspor étanchéité liquide → outillage ; Swisspor BIKUTOP → accessoires toitures plates ;
+caniveau ACO Multiline cadre ↔ grille de la MÊME série (V100/V200) ; saut-de-loup → grille caillebotis + fixations ; regard/anneau CreaBeton →
+cadre, couvercle, échelle ; anneau/cône HGC → regard en fonte ; EFCO mousse ↔ pistolet ; MBT Net-Form → clous ; briques/plots/linteaux → accessoires
+de maçon ; mortiers/ciments → accessoires béton ; Swisspor toitures végétalisées → accessoires (4 articles + « Voir tous »). Nouvelle règle = une entrée dans `RULES` (n'associer que des familles vérifiées dans le catalogue).
 
 ## Deploy workflow (always follow this exact sequence)
 

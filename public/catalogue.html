@@ -6382,7 +6382,42 @@ function indDraw(){
      pick:p=>PRODUCTS.filter(x=>same(x.catalog,p.catalog)&&x.famille===p.famille&&/Outillage/.test(x.sousFamille||''))},
     {title:()=>'Pensez aux accessoires de toiture plate',
      match:p=>/^Swisspor/i.test(p.catalog||'')&&p.famille==='Étanchéité'&&/^BIKUTOP/.test(p.sousFamille||''),
-     pick:p=>PRODUCTS.filter(x=>same(x.catalog,p.catalog)&&x.famille===p.famille&&x.sousFamille==='Accessoires pour toitures plates')}
+     pick:p=>PRODUCTS.filter(x=>same(x.catalog,p.catalog)&&x.famille===p.famille&&x.sousFamille==='Accessoires pour toitures plates')},
+    // Caniveau ACO Multiline : cadre/corps ↔ grille, même série (V100 / V200) uniquement.
+    {title:p=>/grille/i.test(p.designation||'')?'Pensez au caniveau (cadre) de la même série '+((p.designation.match(/V\d+/)||[''])[0]):'Pensez à la grille de la même série '+((p.designation.match(/V\d+/)||[''])[0]),
+     match:p=>p.famille==='Caniveau'&&/ACO Multiline/i.test(p.sousFamille||'')&&/V\d+/.test(p.designation||''),
+     pick:p=>{const s=(p.designation.match(/V\d+/)||[])[0];const g=/grille/i.test(p.designation||'');return PRODUCTS.filter(x=>same(x.catalog,p.catalog)&&x.famille===p.famille&&/ACO Multiline/i.test(x.sousFamille||'')&&(x.designation||'').includes(s+' ')&&(g?!/grille/i.test(x.designation||''):/grille/i.test(x.designation||'')));}},
+    // Saut-de-loup → grille caillebotis et fixations (même fournisseur).
+    {title:()=>'Pensez à la grille caillebotis et aux fixations',
+     match:p=>/^Saut(s)?[- ]de[- ]loup/i.test(p.sousFamille||'')&&p.famille==='Préfa-béton',
+     pick:p=>PRODUCTS.filter(x=>same(x.catalog,p.catalog)&&x.famille===p.famille&&/^Grilles? caillebotis/i.test(x.sousFamille||''))},
+    // Regard CreaBeton → cadre/couvercle + échelle.
+    {title:()=>'Pensez au cadre, au couvercle et à l\'échelle',
+     match:p=>p.famille==='Préfa-béton'&&/^(Fond de regard|Anneaux? de regard|Puits de drainage)/i.test(p.sousFamille||''),
+     pick:p=>PRODUCTS.filter(x=>same(x.catalog,p.catalog)&&x.famille===p.famille&&/^(Cadre & couvercle|Echelles)/i.test(x.sousFamille||'')&&!/^Plus-value/i.test(x.designation||''))},
+    // Anneau / cône béton HGC → regard / cadre en fonte.
+    {title:()=>'Pensez au regard / cadre de voirie',
+     match:p=>p.famille==='Préfa-béton'&&/^(Anneau|Cône)$/i.test(p.sousFamille||''),
+     pick:p=>PRODUCTS.filter(x=>same(x.catalog,p.catalog)&&x.famille==='Voirie & Aménagement'&&/Regard/i.test(x.sousFamille||'')&&/^Regard/i.test(x.designation||''))},
+    // EFCO : mousse expansive ↔ pistolet.
+    {title:()=>'Pensez au pistolet d\'application',
+     match:p=>/^EFCO/i.test(p.catalog||'')&&p.sousFamille==='Mousse expansive',
+     pick:p=>PRODUCTS.filter(x=>same(x.catalog,p.catalog)&&x.sousFamille==='Pistolet')},
+    {title:()=>'Pensez à la mousse / cartouche',
+     match:p=>/^EFCO/i.test(p.catalog||'')&&p.sousFamille==='Pistolet',
+     pick:p=>PRODUCTS.filter(x=>same(x.catalog,p.catalog)&&x.sousFamille==='Mousse expansive')},
+    {title:()=>'Pensez aux clous aluminium Net-Form',
+     match:p=>/^MBT/i.test(p.catalog||'')&&p.sousFamille==='Net-Form',
+     pick:p=>PRODUCTS.filter(x=>same(x.catalog,p.catalog)&&x.sousFamille==='Clous')},
+    {title:()=>'Pensez aux accessoires de maçon',
+     match:p=>p.famille==='Maçonnerie & Briques'&&/^(Briques|Plots|Linteaux)$/i.test(p.sousFamille||''),
+     pick:p=>PRODUCTS.filter(x=>same(x.catalog,p.catalog)&&x.famille===p.famille&&x.sousFamille==='Accessoires pour maçon')},
+    {title:()=>'Pensez aux accessoires béton / mortier',
+     match:p=>p.famille==='Ciments & Bétons'&&/^(Mortiers|Ciments en sac|Béton)$/i.test(p.sousFamille||''),
+     pick:p=>PRODUCTS.filter(x=>same(x.catalog,p.catalog)&&x.famille===p.famille&&x.sousFamille==='Accessoires béton/mortiers')},
+    {title:()=>'Pensez aux accessoires de toiture végétalisée',
+     match:p=>/^Swisspor/i.test(p.catalog||'')&&p.famille==='Toitures végétalisées'&&!/^Accessoires/.test(p.sousFamille||''),
+     pick:p=>PRODUCTS.filter(x=>same(x.catalog,p.catalog)&&x.famille===p.famille&&/^Accessoires/.test(x.sousFamille||''))}
   ];
   window.suggestCompanionsInduni=function(p){
     if(!p) return;
