@@ -507,6 +507,14 @@ fiches en liste avec quantité + « Ajouter au panier » (`addCart` existant : u
 équivalents d'autres fournisseurs (`equivalenceKey` + même unité, jamais pour un prix confidentiel). La barre de recherche du haut sert de
 recherche (`scoreProductV49`). Aucun prix confidentiel affiché (`priceHtml`). Pour ouvrir à tous : retirer le garde `dev_mode`.
 
+## Article « +1 » (suggestions d'articles associés)
+
+`addCart` appelle `suggestFittingForPipe` (coude proposé avec un tuyau de canalisation) puis, si rien n'est affiché,
+`suggestCompanionsInduni(p)` (dernier bloc `<script>` de `catalogue.html`, tableau `RULES`) : même fournisseur uniquement, jamais d'ajout sans
+clic, pas de suggestion si le panier contient déjà un article du lot. Règles : Protection Câbles tube → coudes de MÊME diamètre exact ;
+HGC treillis → distanceurs/cales/ligatures ; Swisspor étanchéité liquide → outillage ; Swisspor BIKUTOP → accessoires toitures plates
+(4 articles + « Voir tous »). Nouvelle règle = une entrée dans `RULES` (n'associer que des familles vérifiées dans le catalogue).
+
 ## Deploy workflow (always follow this exact sequence)
 
 **Déploiement automatique** : une fois les vérifications faites, déployer sur `main` sans attendre de « pousse »/« déploie » du propriétaire — sauf si une validation de sa part est nécessaire (choix ambigu, action risquée ou irréversible, données à confirmer).
