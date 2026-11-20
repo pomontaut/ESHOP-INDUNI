@@ -547,7 +547,10 @@ Fournisseur `Max Frank` (Max Frank AG, Bösingen ; ajouté à `User::SUPPLIERS`,
 (plastique, INOX, INOX carrées), `Egcopal` (LO/LF/HO/HF). Les 18 articles « Sur demande » (DN/DQ/DND ≥ 210, manchette coupe-feu R120, support de
 cheville, Egcopal XL) ne sont PAS au catalogue (pas de prix). Dans le PDF, les libellés français des DND sont décalés d'un cran par rapport aux
 n° d'article : le n° fait foi (CHDND120 = DND120 à 309.-). **E-mail de commande non communiqué : à saisir dans Admin > Fournisseurs avant tout
-envoi** (sans adresse l'envoi échoue). Renchérissement 2026 (PDF `Teuerungszuschlag`) : ne concerne ni Egcodorn ni Egcopal (seulement Egcobox
+envoi** (sans adresse l'envoi échoue). **Transport « RPLP + transport » (pièces standards, `maxFrankTransport()` dans `transportDetailsInduni` /
+`Html` / `LineItems`)** : **5.15 %** de la valeur nette du matériel dès **CHF 2'540** net, en dessous **forfait CHF 130** par point de déchargement / commande
+(130 ≈ 5.15 % de 2'540) ; déchargement avec camion-grue CHF 50 facturé à part (non calculé) ; pièces spéciales non couvertes. Lecture de « toutefois en moins
+130.- » du document Max Frank : en dessous du seuil. Renchérissement 2026 (PDF `Teuerungszuschlag`) : ne concerne ni Egcodorn ni Egcopal (seulement Egcobox
 24 % puis 5 %, Pecafil 10 %, Zemdrain 10 %, distanceurs béton fibreux 2 %, Stremaform 2 %, Fradiflex 3 %, coffrages tôle profilée 10 %) :
 aucune plus-value appliquée à ce catalogue ; si ces gammes sont ajoutées, majorer leurs prix du % indiqué (supplément variable, à reconfirmer).
 
