@@ -223,6 +223,7 @@ Géotextile non tissés|Non-woven geotextile|Geotextil no tejido|Geotessile non 
 ACO Swissdrain|ACO Swissdrain|ACO Swissdrain|ACO Swissdrain|ACO Swissdrain
 Cadre petite hauteur|Low-height frame|Marco de poca altura|Telaio a bassa altezza|Moldura de baixa altura
 Fonds de regard ACO Monolith|ACO Monolith manhole bases|Fondos de registro ACO Monolith|Fondi pozzetto ACO Monolith|Fundos de câmara ACO Monolith
+Fonds de regard Wyss|Wyss manhole bases|Fondos de registro Wyss|Fondi pozzetto Wyss|Fundos de câmara Wyss
 Puits perdus|Soakaways|Pozos filtrantes|Pozzi perdenti|Poços perdidos
 Puits de sortie de secours|Emergency exit shafts|Pozos de salida de emergencia|Pozzi di uscita di emergenza|Poços de saída de emergência
 Puits de pompage FRIWA-pump|FRIWA-pump pump chambers|Pozos de bombeo FRIWA-pump|Pozzi di pompaggio FRIWA-pump|Poços de bombagem FRIWA-pump
