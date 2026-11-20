@@ -220,6 +220,7 @@ Grille caillebotis pour saut de loup|Grating for light well|Rejilla para patio i
 Grilles caillebotis & fixations|Gratings & fixings|Rejillas y fijaciones|Griglie e fissaggi|Grelhas e fixações
 Géotextile HGC Premium|HGC Premium geotextile|Geotextil HGC Premium|Geotessile HGC Premium|Geotêxtil HGC Premium
 Géotextile non tissés|Non-woven geotextile|Geotextil no tejido|Geotessile non tessuto|Geotêxtil não tecido
+Plaque frontale|End plate|Placa frontal|Piastra frontale|Placa frontal
 Géotextile Stratex Premium|Stratex Premium geotextile|Geotextil Stratex Premium|Geotessile Stratex Premium|Geotêxtil Stratex Premium
 Géotextile Stratex Protection|Stratex Protection geotextile|Geotextil Stratex Protección|Geotessile Stratex Protezione|Geotêxtil Stratex Proteção
 Géotextile Schoellkopf|Schoellkopf geotextile|Geotextil Schoellkopf|Geotessile Schoellkopf|Geotêxtil Schoellkopf
