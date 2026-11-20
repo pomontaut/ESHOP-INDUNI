@@ -72,6 +72,12 @@ namespace :catalog do
         email: "commandes@swisspor.com", phone: "+41 21 948 48 80",
         postal_code: "1618", city: "Châtel-St-Denis", country_code: "CH"
       },
+      # Catalogue Max Frank AG 2026 (prix nets, colonne « Netto Preis »). Adresse reprise du
+      # document ; e-mail de commande NON communiqué : à saisir dans Admin > Fournisseurs
+      # avant tout envoi (sans adresse, l'envoi échoue « Missing to field »).
+      "Max Frank" => {
+        phone: "+41 31 740 55 55", address: "Industriestrasse 100", postal_code: "3178", city: "Bösingen", country_code: "CH"
+      },
       # Décision Achats : toute commande passée depuis le Dépôt INDUNI (EFCO,
       # HILTI, Matériel Induni) part systématiquement à magasin@induni.ch,
       # jamais directement au fournisseur externe — voir la correction

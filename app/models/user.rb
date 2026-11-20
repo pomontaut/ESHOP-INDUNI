@@ -33,6 +33,7 @@ class User < ApplicationRecord
     { key: "Sika",       label: "Sika" },
     { key: "GANAMAT SA", label: "GANAMAT SA" },
     { key: "Swisspor",   label: "Swisspor" },
+    { key: "Max Frank",  label: "Max Frank" },
     { key: "EFCO",       label: "EFCO" },
     { key: "HILTI",      label: "HILTI" },
     { key: "Matériel Induni", label: "Matériel Induni" },

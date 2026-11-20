@@ -539,6 +539,18 @@ La famille HGC `Armatures & Distanceurs` a été renommée `Armatures & Distance
 6 goujons HED (art. 100037355, 100037357, 100037358, 100037400, 100037661, 100090480 ; Ø 20 à 28 mm ; prix à la pièce, d'après les captures du
 site HGC, prix barrés non repris). Le nom de famille est la clé : le changer = adapter ces endroits.
 
+## Catalogue Max Frank (prix nets, 2026)
+
+Fournisseur `Max Frank` (Max Frank AG, Bösingen ; ajouté à `User::SUPPLIERS`, carte d'accueil, `SUPPLIER_INFO`, logo
+`public/images/categories/maxfrank.svg` recolorisé en bleu foncé pour fond blanc). 118 articles du PDF « Dorn Max Frank 2026 » au **prix net**
+(colonne « Netto Preis », rabais déjà déduit) : familles `Goujons Egcodorn` (DN, DQ, DND, INOX, DFR, galvanisés…), `Gaines Egcodorn`
+(plastique, INOX, INOX carrées), `Egcopal` (LO/LF/HO/HF). Les 18 articles « Sur demande » (DN/DQ/DND ≥ 210, manchette coupe-feu R120, support de
+cheville, Egcopal XL) ne sont PAS au catalogue (pas de prix). Dans le PDF, les libellés français des DND sont décalés d'un cran par rapport aux
+n° d'article : le n° fait foi (CHDND120 = DND120 à 309.-). **E-mail de commande non communiqué : à saisir dans Admin > Fournisseurs avant tout
+envoi** (sans adresse l'envoi échoue). Renchérissement 2026 (PDF `Teuerungszuschlag`) : ne concerne ni Egcodorn ni Egcopal (seulement Egcobox
+24 % puis 5 %, Pecafil 10 %, Zemdrain 10 %, distanceurs béton fibreux 2 %, Stremaform 2 %, Fradiflex 3 %, coffrages tôle profilée 10 %) :
+aucune plus-value appliquée à ce catalogue ; si ces gammes sont ajoutées, majorer leurs prix du % indiqué (supplément variable, à reconfirmer).
+
 ## Deploy workflow (always follow this exact sequence)
 
 **Déploiement automatique** : une fois les vérifications faites, déployer sur `main` sans attendre de « pousse »/« déploie » du propriétaire — sauf si une validation de sa part est nécessaire (choix ambigu, action risquée ou irréversible, données à confirmer).

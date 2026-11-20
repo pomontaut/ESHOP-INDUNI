@@ -496,9 +496,10 @@ const SGTT_LOGO='/images/categories/sgtt.png';
 const SIKA_LOGO='/images/categories/sika.png';
 const GANAMAT_LOGO='/images/categories/ganamat.png';
 const SWISSPOR_LOGO='/images/categories/swisspor.png';
+const MAXFRANK_LOGO='/images/categories/maxfrank.svg';
 const EFCO_LOGO='/images/categories/efco.png';
 const HILTI_LOGO='/images/categories/hilti.png';
-function catalogLogoInduni(c){return c==='HG COMMERCIALE'?HGC_LOGO:(c==='Canplast'?CAN_LOGO:(c==='Leuba HIAG'?HIAG_LOGO:(c==='CreaBeton'?CREABETON_LOGO:(c==='MBT'?MBT_LOGO:(c==='ALZO AG'?ALZO_LOGO:(c==='Soreval'?SOREVAL_LOGO:(c==='BTest'?BTEST_LOGO:(c==='LCBE'?LCBE_LOGO:(c==='Tinguely'?TINGUELY_LOGO:(c==='SGTT'?SGTT_LOGO:(c==='Sika'?SIKA_LOGO:(c==='GANAMAT SA'?GANAMAT_LOGO:(c==='Swisspor'?SWISSPOR_LOGO:(c==='EFCO'?EFCO_LOGO:(c==='HILTI'?HILTI_LOGO:INDUNI_LOGO)))))))))))))))}
+function catalogLogoInduni(c){return c==='HG COMMERCIALE'?HGC_LOGO:(c==='Canplast'?CAN_LOGO:(c==='Leuba HIAG'?HIAG_LOGO:(c==='CreaBeton'?CREABETON_LOGO:(c==='MBT'?MBT_LOGO:(c==='ALZO AG'?ALZO_LOGO:(c==='Soreval'?SOREVAL_LOGO:(c==='BTest'?BTEST_LOGO:(c==='LCBE'?LCBE_LOGO:(c==='Tinguely'?TINGUELY_LOGO:(c==='SGTT'?SGTT_LOGO:(c==='Sika'?SIKA_LOGO:(c==='GANAMAT SA'?GANAMAT_LOGO:(c==='Swisspor'?SWISSPOR_LOGO:(c==='Max Frank'?MAXFRANK_LOGO:(c==='EFCO'?EFCO_LOGO:(c==='HILTI'?HILTI_LOGO:INDUNI_LOGO))))))))))))))))}
 const SUPPLIER_INFO={
   'HG COMMERCIALE':{email:'yannick.mace@hgc.ch',phone:'0041 22 343 85 50'},
   'Canplast':{address:'Route de Sollens 2B',postal_code:'1029',city:'Villars-Ste-Croix',email:'commandes@canplast.ch',phone:'0041 21 637 37 77'},
@@ -514,6 +515,7 @@ const SUPPLIER_INFO={
   'Sika':{address:'Tüffenwies 16',postal_code:'8048',city:'Zürich',email:'brugger.patrick@ch.sika.com',phone:'+41 79 847 23 85'},
   'GANAMAT SA':{address:'Chemin des Batailles 16',postal_code:'1214',city:'Vernier',email:'info@ganamat.ch',phone:'+41 22 341 04 61'},
   'Swisspor':{postal_code:'1618',city:'Châtel-St-Denis',email:'commandes@swisspor.com',phone:'+41 21 948 48 80'},
+  'Max Frank':{address:'Industriestrasse 100',postal_code:'3178',city:'Bösingen',phone:'+41 31 740 55 55'},
   'EFCO':{},
   'HILTI':{},
   'Matériel Induni':{}
@@ -683,6 +685,7 @@ const covers=[
   canSee('Sika')?`<button class="cover" onclick="chooseCatalog('Sika')"><div class="coverTop" style="background:white"><img src="${SIKA_LOGO}" alt="Sika"></div><div class="coverText"><b>E-shop Sika 🔒</b><p class="muted">${sika} articles · adjuvants béton, réparation & décoffrants — prix net confidentiel</p></div></button>`:'',
   canSee('GANAMAT SA')?`<button class="cover" onclick="chooseCatalog('GANAMAT SA')"><div class="coverTop" style="background:white"><img src="${GANAMAT_LOGO}" alt="GANAMAT SA"></div><div class="coverText"><b>E-shop GANAMAT SA</b><p class="muted">${gan} articles · ligatures, taquets & distanceurs béton armé</p></div></button>`:'',
   canSee('Swisspor')?`<button class="cover" onclick="chooseCatalog('Swisspor')"><div class="coverTop" style="background:white"><img src="${SWISSPOR_LOGO}" alt="Swisspor"></div><div class="coverText"><b>E-shop Swisspor</b><p class="muted">${swi} articles · isolation</p></div></button>`:'',
+  canSee('Max Frank')?`<button class="cover" onclick="chooseCatalog('Max Frank')"><div class="coverTop" style="background:white"><img src="${MAXFRANK_LOGO}" alt="Max Frank"></div><div class="coverText"><b>E-shop Max Frank</b><p class="muted">${PRODUCTS.filter(p=>p.catalog==='Max Frank').length} articles · goujons Egcodorn, gaines, Egcopal (prix nets)</p></div></button>`:'',
   renderFunnelWidget(null)
 ].join('');
 app.innerHTML=`<div style="display:flex;gap:20px;align-items:flex-start">${topArticlesSidebarHtml(null)}<section class="hero" style="flex:1;min-width:0"><div><h1>Catalogues Achats Induni</h1><p class="muted" style="font-size:12.5px;margin:0 0 6px">Cliquez sur un logo pour accéder à l'e-shop correspondant.</p><div class="coverGrid threeCovers">${covers}</div></div></section></div>`}
@@ -1648,7 +1651,7 @@ function addTopArticleFromHistory(catalog,article){
 const CATALOG_COLORS={
   'HG COMMERCIALE':'#1d4ed8', 'Canplast':'#0891b2', 'Leuba HIAG':'#16a34a', 'CreaBeton':'#78716c',
   'MBT':'#b45309', 'ALZO AG':'#f97316', 'Soreval':'#65a30d', 'BTest':'#7c3aed',
-  'LCBE':'#0d9488', 'Tinguely':'#ea580c', 'SGTT':'#dc2626', 'Sika':'#dc2626', 'GANAMAT SA':'#0f766e', 'Swisspor':'#003399'
+  'LCBE':'#0d9488', 'Tinguely':'#ea580c', 'SGTT':'#dc2626', 'Sika':'#dc2626', 'GANAMAT SA':'#0f766e', 'Swisspor':'#003399', 'Max Frank':'#1d3557'
 };
 function catalogColorInduni(c){return CATALOG_COLORS[c]||'#315b84';}
 function topArticlesSidebarHtml(catalogFilter){
