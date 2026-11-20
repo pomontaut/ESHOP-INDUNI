@@ -81,7 +81,8 @@ class User < ApplicationRecord
   def effective_can_import_quote?  = admin? || can_import_quote?
   def effective_can_generic_order? = admin? || can_generic_order?
   # « Article générique » ajouté au panier depuis un catalogue : Conducteur de travaux et administrateurs.
-  def can_generic_article? = admin? || job_function.to_s.upcase == "CONDUCTEUR DE TRAVAUX"
+  GENERIC_ARTICLE_JOB_FUNCTIONS = [ "CONDUCTEUR DE TRAVAUX", "CONTREMAITRE", "CHEF D'EQUIPE" ].freeze
+  def can_generic_article? = admin? || GENERIC_ARTICLE_JOB_FUNCTIONS.include?(job_function.to_s.upcase)
   def effective_can_view_dashboard?    = admin? || can_view_dashboard?
   def effective_can_validate_orders?   = admin? || can_validate_orders?
   def effective_can_enable_alerts?     = admin? || can_enable_alerts?
