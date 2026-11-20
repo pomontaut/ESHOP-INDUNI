@@ -532,6 +532,13 @@ Comme sur la fiche HGC « Brique en ciment creuse » (colonne Type plein/percé)
 100131134-139, 100131167, 100132240) sont dans Maçonnerie & Briques › Briques › « Brique creuse ciment » (19 articles avec les briques creuses) ; la
 sous-famille « Plots » n'existe plus. Désignations, prix et références inchangés.
 
+## HGC : « Armatures & Distanceurs & Goujons cisaillement »
+
+La famille HGC `Armatures & Distanceurs` a été renommée `Armatures & Distanceurs & Goujons cisaillement` (JSON, carte de famille et
+`HGC_SUB_ORDERS` de `catalogue.html`, dictionnaire de langues, règle « +1 » treillis) et reçoit la sous-famille `Goujons de cisaillement` :
+6 goujons HED (art. 100037355, 100037357, 100037358, 100037400, 100037661, 100090480 ; Ø 20 à 28 mm ; prix à la pièce, d'après les captures du
+site HGC, prix barrés non repris). Le nom de famille est la clé : le changer = adapter ces endroits.
+
 ## Deploy workflow (always follow this exact sequence)
 
 **Déploiement automatique** : une fois les vérifications faites, déployer sur `main` sans attendre de « pousse »/« déploie » du propriétaire — sauf si une validation de sa part est nécessaire (choix ambigu, action risquée ou irréversible, données à confirmer).
