@@ -222,6 +222,11 @@ Géotextile HGC Premium|HGC Premium geotextile|Geotextil HGC Premium|Geotessile 
 Géotextile non tissés|Non-woven geotextile|Geotextil no tejido|Geotessile non tessuto|Geotêxtil não tecido
 ACO Swissdrain|ACO Swissdrain|ACO Swissdrain|ACO Swissdrain|ACO Swissdrain
 Cadre petite hauteur|Low-height frame|Marco de poca altura|Telaio a bassa altezza|Moldura de baixa altura
+Fonds de regard ACO Monolith|ACO Monolith manhole bases|Fondos de registro ACO Monolith|Fondi pozzetto ACO Monolith|Fundos de câmara ACO Monolith
+Puits perdus|Soakaways|Pozos filtrantes|Pozzi perdenti|Poços perdidos
+Puits de sortie de secours|Emergency exit shafts|Pozos de salida de emergencia|Pozzi di uscita di emergenza|Poços de saída de emergência
+Puits de pompage FRIWA-pump|FRIWA-pump pump chambers|Pozos de bombeo FRIWA-pump|Pozzi di pompaggio FRIWA-pump|Poços de bombagem FRIWA-pump
+Plaques de couverture puits à câbles|Cable chamber cover slabs|Placas de cubierta para pozos de cables|Lastre di copertura per pozzetti cavi|Lajes de cobertura para câmaras de cabos
 Plaque frontale|End plate|Placa frontal|Piastra frontale|Placa frontal
 Géotextile Stratex Premium|Stratex Premium geotextile|Geotextil Stratex Premium|Geotessile Stratex Premium|Geotêxtil Stratex Premium
 Géotextile Stratex Protection|Stratex Protection geotextile|Geotextil Stratex Protección|Geotessile Stratex Protezione|Geotêxtil Stratex Proteção
