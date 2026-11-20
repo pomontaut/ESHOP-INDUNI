@@ -273,6 +273,9 @@ Peinture|Paint|Pintura|Pittura|Tinta
 Perforateur Bosch|Bosch rotary hammer|Martillo perforador Bosch|Perforatore Bosch|Martelo perfurador Bosch
 Pistolet|Gun|Pistola|Pistola|Pistola
 Pistolet à clou|Nail gun|Pistola de clavos|Chiodatrice|Pistola de pregos
+Liteau|Batten|Listón|Listello|Ripa
+Profils triangulaires|Triangular profiles|Perfiles triangulares|Profili triangolari|Perfis triangulares
+Chanfreins|Chamfers|Chaflanes|Smussi|Chanfros
 Planches de coffrage|Formwork boards|Tablas de encofrado|Tavole per casseforme|Tábuas de cofragem
 Plaques|Plates|Placas|Lastre|Placas
 Plateau bois C24|C24 timber plank|Tablón de madera C24|Tavolone in legno C24|Prancha de madeira C24

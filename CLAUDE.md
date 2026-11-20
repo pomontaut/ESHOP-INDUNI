@@ -637,3 +637,9 @@ famille partagent la photo). Source : recherche `https://www.hilti.ch/fr/search?
 résultat porte exactement `itemCode=<n° article>` (les articles « remplacés par » un autre n° sont laissés sans photo : 4 articles).
 Visibles seulement en mode Développement : `Api::ProductsController#visible_image` masque `/images/products/hilti-ch-*` hors dev_mode
 (les photos HILTI fournies à la main `hilti-<n°>.jpg` restent publiques ; les nouvelles sont nommées `hilti-ch-*`). Pour ouvrir à tous : retirer ce masquage. Photos propriété de Hilti, usage interne.
+
+## HGC : sous-famille « Liteau » (Coffrage & Étaiement)
+
+Famille HGC `Coffrage & Étaiement` › sous-famille `Liteau` (déclarée dans la carte de famille et `HGC_SUB_ORDERS` de `catalogue.html`, dictionnaire de langues) :
+`Profils triangulaires` (3 profils plastique creux 10/15/20 mm au lot de 100 m, déplacés depuis « Profils plastique », + 5 Constri 10 à 30 mm au paquet de 100 ou 50 m, art. 100012205…100012253)
+et `Chanfreins` (5 TAM Chanfrein/PNR avec onglet 10 à 30 mm, L250 cm, prix à la pièce, art. 100139571…100139575). Prix nets d'après les captures du site HGC (prix barrés non repris).
