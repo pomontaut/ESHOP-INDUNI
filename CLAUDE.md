@@ -551,6 +551,20 @@ envoi** (sans adresse l'envoi échoue). Renchérissement 2026 (PDF `Teuerungszus
 24 % puis 5 %, Pecafil 10 %, Zemdrain 10 %, distanceurs béton fibreux 2 %, Stremaform 2 %, Fradiflex 3 %, coffrages tôle profilée 10 %) :
 aucune plus-value appliquée à ce catalogue ; si ces gammes sont ajoutées, majorer leurs prix du % indiqué (supplément variable, à reconfirmer).
 
+## Catalogue Albanese (conditions d'achat INDUNI & CIE SA 2026-2027)
+
+Fournisseur `Albanese` (Albanese Baumaterialien AG, Winterthur ; conditions valables jusqu'au 30.06.2027, paiement 30 jours net ; logo
+`public/images/albanese.png`). 58 articles, UNIQUEMENT les catégories du PDF : 1 Technique de coffrage bord de dalle (`Coffrage bord de dalle` : AL-Fix
+quattro, V-Max Board / WD / IT, MIDI Board, Picofix, équerres BEGO-Fix), 2 Technique d'ancrage, 3 butées RISA (`Butées et distanceurs de coffrage`),
+5 Accessoires de coffrage (PDK, Speedy). Prix : **prix nets du PDF** tels quels ; pour les lignes « rabais en % », prix de LISTE de la boutique en
+ligne (albanese.ch/online shop, ShopFactory, `product:price:amount`) × (1 − rabais), prix à la pièce (carton ÷ nb de pièces). AL-Fix quattro, ancre ASK,
+RISA Excenter : prix « Moins » (hors palette entière), prix palette cité dans le descriptif. RISA : prix net « jusqu'à 30 cm » seulement. N° d'article
+internes (ALFIXQ27, PDK449…) sauf V-Max / MIDI (n° du PDF ; 3998.28 et 3999.18 corrigent deux n° dupliqués/erronés du PDF). NON repris (pas de prix de
+liste en ligne ou unité ambiguë) : BEGO ciment/Light/Allbord/ISOBORD, DILA-Profi, plaques et tubes de rallonge UNI-douille / V2A, V2A UNI-ancre, cônes
+aimantés, soutien combi V, clé de coffrage, ancres de rocher/ascenseur, Waterstop, RISA ≥ 30 cm, outils et vêtements (rabais généraux 30 %/5 %).
+Frais de livraison (jusqu'à 2'000.- net : transport en plus, dès 2'000.- : forfait 139.-) NON implémentés dans `transportDetailsInduni`.
+Pas de photos. E-mail de commande = info@albanese.ch (pied de page du PDF), à confirmer.
+
 ## Deploy workflow (always follow this exact sequence)
 
 **Déploiement automatique** : une fois les vérifications faites, déployer sur `main` sans attendre de « pousse »/« déploie » du propriétaire — sauf si une validation de sa part est nécessaire (choix ambigu, action risquée ou irréversible, données à confirmer).

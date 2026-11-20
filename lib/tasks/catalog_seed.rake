@@ -78,6 +78,15 @@ namespace :catalog do
       "Max Frank" => {
         phone: "+41 31 740 55 55", address: "Industriestrasse 100", postal_code: "3178", city: "Bösingen", country_code: "CH"
       },
+      # Albanese Baumaterialien AG (Winterthur) : conditions d'achat INDUNI & CIE SA 2026-2027
+      # (valables jusqu'au 30.06.2027, paiement 30 jours net). Adresse e-mail du pied de page du
+      # document (info@albanese.ch) : à remplacer par l'adresse de commande dans Admin > Fournisseurs
+      # si Albanese en communique une autre.
+      "Albanese" => {
+        email: "info@albanese.ch", phone: "+41 52 213 86 41", fax: "+41 52 213 73 59",
+        address: "Maienriedweg 1a", postal_code: "8408", city: "Winterthur", country_code: "CH",
+        ide_number: "CHE-116.361.800", payment_condition: "30 jours net"
+      },
       # Décision Achats : toute commande passée depuis le Dépôt INDUNI (EFCO,
       # HILTI, Matériel Induni) part systématiquement à magasin@induni.ch,
       # jamais directement au fournisseur externe — voir la correction

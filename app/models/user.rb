@@ -34,6 +34,7 @@ class User < ApplicationRecord
     { key: "GANAMAT SA", label: "GANAMAT SA" },
     { key: "Swisspor",   label: "Swisspor" },
     { key: "Max Frank",  label: "Max Frank" },
+    { key: "Albanese",   label: "Albanese" },
     { key: "EFCO",       label: "EFCO" },
     { key: "HILTI",      label: "HILTI" },
     { key: "Matériel Induni", label: "Matériel Induni" },
