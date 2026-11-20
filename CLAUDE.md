@@ -562,7 +562,13 @@ RISA Excenter : prix « Moins » (hors palette entière), prix palette cité dan
 internes (ALFIXQ27, PDK449…) sauf V-Max / MIDI (n° du PDF ; 3998.28 et 3999.18 corrigent deux n° dupliqués/erronés du PDF). NON repris (pas de prix de
 liste en ligne ou unité ambiguë) : BEGO ciment/Light/Allbord/ISOBORD, DILA-Profi, plaques et tubes de rallonge UNI-douille / V2A, V2A UNI-ancre, cônes
 aimantés, soutien combi V, clé de coffrage, ancres de rocher/ascenseur, Waterstop, RISA ≥ 30 cm, outils et vêtements (rabais généraux 30 %/5 %).
-Frais de livraison (jusqu'à 2'000.- net : transport en plus, dès 2'000.- : forfait 139.-) NON implémentés dans `transportDetailsInduni`.
+**Frais de transport (règle déduite de 18 factures réelles oct. 2024 – nov. 2026, `albaneseTransport()` dans `transportDetailsInduni` / `Html` /
+`LineItems`)** : dès CHF 1'500 net (observé : tout ≥ 1'647) « Transport Pauschal » **129.-** (les conditions 2026-27 annoncent 139.- dès 2'000.-, mais la
+facture du 4.11.2026 est restée à 129.-) + surtaxe carburant/embouteillages sur ce forfait camion (+6 % en juin 2026 [TTD], +14 % en nov. 2026 [TTF] =
+18.05 : valeur retenue 14 %, `ALBANESE_SURTAXE_RATE`, à réajuster aux prochaines factures) ; en dessous : « Transportanteil » colis variable (CHF 21 à 98, 4 à
+10 % du net, aucun lien exact) estimé à **7 %** du net [H], plafonné à 129.-, sans surtaxe. Occasionnellement franco (colis express gratuit, ex. 298.- ou
+750.- à prix spécial) ou « Express » +32.-/+40.-/+90.-/+120.- (non calculés). Palette spéciale consignée (Paletten-Verschlag 39.95, remboursable au retour) et
+LSVA (0.-) non calculées.
 Pas de photos. E-mail de commande = info@albanese.ch (pied de page du PDF), à confirmer.
 
 ## Deploy workflow (always follow this exact sequence)

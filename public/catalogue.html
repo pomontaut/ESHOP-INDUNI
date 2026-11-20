@@ -156,6 +156,12 @@ const LCBE_TRANSPORT=145;
 // Tinguely (aspiratrice, canton de Vaud) : supplément ASTAG de 4.2 % (offre jointe), appliqué ici au montant net après rabais [hypothèse de base]. SGTT (Genève) : aucun frais annexe, transport compris dans les heures/forfaits.
 const TINGUELY_ASTAG_RATE=0.042;
 const GANAMAT_TRANSPORT=105;
+// Albanese : règle déduite de 18 factures réelles INDUNI (oct. 2024 – nov. 2026), pas d'un tarif écrit. Dès ~CHF 1'650 net :
+// « Transport Pauschal » CHF 129 (les conditions 2026-27 annoncent 139 dès 2'000, mais la facture du 4.11.2026 reste à 129) ;
+// en dessous : « Transportanteil » variable (colis, CHF 21 à 98 soit 4 à 10 % du net) estimé à 7 % [H], plafonné au forfait.
+// Surtaxe carburant/embouteillages sur le camion : +6 % en juin 2026, +14 % en nov. 2026 (dernière valeur) — pas sur les colis.
+const ALBANESE_FORFAIT=129, ALBANESE_FORFAIT_MIN=1500, ALBANESE_PETIT_RATE=0.07, ALBANESE_SURTAXE_RATE=0.14;
+function albaneseTransport(sub){const r5=x=>Math.round(x*20)/20;const camion=sub>=ALBANESE_FORFAIT_MIN;const base=camion?ALBANESE_FORFAIT:Math.min(ALBANESE_FORFAIT,r5(sub*ALBANESE_PETIT_RATE));return {base:base,surtaxe:camion?r5(base*ALBANESE_SURTAXE_RATE):0,camion:camion};}
 // Conditions de vente et de livraison swisspor (liste de prix nets, valable dès le
 // 22.06.2026, §2 et §4) : franco chantier dès CHF 3'500 net (zone de plaine), sinon
 // supplément fixe CHF 150 ; supplément de transport routier (STR/majoration RPLP) de
@@ -369,6 +375,10 @@ function transportDetailsInduni(sub,supplier,weightOverride,chantierNom){
   if(supplier==='SGTT') return {transport:0,rplp:0,crane:0,prep:0,totalTransport:0,total:sub,label:'Transport SGTT'};
   if(supplier==='LCBE') return {transport:LCBE_TRANSPORT,rplp:0,crane:0,prep:0,totalTransport:LCBE_TRANSPORT,total:sub+LCBE_TRANSPORT,label:'Forfait déplacement LCBE'};
   if(supplier==='GANAMAT SA') return {transport:GANAMAT_TRANSPORT,rplp:0,crane:0,prep:0,totalTransport:GANAMAT_TRANSPORT,total:sub+GANAMAT_TRANSPORT,label:'Participation transport GANAMAT'};
+  if(supplier==='Albanese'){
+    const a=albaneseTransport(sub);
+    return {transport:a.base,rplp:a.surtaxe,crane:0,prep:0,totalTransport:a.base+a.surtaxe,total:sub+a.base+a.surtaxe,label:'Transport Albanese'};
+  }
   if(supplier==='Swisspor'){
     const base=sub>=SWISSPOR_FRANCO?0:SWISSPOR_SUPPLEMENT;
     const rplp=Math.round(sub*SWISSPOR_STR_RATE*100)/100;
@@ -405,6 +415,10 @@ function transportHtmlInduni(sub,supplier,included,chantierNom){
   if(supplier==='SGTT') return `<div class="sum"><span>Transport SGTT — compris dans les heures/forfaits</span><b>${fmt(0)}</b></div>`;
   if(supplier==='LCBE') return `<div class="sum"><span>Forfait déplacement LCBE</span><b>${fmt(t.totalTransport)}</b></div>`;
   if(supplier==='GANAMAT SA') return `<div class="sum"><span>Participation transport GANAMAT</span><b>${fmt(t.totalTransport)}</b></div>`;
+  if(supplier==='Albanese'){
+    const a=albaneseTransport(sub);
+    return `<div class="sum"><span>${a.camion?'Transport Albanese — forfait camion':'Transport Albanese — estimation colis (7 %)'}</span><b>${fmt(t.transport)}</b></div>`+(t.rplp?`<div class="sum"><span>Surtaxe carburant et embouteillages Albanese (${Math.round(ALBANESE_SURTAXE_RATE*100)} %)</span><b>${fmt(t.rplp)}</b></div>`:'');
+  }
   if(supplier==='Swisspor'){
     const otherSupplementsNote="Selon les conditions de vente et de livraison swisspor, d'autres suppléments peuvent s'appliquer et ne sont pas calculés automatiquement ici : accès difficile/montagne +CHF 150/camion, livraison express (commande la veille après 11h) +CHF 80, livraison de nuit (20h–5h) +CHF 700, palette EURO CHF 20 (crédit CHF 15 si retournée), forfait de déchargement CHF 200 à 400 si le chantier ne peut pas décharger.";
     return `<div class="sum"><span>Supplément transport routier (STR) — 0.95%</span><b>${fmt(t.rplp)}</b></div><div class="sum"><span>Livraison Swisspor${sub>=SWISSPOR_FRANCO?' franco chantier dès CHF 3’500':' — commande < CHF 3’500'} <span title="${esc(otherSupplementsNote)}" style="cursor:help;opacity:.6">ⓘ</span></span><b>${fmt(t.transport)}</b></div>`;
@@ -451,6 +465,10 @@ function transportLineItemsInduni(sub,supplier,included,chantierNom){
   if(supplier==='SGTT') return [];
   if(supplier==='LCBE') return [{label:'Forfait déplacement LCBE',amount:t.totalTransport}];
   if(supplier==='GANAMAT SA') return [{label:'Participation transport GANAMAT',amount:t.totalTransport}];
+  if(supplier==='Albanese'){
+    const a=albaneseTransport(sub);
+    return [{label:a.camion?'Transport Albanese — forfait camion':'Transport Albanese — estimation colis (7 %)',amount:t.transport}].concat(t.rplp?[{label:`Surtaxe carburant et embouteillages Albanese (${Math.round(ALBANESE_SURTAXE_RATE*100)} %)`,amount:t.rplp}]:[]);
+  }
   if(supplier==='Swisspor') return [
     {label:'Supplément transport routier (STR) — 0.95%',amount:t.rplp},
     {label:`Livraison Swisspor${sub>=SWISSPOR_FRANCO?' franco chantier dès CHF 3’500':' — commande < CHF 3’500'}`,amount:t.transport}
