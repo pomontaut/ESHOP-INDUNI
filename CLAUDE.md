@@ -571,6 +571,16 @@ facture du 4.11.2026 est restée à 129.-) + surtaxe carburant/embouteillages su
 LSVA (0.-) non calculées.
 Pas de photos. E-mail de commande = info@albanese.ch (pied de page du PDF), à confirmer.
 
+## Photos et fiches : Max Frank et Albanese
+
+**Max Frank** : 80 articles ont leur photo (`public/images/products/maxfrank-<famille>.jpg`, extraite à la main du PDF « Dorn Max Frank 2026 », une photo par bloc : DN,
+DQ, DND, gaines plastique / INOX / INOX carrées, Egcopal LO/LF/HO/HF, agrandie ×2) ; les goujons DI/DFR/DFA/DFAB n'ont que des bandeaux 260×36 inutilisables :
+pas de photo. `ficheUrl` (lien « Fiche article ») = PDF du site maxfrank.com : notices d'application Egcodorn DN/DQ, DND, Egcopal Ortbeton/Fertigteil, sinon la
+brochure « Egcodorn goujons de dilatation » (goujons, gaines). **Albanese** : 52/58 photos (`albanese-<n° produit boutique>.jpg`, `og:image` de la fiche du
+shop albanese.ch/online shop, ≤ 600 px, relues à l'œil ; AL-Fix LM, outil cônes aimantés et RISA Excenter sans photo exploitable) ; `ficheUrl` = section du
+catalogue PDF Albanese (`albanese-katalog.pdf#page=7|45|61|78` : bord de dalle / ancrage / butées / accessoires, pages données par le site). Photos propriété des
+fournisseurs, usage interne.
+
 ## Deploy workflow (always follow this exact sequence)
 
 **Déploiement automatique** : une fois les vérifications faites, déployer sur `main` sans attendre de « pousse »/« déploie » du propriétaire — sauf si une validation de sa part est nécessaire (choix ambigu, action risquée ou irréversible, données à confirmer).
