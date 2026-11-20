@@ -589,8 +589,7 @@ fournisseurs, usage interne.
 Bandeau déroulant « INFOS » juste au-dessus du titre « Catalogues Achats Induni » (`newsTickerHtml()` dans `renderHome()`, liste `NEWS_INDUNI` =
 `{from:'AAAA-MM-JJ', text}` dans `catalogue.html`). Chaque annonce s'affiche **21 jours** (`NEWS_DAYS`) à partir de `from`, puis disparaît seule ; le bandeau
 entier disparaît quand il n'y a plus d'annonce active. Survol = pause, `prefers-reduced-motion` = texte fixe. **Nouvelle annonce = une ligne dans
-`NEWS_INDUNI`** (supprimer les lignes échues à l'occasion). Annonces du 20.11.2026 : catalogues Max Frank et Albanese, contrat Albanese 2026-27, nouveautés HGC,
-suggestions « article + 1 » et article générique.
+`NEWS_INDUNI`** (supprimer les lignes échues à l'occasion). Règle éditoriale : uniquement nouveaux contrats et nouvelles fonctionnalités (jamais de nouvelles références/catalogues), textes courts, rien de confidentiel (pas de droits/profils ni de conditions détaillées). Annonces du 20.11.2026 : contrat Albanese 2026-27, suggestions « article + 1 ».
 
 ## Deploy workflow (always follow this exact sequence)
 

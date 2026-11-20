@@ -699,10 +699,8 @@ function render(){const q=document.getElementById('searchBox').value.trim().toLo
 // toute seule (les entrées échues peuvent être supprimées de la liste lors d'une prochaine mise à jour).
 const NEWS_DAYS=21;
 const NEWS_INDUNI=[
-  {from:'2026-11-20',text:"🆕 Nouveaux catalogues : Max Frank (goujons Egcodorn, gaines, Egcopal) et Albanese (coffrage de bord de dalle, ancrage, butées RISA) — prix nets des contrats 2026-27"},
-  {from:'2026-11-20',text:"📄 Nouveau contrat Albanese 2026-2027 : conditions d'achat INDUNI & CIE SA valables jusqu'au 30.06.2027, paiement à 30 jours, transport forfaitaire dès CHF 1'500.- net"},
-  {from:'2026-11-20',text:"🆕 HG COMMERCIALE : Panneaux décoratifs Forex, goujons de cisaillement HED, bétons weber ton 916 et Maximum Solido"},
-  {from:'2026-11-20',text:"💡 Nouveautés : suggestions « article + 1 » (un caniveau → sa grille, un tube → son coude…) et « Article générique » à chaque niveau du catalogue (conducteurs de travaux et administrateurs)"}
+  {from:'2026-11-20',text:"📄 Nouveau contrat Albanese 2026-2027 : les conditions d'achat Induni sont appliquées dans l'e-shop"},
+  {from:'2026-11-20',text:"💡 Nouveauté : suggestions « article + 1 » à l'ajout au panier (article associé proposé, jamais ajouté sans votre clic)"}
 ];
 function newsActiveInduni(now){const t=(now||new Date()).getTime();return NEWS_INDUNI.filter(n=>{const s=new Date(n.from+'T00:00:00').getTime();return t>=s&&t<s+NEWS_DAYS*86400000;});}
 function newsTickerHtml(){const L=newsActiveInduni();if(!L.length)return '';const items=L.map(n=>`<span class="newsItem">${esc(n.text)}</span>`).join('');const dur=Math.max(40,Math.round(items.replace(/<[^>]+>/g,'').length/5));return `<div class="newsTicker" role="region" aria-label="Informations"><span class="newsTag">INFOS</span><div class="newsViewport"><div class="newsTrack" style="--newsDur:${dur}s">${items}${items}</div></div></div>`;}
