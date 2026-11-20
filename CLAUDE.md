@@ -515,7 +515,7 @@ recherche (`scoreProductV49`). Aucun prix confidentiel affiché (`priceHtml`). P
 clic, pas de suggestion si le panier contient déjà un article du lot. Règles : Protection Câbles tube → coudes de MÊME diamètre exact ;
 HGC treillis → distanceurs/cales/ligatures ; Swisspor étanchéité liquide → outillage ; Swisspor BIKUTOP → accessoires toitures plates ;
 caniveau ACO Multiline cadre ↔ grille de la MÊME série (V100/V200) ; saut-de-loup → grille caillebotis + fixations ; regard/anneau CreaBeton →
-cadre, couvercle, échelle ; anneau/cône HGC → regard en fonte ; EFCO mousse ↔ pistolet ; MBT Net-Form → clous ; briques/plots/linteaux → accessoires
+cadre, couvercle, échelle ; anneau/cône HGC → regard en fonte ; tuyau béton HGC (rond/ovale) → anneaux de regard (ronds/ovales) ; EFCO mousse ↔ pistolet ; MBT Net-Form → clous ; briques/plots/linteaux → accessoires
 de maçon ; mortiers/ciments → accessoires béton ; Swisspor toitures végétalisées → accessoires (4 articles + « Voir tous »). Nouvelle règle = une entrée dans `RULES` (n'associer que des familles vérifiées dans le catalogue).
 
 ## HGC : famille « Panneaux décoratifs » (Forex Classic)

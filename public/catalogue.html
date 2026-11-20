@@ -6448,6 +6448,10 @@ function indDraw(){
     {title:()=>'Pensez au regard / cadre de voirie',
      match:p=>p.famille==='Préfa-béton'&&/^(Anneau|Cône)$/i.test(p.sousFamille||''),
      pick:p=>PRODUCTS.filter(x=>same(x.catalog,p.catalog)&&x.famille==='Voirie & Aménagement'&&/Regard/i.test(x.sousFamille||'')&&/^Regard/i.test(x.designation||''))},
+    // Tuyau béton HGC (rond / ovale) → anneaux de regard (ronds pour tuyaux ronds, ovales pour ovales).
+    {title:p=>/ovale?/i.test(p.sousSousFamille||'')?'Pensez aux anneaux de regard ovales':'Pensez aux anneaux de regard',
+     match:p=>p.famille==='Préfa-béton'&&p.sousFamille==='Tuyaux & bordures béton'&&/^Tuyaux béton (rond|oval)/i.test(p.sousSousFamille||''),
+     pick:p=>{const ov=/oval/i.test(p.sousSousFamille||'');return PRODUCTS.filter(x=>same(x.catalog,p.catalog)&&x.famille===p.famille&&x.sousFamille==='Anneau'&&(ov?/ovale/i:/^(?!.*ovale)/i).test(x.designation||''));}},
     // EFCO : mousse expansive ↔ pistolet.
     {title:()=>'Pensez au pistolet d\'application',
      match:p=>/^EFCO/i.test(p.catalog||'')&&p.sousFamille==='Mousse expansive',
