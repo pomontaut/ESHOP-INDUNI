@@ -6,6 +6,8 @@ Accessoires béton armé|Reinforced concrete accessories|Accesorios para hormig�
 Adjuvants béton|Concrete admixtures|Aditivos para hormigón|Additivi per calcestruzzo|Adjuvantes para betão
 Appareil scellement|Anchoring devices|Aparatos de sellado|Apparecchi di ancoraggio|Aparelhos de selagem
 Armatures & Distanceurs|Reinforcement & Spacers|Armaduras y separadores|Armature e distanziatori|Armaduras e espaçadores
+Armatures & Distanceurs & Goujons cisaillement|Reinforcement, Spacers & Shear dowels|Armaduras, separadores y pasadores de cortante|Armature, distanziatori e spinotti di taglio|Armaduras, espaçadores e cavilhas de corte
+Goujons de cisaillement|Shear dowels|Pasadores de cortante|Spinotti di taglio|Cavilhas de corte
 Aspiratrice & pompage|Suction & pumping|Aspiración y bombeo|Autospurgo e pompaggio|Aspiração e bombagem
 Autre sécurité EPI|Other safety / PPE|Otra seguridad / EPI|Altra sicurezza / DPI|Outra segurança / EPI
 Autre électroportatif|Other power tools|Otras herramientas eléctricas|Altri elettroutensili|Outras ferramentas elétricas
