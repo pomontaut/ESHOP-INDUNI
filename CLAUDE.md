@@ -526,6 +526,12 @@ Famille HGC `Panneaux décoratifs` › sous-famille `Forex Classic` : 26 panneau
 `i18n_dict_categories.js` et le rayon « Coffrage & bois » de la vue Amazon. L'art. 100121426 n'existait pas dans les captures. Un nouveau format :
 ajouter une ligne dans `catalog_products.json`.
 
+## HGC : plots pleins rangés dans « Brique creuse ciment »
+
+Comme sur la fiche HGC « Brique en ciment creuse » (colonne Type plein/percé), les 12 articles « Plot plein DB » (100107604, 100120762-764,
+100131134-139, 100131167, 100132240) sont dans Maçonnerie & Briques › Briques › « Brique creuse ciment » (19 articles avec les briques creuses) ; la
+sous-famille « Plots » n'existe plus. Désignations, prix et références inchangés.
+
 ## Deploy workflow (always follow this exact sequence)
 
 **Déploiement automatique** : une fois les vérifications faites, déployer sur `main` sans attendre de « pousse »/« déploie » du propriétaire — sauf si une validation de sa part est nécessaire (choix ambigu, action risquée ou irréversible, données à confirmer).
