@@ -581,6 +581,14 @@ shop albanese.ch/online shop, ≤ 600 px, relues à l'œil ; AL-Fix LM, outil c�
 catalogue PDF Albanese (`albanese-katalog.pdf#page=7|45|61|78` : bord de dalle / ancrage / butées / accessoires, pages données par le site). Photos propriété des
 fournisseurs, usage interne.
 
+## Bandeau d'informations de l'accueil (nouveaux contrats / fonctionnalités)
+
+Bandeau déroulant « INFOS » juste au-dessus du titre « Catalogues Achats Induni » (`newsTickerHtml()` dans `renderHome()`, liste `NEWS_INDUNI` =
+`{from:'AAAA-MM-JJ', text}` dans `catalogue.html`). Chaque annonce s'affiche **21 jours** (`NEWS_DAYS`) à partir de `from`, puis disparaît seule ; le bandeau
+entier disparaît quand il n'y a plus d'annonce active. Survol = pause, `prefers-reduced-motion` = texte fixe. **Nouvelle annonce = une ligne dans
+`NEWS_INDUNI`** (supprimer les lignes échues à l'occasion). Annonces du 20.11.2026 : catalogues Max Frank et Albanese, contrat Albanese 2026-27, nouveautés HGC,
+suggestions « article + 1 » et article générique.
+
 ## Deploy workflow (always follow this exact sequence)
 
 **Déploiement automatique** : une fois les vérifications faites, déployer sur `main` sans attendre de « pousse »/« déploie » du propriétaire — sauf si une validation de sa part est nécessaire (choix ambigu, action risquée ou irréversible, données à confirmer).
