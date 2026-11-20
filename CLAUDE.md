@@ -518,6 +518,14 @@ caniveau ACO Multiline cadre ↔ grille de la MÊME série (V100/V200) ; saut-de
 cadre, couvercle, échelle ; anneau/cône HGC → regard en fonte ; EFCO mousse ↔ pistolet ; MBT Net-Form → clous ; briques/plots/linteaux → accessoires
 de maçon ; mortiers/ciments → accessoires béton ; Swisspor toitures végétalisées → accessoires (4 articles + « Voir tous »). Nouvelle règle = une entrée dans `RULES` (n'associer que des familles vérifiées dans le catalogue).
 
+## HGC : famille « Panneaux décoratifs » (Forex Classic)
+
+Famille HGC `Panneaux décoratifs` › sous-famille `Forex Classic` : 26 panneaux PVC durs blancs film 1 côté (2 à 19 mm ; 3050x1220/1560/2030 et
+2500x1220 mm ; art. 100121413…100121438 et 100132533), prix net au **m²** (unité `m2`, comme les OSB), saisis d'après les captures du site HGC
+(prix barrés = prix catalogue, non repris). Pas de photo (icône 🎨). Déclarée dans `catalogue.html` (carte de famille + `HGC_SUB_ORDERS`),
+`i18n_dict_categories.js` et le rayon « Coffrage & bois » de la vue Amazon. L'art. 100121426 n'existait pas dans les captures. Un nouveau format :
+ajouter une ligne dans `catalog_products.json`.
+
 ## Deploy workflow (always follow this exact sequence)
 
 **Déploiement automatique** : une fois les vérifications faites, déployer sur `main` sans attendre de « pousse »/« déploie » du propriétaire — sauf si une validation de sa part est nécessaire (choix ambigu, action risquée ou irréversible, données à confirmer).

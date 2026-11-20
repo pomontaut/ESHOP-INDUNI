@@ -255,6 +255,7 @@ Ouverture de nettoyage|Cleaning opening|Abertura de limpieza|Apertura di pulizia
 Paniers|Baskets|Cestas|Ceste|Cestos
 Panneau / affichage interne chantier|Panel / internal site display|Panel / cartelería interna de obra|Pannello / affissione interna di cantiere|Painel / afixação interna de obra
 Panneaux|Panels|Paneles|Pannelli|Painéis
+Panneaux décoratifs|Decorative panels|Paneles decorativos|Pannelli decorativi|Painéis decorativos
 Panneaux OSB 3|OSB 3 panels|Paneles OSB 3|Pannelli OSB 3|Painéis OSB 3
 Panneaux jaunes|Yellow panels|Paneles amarillos|Pannelli gialli|Painéis amarelos
 Panneaux routier|Road signs|Señales de carretera|Cartelli stradali|Sinais rodoviários
