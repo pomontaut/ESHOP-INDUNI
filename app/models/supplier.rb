@@ -12,6 +12,18 @@ class Supplier < ApplicationRecord
   # Vide depuis la mise en production de Tinguely et SGTT.
   TEST_ONLY_NAMES = [].freeze
 
+  # SGTT : toutes les prestations (hors « Transport des déchets », SGTT-02) sont
+  # rédigées avec EDAPHOS (bon Omod) : son adresse est toujours en copie (en dur,
+  # non modifiable, ajoutée côté serveur) et le remerciement figure en gras dans
+  # l'e-mail de base.
+  EDAPHOS_EMAIL = "environnement@edaphos.ch".freeze
+  EDAPHOS_THANKS = "Merci à EDAPHOS pour la rédaction du bon Omod.".freeze
+  SGTT_WASTE_TRANSPORT_ARTICLE = "SGTT-02".freeze
+
+  def self.edaphos_order?(supplier_name, articles)
+    base_name(supplier_name) == "sgtt" && Array(articles).any? { |a| a.to_s != SGTT_WASTE_TRANSPORT_ARTICLE }
+  end
+
   CANTONS = [ "GENEVE", "VAUD", "VALAIS", "FRIBOURG", "JURA" ].freeze
   SECTORS = [ "GC", "BAT GE", "BAT VD", "TRANSFO GE", "TRANSFO VD" ].freeze
 

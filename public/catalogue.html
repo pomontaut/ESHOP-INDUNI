@@ -4355,9 +4355,11 @@ async function sendOrderByEmail(e) {
   document.getElementById('confirmOrderNumber').textContent = no;
   document.getElementById('confirmSupplierEmail').value = supplierOrderEmailInduni(supplier, chantier);
   document.getElementById('confirmCcEmail').value = chantierTechnicienEmail(chantier);
+  const _edaphos = supplier === 'SGTT' && cart.some(i => i.article !== 'SGTT-02');
+  if (_edaphos) { const c = document.getElementById('confirmCcEmail'); c.value = [c.value, 'environnement@edaphos.ch'].filter(Boolean).join(', '); }
   if (window._userPerms && window._userPerms.testRecipient) { document.getElementById('confirmSupplierEmail').value = window._userPerms.testRecipient; document.getElementById('confirmCcEmail').value = ''; }
   document.getElementById('confirmSubject').value = 'Commande ' + no;
-  document.getElementById('confirmBody').value = 'Bonjour,\n\nVeuillez trouver ci-joint le bon de commande.\n\n' + (pickup ? 'ENLÈVEMENT AU DÉPÔT : cette commande sera retirée par nos soins à votre dépôt (aucune livraison). Merci de la préparer pour la date indiquée.\n\n' : '') + 'Merci de bien vouloir nous faire parvenir votre confirmation de commande dans les plus brefs délais.\n\nRestant à votre disposition pour toute information complémentaire.\n\nCordialement\nINDUNI & Cie SA\nAvenue des Grandes-Communes 6\n1213 Petit-Lancy';
+  document.getElementById('confirmBody').value = 'Bonjour,\n\nVeuillez trouver ci-joint le bon de commande.\n\n' + (_edaphos ? 'Merci à EDAPHOS pour la rédaction du bon Omod.\n\n' : '') + (pickup ? 'ENLÈVEMENT AU DÉPÔT : cette commande sera retirée par nos soins à votre dépôt (aucune livraison). Merci de la préparer pour la date indiquée.\n\n' : '') + 'Merci de bien vouloir nous faire parvenir votre confirmation de commande dans les plus brefs délais.\n\nRestant à votre disposition pour toute information complémentaire.\n\nCordialement\nINDUNI & Cie SA\nAvenue des Grandes-Communes 6\n1213 Petit-Lancy';
   const modifyNote = document.getElementById('confirmModifyNote');
   if (modifyNote) modifyNote.style.display = _modifyingOrderId ? 'block' : 'none';
   openModal('sendConfirmModal');

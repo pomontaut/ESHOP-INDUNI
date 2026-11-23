@@ -3,7 +3,7 @@
   body_before_button = paragraphs.first(2).join("\n\n")
   body_after_button  = paragraphs.drop(2).join("\n\n")
 %>
-<%= simple_format(h(body_before_button)) %>
+<%= simple_format(h(body_before_button).sub(h(Supplier::EDAPHOS_THANKS), "<strong>#{h(Supplier::EDAPHOS_THANKS)}</strong>").html_safe) %>
 
 <table role="presentation" style="margin:20px 0;width:100%;max-width:520px;">
   <tr>

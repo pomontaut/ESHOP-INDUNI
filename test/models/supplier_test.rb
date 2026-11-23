@@ -76,4 +76,11 @@ class SupplierTest < ActiveSupport::TestCase
     assert_equal canplast, Supplier.find_existing("canplast")
     assert_nil Supplier.find_existing("Autre fournisseur SA")
   end
+
+  test "edaphos_order? : SGTT hors transport de déchets seulement" do
+    assert Supplier.edaphos_order?("SGTT", [ "SGTT-01" ])
+    assert Supplier.edaphos_order?("SGTT", [ "SGTT-02", "SGTT-03" ])
+    assert_not Supplier.edaphos_order?("SGTT", [ "SGTT-02" ])
+    assert_not Supplier.edaphos_order?("Tinguely", [ "TIN-01" ])
+  end
 end

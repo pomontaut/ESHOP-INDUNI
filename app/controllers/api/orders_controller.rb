@@ -352,6 +352,13 @@ class Api::OrdersController < ApplicationController
       # read too).
       cc_addresses = (cc || "").split(",").map(&:strip)
       cc_addresses << current_user.email if current_user&.email.present?
+      body    = params[:body].to_s.strip.presence
+      # SGTT (hors transport de déchets) : EDAPHOS toujours en copie + remerciement en gras.
+      if !test_mode && Supplier.edaphos_order?(supplier.name, items.map { |i| i[:article] })
+        cc_addresses << Supplier::EDAPHOS_EMAIL
+        body = (body || OrderMailer::DEFAULT_BODY)
+        body = body.sub(/\n\n/, "\n\n#{Supplier::EDAPHOS_THANKS}\n\n") unless body.include?(Supplier::EDAPHOS_THANKS)
+      end
       cc = cc_addresses.uniq.join(", ").presence
       subject = params[:subject].to_s.strip.presence
       subject = "[TEST] #{subject || "Commande #{order.number}"}" if test_mode && !subject.to_s.start_with?("[TEST]")
@@ -365,7 +372,6 @@ class Api::OrdersController < ApplicationController
       # ESHOP_NN pattern found is corrected to the real one rather than left
       # to silently mismatch the attachment.
       subject = subject.gsub(/ESHOP(?:_INDUNI)?_\d+(?:-V\d+)?/, order.number) if subject&.match?(/ESHOP(?:_INDUNI)?_\d+(?:-V\d+)?/)
-      body    = params[:body].to_s.strip.presence
       # Persisted so a failed send can be retried later (see #resend) with the
       # exact same recipients/message, instead of falling back to generic
       # defaults — and so the order is never silently mistaken for "sent"
