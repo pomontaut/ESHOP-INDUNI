@@ -500,6 +500,15 @@ page recadrée avec cadre rouge (vignette + agrandissement au clic). **Recherche
 (`PRODUCTS` + `scoreProductV49`, 8 résultats) ; « Choisir » = choix manuel (statut À valider, `★`), puis ✓ l'enseigne à l'agent (`/learn`). Prix
 confidentiels : `PRODUCTS.confidential` → 🔒, jamais de prix. Pas encore fait : lien direct avec l'outil `GESTION-SOUMISSION` (React, local) et transport rendu chantier.
 
+**Mémoire « historique des soumissions BAT GE » (23.11.2026)** : le classeur « Articles des soumissions PDF 2010-2026 » (356'993 lignes lues dans
+5'193 PDF de l'archive Bâtiment Genève) est filtré sur sa colonne L « Fourniture et pose » (57'123 lignes : expression dans l'article ou dans le titre au-dessus),
+regroupé par texte + unité et versé dans `db/seed_data/soumission_history.json.gz` (28'898 positions, sans prix : le PU du classeur est quasi vide) par
+`python3 script/build_soumission_history.py <classeur.xlsx>`. Table `soumission_history_entries` (`SoumissionHistoryEntry`, rechargée en entier par `catalog:seed`).
+Application : `SoumissionPricer#price` ajoute `historique` (≤ 3 positions passées proches : mots communs pondérés, ≥ 2 mots non numériques, nombres double poids ;
+occurrences, années, affaire, unité et quantité habituelles, « fourniture et pose » dans l'article ou le titre) affiché sous la désignation (`soumHistHtml`, 🕘).
+Information seulement : elle ne change ni le statut ni l'article proposé (l'historique n'a aucun lien avec les articles du catalogue, donc pas de rapprochement
+automatique). Nouveau classeur = relancer le script, déployer.
+
 ## Vue « Amazon » (environnement test « Développement » uniquement)
 
 Bouton « 🛒 Vue Amazon 🧪 » (`amzInit()`, dernier bloc `<script>` de `catalogue.html`, préfixe `amz*`, `state.view === 'amz'` branché dans

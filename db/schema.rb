@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_11_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_100000) do
   create_table "canplast_surcharges", force: :cascade do |t|
     t.string "codes", null: false
     t.datetime "created_at", null: false
@@ -353,6 +353,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_11_090000) do
     t.datetime "updated_at", null: false
     t.text "value", null: false
     t.index ["kind", "status"], name: "index_search_memories_on_kind_and_status"
+  end
+
+  create_table "soumission_history_entries", force: :cascade do |t|
+    t.integer "affaires_count", default: 1, null: false
+    t.string "code"
+    t.datetime "created_at", null: false
+    t.text "designation", null: false
+    t.string "heading"
+    t.decimal "median_quantity", precision: 14, scale: 2
+    t.string "norm_text", null: false
+    t.integer "occurrences", default: 1, null: false
+    t.string "sample_affaire"
+    t.string "scope", default: "article", null: false
+    t.text "tokens", default: "", null: false
+    t.string "unit"
+    t.datetime "updated_at", null: false
+    t.integer "year_from"
+    t.integer "year_to"
+    t.index ["norm_text", "unit"], name: "idx_soum_history_unique", unique: true
   end
 
   create_table "soumission_matches", force: :cascade do |t|

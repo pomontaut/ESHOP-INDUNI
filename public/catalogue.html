@@ -6202,6 +6202,12 @@ function indDraw(){
     if(!soumOpen[i]) return '';
     return `<div style="margin-top:8px;padding:8px;border:1px solid var(--line);border-radius:10px;background:#f8fafc"><div style="display:flex;gap:6px"><input id="soumQ${i}" value="${esc(soumOpen[i].q)}" oninput="soumSearchInput(${i},this.value)" placeholder="Chercher dans l'e-shop…" style="flex:1;min-width:180px;border:1px solid var(--line);border-radius:8px;padding:6px 10px"><button class="miniBtn gray" onclick="soumSearchClose(${i})">Fermer</button></div><div id="soumRes${i}" style="margin-top:8px"></div></div>`;
   }
+  function soumHistHtml(it){
+    const h=it.historique; if(!h||!h.matches||!h.matches.length) return '';
+    const m=h.matches[0], yr=m.from===m.to?m.from:m.from+'–'+m.to;
+    const lst=h.matches.map(x=>'• '+x.designation+' ('+(x.unite||'?')+(x.quantiteHabituelle!=null?', qté habituelle '+x.quantiteHabituelle:'')+', '+x.occurrences+'× · '+x.affaire+')').join('\n');
+    return `<div class="muted" style="font-size:11px;margin-top:4px;color:#1a5fb4" title="${esc(lst)}">🕘 Déjà rencontrée dans les soumissions BAT GE (${esc(String(yr))}) : ${h.count} position(s) proche(s) · ${m.dansArticle?'« fourniture et pose » dans l\'article':'« fourniture et pose » dans le titre'}${m.unite?' · unité '+esc(m.unite):''}</div>`;
+  }
   function soumDraw(){
     const el=document.getElementById('soumBody'); if(!el||!soumItems.length) return;
     const rows=soumItems.map((it,i)=>({it,i})).filter(({it})=>soumFilter==='all'||it.status===soumFilter);
@@ -6216,7 +6222,7 @@ function indDraw(){
       const pu=!c?'':c.confidential?'🔒 accords cadre':(c.prix!=null?money(c.prix)+' / '+esc(c.unite||''):'');
       const tot=!c?'':c.confidential?'🔒':(c.total!=null?money(c.total):(c.prix!=null?'<span title="Unité différente de la soumission" style="color:#b26a00">unité ?</span>':''));
       const st=ST[it.status]||ST.a_demander;
-      return `<tr><td>${esc(it.pos||'')}</td><td style="min-width:360px">${esc(it.designation||'')}<div class="muted" style="font-size:11px">${esc(it.chapter||'')}${it.cfc?' · CFC '+esc(it.cfc):''}</div><div class="soumPdfBox" data-i="${i}" id="soumPdf${i}" style="margin-top:6px">${prevHtml(i)}</div></td><td>${it.quantity!=null?esc(String(it.quantity)):''} ${esc(it.unit||'')}</td><td>${it.highlight==='jaune'?'🟨 fourniture':'🟦 fourn. + pose'}</td><td style="min-width:300px">${sel}${previewArticle(i,c)}<div style="margin-top:6px"><button class="miniBtn gray" onclick="soumSearchOpen(${i})">🔍 Autre article</button></div>${searchPanel(i)}</td><td>${pu}</td><td>${tot}</td><td><span style="color:${st[1]};font-weight:800;white-space:nowrap">${st[0]}</span></td><td style="white-space:nowrap">${c?`<button class="miniBtn" title="Valider ce rapprochement" onclick="soumLearn(${i},'confirmed')">✓</button> <button class="miniBtn gray" title="Refuser : ne plus proposer" onclick="soumLearn(${i},'rejected')">✗</button>`:''}</td></tr>`;
+      return `<tr><td>${esc(it.pos||'')}</td><td style="min-width:360px">${esc(it.designation||'')}<div class="muted" style="font-size:11px">${esc(it.chapter||'')}${it.cfc?' · CFC '+esc(it.cfc):''}</div>${soumHistHtml(it)}<div class="soumPdfBox" data-i="${i}" id="soumPdf${i}" style="margin-top:6px">${prevHtml(i)}</div></td><td>${it.quantity!=null?esc(String(it.quantity)):''} ${esc(it.unit||'')}</td><td>${it.highlight==='jaune'?'🟨 fourniture':'🟦 fourn. + pose'}</td><td style="min-width:300px">${sel}${previewArticle(i,c)}<div style="margin-top:6px"><button class="miniBtn gray" onclick="soumSearchOpen(${i})">🔍 Autre article</button></div>${searchPanel(i)}</td><td>${pu}</td><td>${tot}</td><td><span style="color:${st[1]};font-weight:800;white-space:nowrap">${st[0]}</span></td><td style="white-space:nowrap">${c?`<button class="miniBtn" title="Valider ce rapprochement" onclick="soumLearn(${i},'confirmed')">✓</button> <button class="miniBtn gray" title="Refuser : ne plus proposer" onclick="soumLearn(${i},'rejected')">✗</button>`:''}</td></tr>`;
     }).join('')+`</tbody></table></div><p style="margin-top:10px"><b>Total chiffré (articles retenus) : CHF ${money(total)}</b> <span class="muted">· ${nb} ligne(s) sur ${soumItems.length} — hors transport, hors lignes à demander, hors prix confidentiels</span></p>`;
     soumOpenRefresh(); soumObserve();
   }

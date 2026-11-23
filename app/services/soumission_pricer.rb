@@ -52,12 +52,22 @@ class SoumissionPricer
     end
     top = scored.sort_by { |(p, s, l)| [ l ? 0 : 1, -s, @tokens[p.id].size ] }.first(MAX_CANDIDATES)
     candidates = top.map { |(p, s, l)| candidate(p, s, l, line) }
-    { candidates: candidates, status: status_of(candidates) }
+    { candidates: candidates, status: status_of(candidates), historique: history_of(designation, line[:unit]) }
   end
 
   def self.normalize_unit(unit) = UNIT_ALIASES[unit.to_s.strip.downcase.delete(".")] || unit.to_s.strip.downcase
 
   private
+
+  # Mémoire « historique des soumissions BAT GE » : positions F+P proches déjà rencontrées (aucun prix).
+  def history_of(designation, unit)
+    return nil unless SoumissionHistoryEntry.table_exists?
+    similar = SoumissionHistoryEntry.similar(designation, unit: unit)
+    return nil if similar.empty?
+    { count: similar.sum { |e, _| e[:n] }, matches: similar.map { |e, s|
+      { designation: e[:designation].truncate(220), code: e[:code], unite: e[:unit], occurrences: e[:n], affaires: e[:na], from: e[:y0], to: e[:y1],
+        affaire: e[:affaire], quantiteHabituelle: e[:qty], dansArticle: e[:scope] == "article", score: s.round(2) } } }
+  end
 
   def status_of(candidates)
     return "a_demander" if candidates.empty?

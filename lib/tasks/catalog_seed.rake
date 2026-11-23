@@ -254,6 +254,7 @@ namespace :catalog do
     end
 
     NomenclatureEntry.seed_from_json! if NomenclatureEntry.table_exists?
+    SoumissionHistoryEntry.seed_from_json! if SoumissionHistoryEntry.table_exists?
 
     puts "catalog:seed — #{Supplier.count} fournisseurs, #{Product.count} produits, #{Chantier.count} chantiers"
   end
